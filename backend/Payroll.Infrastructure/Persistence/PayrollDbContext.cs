@@ -6,6 +6,7 @@ using Payroll.Domain.Leave;
 using Payroll.Domain.Loans;
 using Payroll.Domain.Overtime;
 using Payroll.Domain.Payroll;
+using Payroll.Domain.PayrollConfig;
 
 namespace Payroll.Infrastructure.Persistence;
 
@@ -22,6 +23,8 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
     public DbSet<OvertimeRecord> OvertimeRecords => Set<OvertimeRecord>();
     public DbSet<Loan> Loans => Set<Loan>();
+    public DbSet<AllowanceType> AllowanceTypes => Set<AllowanceType>();
+    public DbSet<DeductionType> DeductionTypes => Set<DeductionType>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
