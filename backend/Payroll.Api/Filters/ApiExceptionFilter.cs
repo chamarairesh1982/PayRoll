@@ -16,9 +16,15 @@ public class ApiExceptionFilter : IExceptionFilter
     public void OnException(ExceptionContext context)
     {
         _logger.LogError(context.Exception, "Unhandled exception occurred");
-        context.Result = new ObjectResult(new { message = "An unexpected error occurred" })
+        var (statusCode, message) = context.Exception switch
         {
-            StatusCode = StatusCodes.Status500InternalServerError
+            ArgumentException ex => (StatusCodes.Status400BadRequest, ex.Message),
+            InvalidOperationException ex => (StatusCodes.Status400BadRequest, ex.Message),
+            KeyNotFoundException ex => (StatusCodes.Status404NotFound, ex.Message),
+            _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred")
         };
+
+        context.Result = new ObjectResult(new { message }) { StatusCode = statusCode };
+        context.ExceptionHandled = true;
     }
 }

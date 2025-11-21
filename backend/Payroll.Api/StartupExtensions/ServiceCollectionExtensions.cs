@@ -1,8 +1,12 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using Microsoft.EntityFrameworkCore;
 using Payroll.Api.Configuration;
 using Payroll.Api.Filters;
 using Payroll.Api.Mapping;
 using Payroll.Application.Interfaces;
 using Payroll.Application.Services;
+using Payroll.Application.Validators.Employees;
 using Payroll.Infrastructure.Identity;
 using Payroll.Infrastructure.Logging;
 using Payroll.Infrastructure.Persistence;
@@ -19,6 +23,8 @@ public static class ServiceCollectionExtensions
         services.Configure<PayrollRulesOptions>(configuration.GetSection("PayrollRules"));
 
         services.AddAutoMapper(typeof(MappingProfile).Assembly);
+        services.AddFluentValidationAutoValidation();
+        services.AddValidatorsFromAssemblyContaining<CreateEmployeeRequestDtoValidator>();
         services.AddScoped<IEmployeeService, EmployeeService>();
         services.AddScoped<IPayrollService, PayrollService>();
         services.AddScoped<IAttendanceService, AttendanceService>();
@@ -33,7 +39,16 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddDbContext<PayrollDbContext>(options => { /* TODO: configure provider */ });
+        var databaseOptions = new DatabaseOptions();
+        configuration.GetSection("Database").Bind(databaseOptions);
+        var connectionString = databaseOptions.ConnectionString;
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException("Database connection string not configured.");
+        }
+
+        services.AddDbContext<PayrollDbContext>(options => options.UseSqlServer(connectionString));
+        services.AddScoped<IPayrollDbContext>(provider => provider.GetRequiredService<PayrollDbContext>());
         services.AddIdentityLayer();
         services.AddStructuredLogging(configuration);
         return services;
