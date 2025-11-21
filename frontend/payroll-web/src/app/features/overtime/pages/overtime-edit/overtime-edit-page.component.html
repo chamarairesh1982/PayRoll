@@ -1,0 +1,24 @@
+<h1>Edit Overtime Record</h1>
+
+<ng-container *ngIf="!isLoading; else loading">
+  <div *ngIf="overtimeRecord; else notFound">
+    <div *ngIf="overtimeRecord.isLockedForPayroll" class="locked-message">
+      This OT record is locked and cannot be edited.
+    </div>
+
+    <app-overtime-form
+      *ngIf="!overtimeRecord.isLockedForPayroll"
+      [initialValue]="overtimeRecord"
+      mode="edit"
+      (submitted)="onSubmitted($event)"
+    ></app-overtime-form>
+  </div>
+</ng-container>
+
+<ng-template #loading>
+  <div>Loading overtime record...</div>
+</ng-template>
+
+<ng-template #notFound>
+  <div>Overtime record not found.</div>
+</ng-template>
