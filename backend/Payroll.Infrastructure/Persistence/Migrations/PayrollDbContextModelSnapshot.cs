@@ -177,6 +177,71 @@ partial class PayrollDbContextModelSnapshot : ModelSnapshot
 
             b.ToTable("LeaveRequests", (string)null);
         });
+
+        modelBuilder.Entity("Payroll.Domain.Overtime.OvertimeRecord", b =>
+        {
+            b.Property<Guid>("Id")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("uniqueidentifier");
+
+            b.Property<DateTimeOffset?>("ApprovedAt")
+                .HasColumnType("datetimeoffset");
+
+            b.Property<Guid?>("ApprovedById")
+                .HasColumnType("uniqueidentifier");
+
+            b.Property<DateTime>("CreatedAt")
+                .HasColumnType("datetime2");
+
+            b.Property<string>("CreatedBy")
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasColumnType("nvarchar(100)");
+
+            b.Property<DateOnly>("Date")
+                .HasColumnType("date");
+
+            b.Property<Guid>("EmployeeId")
+                .HasColumnType("uniqueidentifier");
+
+            b.Property<double>("Hours")
+                .HasColumnType("float");
+
+            b.Property<bool>("IsActive")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("bit")
+                .HasDefaultValue(true);
+
+            b.Property<bool>("IsLockedForPayroll")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("bit")
+                .HasDefaultValue(false);
+
+            b.Property<DateTime?>("ModifiedAt")
+                .HasColumnType("datetime2");
+
+            b.Property<string>("ModifiedBy")
+                .HasMaxLength(100)
+                .HasColumnType("nvarchar(100)");
+
+            b.Property<string>("Reason")
+                .HasMaxLength(500)
+                .HasColumnType("nvarchar(500)");
+
+            b.Property<int>("Status")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("int")
+                .HasDefaultValue(1);
+
+            b.Property<int>("Type")
+                .HasColumnType("int");
+
+            b.HasKey("Id");
+
+            b.HasIndex("EmployeeId", "Date");
+
+            b.ToTable("OvertimeRecords", (string)null);
+        });
 #pragma warning restore 612, 618
     }
 }
