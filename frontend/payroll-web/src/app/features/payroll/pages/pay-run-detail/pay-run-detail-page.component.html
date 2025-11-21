@@ -1,0 +1,70 @@
+<div *ngIf="isLoading" class="loading">Loading pay run...</div>
+
+<section *ngIf="payRun" class="pay-run-detail">
+  <div class="page-header">
+    <div>
+      <h1>{{ payRun.name }}</h1>
+      <div class="code">Code: {{ payRun.code }}</div>
+    </div>
+    <div class="status">Status: {{ payRun.status }}</div>
+  </div>
+
+  <div class="summary">
+    <div><strong>Period:</strong> {{ payRun.periodStart }} - {{ payRun.periodEnd }}</div>
+    <div><strong>Pay Date:</strong> {{ payRun.payDate }}</div>
+    <div><strong>Period Type:</strong> {{ payRun.periodType }}</div>
+    <div><strong>Employees:</strong> {{ payRun.employeeCount }}</div>
+    <div><strong>Total Net Pay:</strong> {{ payRun.totalNetPay }}</div>
+    <div><strong>Locked:</strong> {{ payRun.isLocked ? 'Yes' : 'No' }}</div>
+  </div>
+
+  <div class="actions">
+    <button type="button" (click)="recalculate()" [disabled]="!canRecalculate || isRecalculating">
+      {{ isRecalculating ? 'Recalculating...' : 'Recalculate' }}
+    </button>
+    <button type="button" (click)="changeStatus('UnderReview')" [disabled]="!canMarkUnderReview || isChangingStatus">
+      Mark as Under Review
+    </button>
+    <button type="button" (click)="changeStatus('Approved')" [disabled]="!canApprove || isChangingStatus">
+      Approve
+    </button>
+    <button type="button" (click)="changeStatus('Posted')" [disabled]="!canPost || isChangingStatus">
+      Post
+    </button>
+  </div>
+
+  <div class="payslips">
+    <h2>Payslips</h2>
+    <table class="table" *ngIf="payRun.paySlips?.length; else noPayslips">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Basic Salary</th>
+          <th>Total Earnings</th>
+          <th>Total Deductions</th>
+          <th>Net Pay</th>
+          <th>Employee EPF</th>
+          <th>PAYE</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let slip of payRun.paySlips">
+          <td>{{ slip.employeeCode || slip.employeeId }} - {{ slip.employeeName }}</td>
+          <td>{{ slip.basicSalary }}</td>
+          <td>{{ slip.totalEarnings }}</td>
+          <td>{{ slip.totalDeductions }}</td>
+          <td>{{ slip.netPay }}</td>
+          <td>{{ slip.employeeEpf }}</td>
+          <td>{{ slip.payeTax }}</td>
+          <td>
+            <button type="button" (click)="viewPaySlip(slip.id)">View Payslip</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <ng-template #noPayslips>
+      <div>No payslips available.</div>
+    </ng-template>
+  </div>
+</section>
