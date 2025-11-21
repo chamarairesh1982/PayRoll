@@ -12,6 +12,7 @@ export class SidebarComponent {
     { label: 'Payroll', path: '/payroll' },
     { label: 'Attendance', path: '/attendance' },
     { label: 'Leave', path: '/leave' },
+    { label: 'Overtime', path: '/overtime' },
     { label: 'Reports', path: '/reports' },
   ];
 }

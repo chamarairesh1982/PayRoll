@@ -1,0 +1,55 @@
+<h1>Overtime Details</h1>
+
+<ng-container *ngIf="!isLoading; else loading">
+  <div *ngIf="overtimeRecord; else notFound" class="detail-card">
+    <div class="row">
+      <span class="label">Employee:</span>
+      <span class="value">{{ overtimeRecord.employeeName || overtimeRecord.employeeCode || overtimeRecord.employeeId }}</span>
+    </div>
+    <div class="row">
+      <span class="label">Date:</span>
+      <span class="value">{{ overtimeRecord.date | date: 'yyyy-MM-dd' }}</span>
+    </div>
+    <div class="row">
+      <span class="label">Hours:</span>
+      <span class="value">{{ overtimeRecord.hours }}</span>
+    </div>
+    <div class="row">
+      <span class="label">Type:</span>
+      <span class="value">{{ overtimeRecord.type }}</span>
+    </div>
+    <div class="row">
+      <span class="label">Status:</span>
+      <span class="value">{{ overtimeRecord.status }}</span>
+    </div>
+    <div class="row" *ngIf="overtimeRecord.reason">
+      <span class="label">Reason:</span>
+      <span class="value">{{ overtimeRecord.reason }}</span>
+    </div>
+    <div class="row" *ngIf="overtimeRecord.approvedByName">
+      <span class="label">Approved By:</span>
+      <span class="value">{{ overtimeRecord.approvedByName }}</span>
+    </div>
+    <div class="row" *ngIf="overtimeRecord.approvedAt">
+      <span class="label">Approved At:</span>
+      <span class="value">{{ overtimeRecord.approvedAt | date: 'medium' }}</span>
+    </div>
+    <div class="row">
+      <span class="label">Locked for Payroll:</span>
+      <span class="value">{{ overtimeRecord.isLockedForPayroll ? 'Yes' : 'No' }}</span>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="secondary" (click)="goBack()">Back</button>
+      <button type="button" [disabled]="overtimeRecord.isLockedForPayroll" (click)="goToEdit()">Edit</button>
+    </div>
+  </div>
+</ng-container>
+
+<ng-template #loading>
+  <div>Loading overtime details...</div>
+</ng-template>
+
+<ng-template #notFound>
+  <div>Overtime record not found.</div>
+</ng-template>

@@ -24,6 +24,10 @@ const routes: Routes = [
         path: 'leave',
         loadChildren: () => import('./features/leave/leave.module').then(m => m.LeaveModule),
       },
+      {
+        path: 'overtime',
+        loadChildren: () => import('./features/overtime/overtime.module').then(m => m.OvertimeModule),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

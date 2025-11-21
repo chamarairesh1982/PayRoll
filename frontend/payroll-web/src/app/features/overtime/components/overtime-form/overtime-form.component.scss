@@ -1,0 +1,23 @@
+.overtime-form {
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    font-weight: 600;
+  }
+
+  .full-width {
+    grid-column: 1 / -1;
+  }
+
+  .actions {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: flex-end;
+  }
+}

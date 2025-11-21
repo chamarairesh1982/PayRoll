@@ -1,0 +1,90 @@
+<div class="page-header">
+  <h1>Overtime Records</h1>
+  <button type="button" (click)="goToCreate()">Create OT Record</button>
+</div>
+
+<div class="filters">
+  <label>
+    Employee
+    <input type="text" [(ngModel)]="selectedEmployeeId" placeholder="Employee ID or Code" />
+  </label>
+
+  <label>
+    Date
+    <input type="date" [(ngModel)]="selectedDate" />
+  </label>
+
+  <label>
+    Status
+    <select [(ngModel)]="selectedStatus">
+      <option [ngValue]="''">All</option>
+      <option [ngValue]="'Pending'">Pending</option>
+      <option [ngValue]="'Approved'">Approved</option>
+      <option [ngValue]="'Rejected'">Rejected</option>
+      <option [ngValue]="'Cancelled'">Cancelled</option>
+    </select>
+  </label>
+
+  <div class="filter-actions">
+    <button type="button" (click)="applyFilters()">Apply</button>
+    <button type="button" class="secondary" (click)="resetFilters()">Reset</button>
+  </div>
+</div>
+
+<ng-template #loading>
+  <div class="loading">Loading overtime records...</div>
+</ng-template>
+
+<div class="table-wrapper" *ngIf="!isLoading; else loading">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Employee</th>
+        <th>Hours</th>
+        <th>Type</th>
+        <th>Status</th>
+        <th>Locked</th>
+        <th class="actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let record of records">
+        <td>{{ record.date | date: 'yyyy-MM-dd' }}</td>
+        <td>
+          <div class="employee-cell">
+            <span class="code">{{ record.employeeCode || record.employeeId }}</span>
+            <span class="name" *ngIf="record.employeeName">{{ record.employeeName }}</span>
+          </div>
+        </td>
+        <td>{{ record.hours }}</td>
+        <td>{{ record.type }}</td>
+        <td>{{ record.status }}</td>
+        <td>{{ record.isLockedForPayroll ? 'Yes' : 'No' }}</td>
+        <td class="actions">
+          <button type="button" (click)="viewRecord(record)">View</button>
+          <button type="button" (click)="editRecord(record)">Edit</button>
+          <button type="button" class="danger" (click)="confirmDelete(record)">Delete</button>
+        </td>
+      </tr>
+      <tr *ngIf="records.length === 0">
+        <td colspan="7" class="empty">No overtime records found.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="pagination">
+  <button type="button" (click)="previousPage()" [disabled]="page === 1">Previous</button>
+  <span>Page {{ page }} of {{ totalPages || 1 }}</span>
+  <button type="button" (click)="nextPage()" [disabled]="page * pageSize >= totalCount">Next</button>
+</div>
+
+<div class="dialog-wrapper" *ngIf="showConfirm">
+  <app-confirm-dialog
+    title="Delete Overtime Record"
+    [message]="'Are you sure you want to delete OT record for ' + (recordToDelete?.employeeName || recordToDelete?.employeeCode || recordToDelete?.employeeId) + ' on ' + (recordToDelete?.date | date: 'yyyy-MM-dd') + '?'"
+    (confirmed)="deleteRecord()"
+    (cancelled)="cancelDelete()"
+  ></app-confirm-dialog>
+</div>
