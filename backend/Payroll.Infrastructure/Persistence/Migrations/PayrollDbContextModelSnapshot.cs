@@ -242,6 +242,121 @@ partial class PayrollDbContextModelSnapshot : ModelSnapshot
 
             b.ToTable("OvertimeRecords", (string)null);
         });
+
+        modelBuilder.Entity("Payroll.Domain.PayrollConfig.AllowanceType", b =>
+        {
+            b.Property<Guid>("Id")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("uniqueidentifier");
+
+            b.Property<int>("Basis")
+                .HasColumnType("int");
+
+            b.Property<string>("Code")
+                .IsRequired()
+                .HasMaxLength(20)
+                .HasColumnType("nvarchar(20)");
+
+            b.Property<DateTime>("CreatedAt")
+                .HasColumnType("datetime2");
+
+            b.Property<string>("CreatedBy")
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasColumnType("nvarchar(100)");
+
+            b.Property<string>("Description")
+                .HasColumnType("nvarchar(max)");
+
+            b.Property<bool>("IsActive")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("bit")
+                .HasDefaultValue(true);
+
+            b.Property<bool>("IsEpfApplicable")
+                .HasColumnType("bit");
+
+            b.Property<bool>("IsEtfApplicable")
+                .HasColumnType("bit");
+
+            b.Property<bool>("IsTaxable")
+                .HasColumnType("bit");
+
+            b.Property<DateTime?>("ModifiedAt")
+                .HasColumnType("datetime2");
+
+            b.Property<string>("ModifiedBy")
+                .HasMaxLength(100)
+                .HasColumnType("nvarchar(100)");
+
+            b.Property<string>("Name")
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasColumnType("nvarchar(100)");
+
+            b.HasKey("Id");
+
+            b.HasIndex("Code")
+                .IsUnique();
+
+            b.ToTable("AllowanceTypes", (string)null);
+        });
+
+        modelBuilder.Entity("Payroll.Domain.PayrollConfig.DeductionType", b =>
+        {
+            b.Property<Guid>("Id")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("uniqueidentifier");
+
+            b.Property<int>("Basis")
+                .HasColumnType("int");
+
+            b.Property<string>("Code")
+                .IsRequired()
+                .HasMaxLength(20)
+                .HasColumnType("nvarchar(20)");
+
+            b.Property<DateTime>("CreatedAt")
+                .HasColumnType("datetime2");
+
+            b.Property<string>("CreatedBy")
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasColumnType("nvarchar(100)");
+
+            b.Property<string>("Description")
+                .HasColumnType("nvarchar(max)");
+
+            b.Property<bool>("IsActive")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("bit")
+                .HasDefaultValue(true);
+
+            b.Property<bool>("IsPostTax")
+                .HasColumnType("bit");
+
+            b.Property<bool>("IsPreTax")
+                .HasColumnType("bit");
+
+            b.Property<DateTime?>("ModifiedAt")
+                .HasColumnType("datetime2");
+
+            b.Property<string>("ModifiedBy")
+                .HasMaxLength(100)
+                .HasColumnType("nvarchar(100)");
+
+            b.Property<string>("Name")
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasColumnType("nvarchar(100)");
+
+            b.HasKey("Id");
+
+            b.HasIndex("Code")
+                .IsUnique();
+
+            b.ToTable("DeductionTypes", (string)null);
+        });
 #pragma warning restore 612, 618
     }
 }
