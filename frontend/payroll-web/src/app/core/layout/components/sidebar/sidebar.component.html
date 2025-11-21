@@ -1,0 +1,8 @@
+<aside class="sidebar">
+  <div class="sidebar__brand">Payroll</div>
+  <nav class="sidebar__nav">
+    <a *ngFor="let link of links" [routerLink]="link.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+      {{ link.label }}
+    </a>
+  </nav>
+</aside>

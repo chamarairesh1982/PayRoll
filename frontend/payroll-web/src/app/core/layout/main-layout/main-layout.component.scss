@@ -1,0 +1,21 @@
+.layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.layout__content {
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.layout__main {
+  padding: 1.5rem;
+}
+
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}

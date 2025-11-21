@@ -1,0 +1,29 @@
+<div class="page-header">
+  <h1>Employees</h1>
+  <button type="button" (click)="goToCreate()">Create Employee</button>
+</div>
+
+<ng-template #actions let-employee>
+  <div class="actions">
+    <button type="button" (click)="viewEmployee(employee)">View</button>
+    <button type="button" (click)="editEmployee(employee)">Edit</button>
+    <button type="button" (click)="confirmDelete(employee)">Delete</button>
+  </div>
+</ng-template>
+
+<app-data-table [columns]="columns" [data]="employees" [actionsTemplate]="actions"></app-data-table>
+
+<div class="pagination">
+  <button type="button" (click)="previousPage()" [disabled]="page === 1">Previous</button>
+  <span>Page {{ page }}</span>
+  <button type="button" (click)="nextPage()" [disabled]="page * pageSize >= totalCount">Next</button>
+</div>
+
+<div class="dialog-wrapper" *ngIf="showConfirm">
+  <app-confirm-dialog
+    title="Delete Employee"
+    [message]="'Are you sure you want to delete ' + employeeToDelete?.firstName + ' ' + employeeToDelete?.lastName + '?'"
+    (confirmed)="deleteEmployee()"
+    (cancelled)="cancelDelete()"
+  ></app-confirm-dialog>
+</div>
