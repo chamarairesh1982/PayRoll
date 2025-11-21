@@ -1,18 +1,15 @@
-using Payroll.Domain.Common;
+namespace Payroll.Application.Payroll.DTOs;
 
-namespace Payroll.Domain.Payroll;
-
-public class PaySlip : AuditableEntity
+public class PaySlipDto
 {
-    public new Guid Id { get; set; }
-
+    public Guid Id { get; set; }
     public Guid PayRunId { get; set; }
-    public PayRun PayRun { get; set; } = null!;
-
     public Guid EmployeeId { get; set; }
 
-    public decimal BasicSalary { get; set; }
+    public string? EmployeeCode { get; set; }
+    public string? EmployeeName { get; set; }
 
+    public decimal BasicSalary { get; set; }
     public decimal TotalEarnings { get; set; }
     public decimal TotalDeductions { get; set; }
     public decimal NetPay { get; set; }
@@ -24,6 +21,6 @@ public class PaySlip : AuditableEntity
 
     public string Currency { get; set; } = "LKR";
 
-    public ICollection<PaySlipEarningLine> Earnings { get; set; } = new List<PaySlipEarningLine>();
-    public ICollection<PaySlipDeductionLine> Deductions { get; set; } = new List<PaySlipDeductionLine>();
+    public List<PaySlipEarningLineDto> Earnings { get; set; } = new();
+    public List<PaySlipDeductionLineDto> Deductions { get; set; } = new();
 }

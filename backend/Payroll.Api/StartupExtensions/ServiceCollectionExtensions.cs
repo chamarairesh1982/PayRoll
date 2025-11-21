@@ -8,6 +8,7 @@ using Payroll.Application.Interfaces;
 using Payroll.Application.Leave;
 using Payroll.Application.Overtime;
 using Payroll.Application.PayrollConfig;
+using Payroll.Application.Payroll;
 using Payroll.Application.Services;
 using Payroll.Application.Validators.Employees;
 using Payroll.Infrastructure.Identity;
@@ -29,7 +30,7 @@ public static class ServiceCollectionExtensions
         services.AddFluentValidationAutoValidation();
         services.AddValidatorsFromAssemblyContaining<CreateEmployeeRequestDtoValidator>();
         services.AddScoped<IEmployeeService, EmployeeService>();
-        services.AddScoped<IPayrollService, PayrollService>();
+        services.AddScoped<IPayRunService, PayRunService>();
         services.AddScoped<IAttendanceService, AttendanceService>();
         services.AddScoped<ILeaveRequestService, LeaveRequestService>();
         services.AddScoped<IOvertimeService, OvertimeService>();

@@ -1,13 +1,24 @@
 using Payroll.Domain.Common;
-using Payroll.Domain.Employees;
 
 namespace Payroll.Domain.Payroll;
 
 public class PayRun : AuditableEntity, IAggregateRoot
 {
-    public string Reference { get; set; } = string.Empty;
-    public DateTime PeriodStart { get; set; }
-    public DateTime PeriodEnd { get; set; }
-    public PayRunStatus Status { get; set; } = PayRunStatus.Draft;
+    public new Guid Id { get; set; }
+
+    public string Code { get; set; } = null!;
+    public string Name { get; set; } = null!;
+
+    public PayPeriodType PeriodType { get; set; }
+
+    public DateOnly PeriodStart { get; set; }
+    public DateOnly PeriodEnd { get; set; }
+
+    public DateOnly PayDate { get; set; }
+
+    public PayRunStatus Status { get; set; }
+
+    public bool IsLocked { get; set; }
+
     public ICollection<PaySlip> PaySlips { get; set; } = new List<PaySlip>();
 }

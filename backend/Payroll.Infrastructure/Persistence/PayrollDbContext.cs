@@ -19,6 +19,8 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<PayRun> PayRuns => Set<PayRun>();
     public DbSet<PaySlip> PaySlips => Set<PaySlip>();
+    public DbSet<PaySlipEarningLine> PaySlipEarningLines => Set<PaySlipEarningLine>();
+    public DbSet<PaySlipDeductionLine> PaySlipDeductionLines => Set<PaySlipDeductionLine>();
     public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
     public DbSet<OvertimeRecord> OvertimeRecords => Set<OvertimeRecord>();
