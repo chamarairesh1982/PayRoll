@@ -1,0 +1,35 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="tax-rule-set-form">
+  <div class="grid">
+    <label>
+      Name
+      <input type="text" formControlName="name" />
+      <app-form-field-error [control]="form.get('name')"></app-form-field-error>
+    </label>
+    <label>
+      Year of Assessment
+      <input type="number" formControlName="yearOfAssessment" />
+      <app-form-field-error [control]="form.get('yearOfAssessment')"></app-form-field-error>
+    </label>
+    <label>
+      Effective From
+      <input type="date" formControlName="effectiveFrom" />
+      <app-form-field-error [control]="form.get('effectiveFrom')"></app-form-field-error>
+    </label>
+    <label>
+      Effective To
+      <input type="date" formControlName="effectiveTo" />
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" formControlName="isDefault" /> Default Rule Set
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" formControlName="isActive" /> Active
+    </label>
+  </div>
+
+  <app-tax-slabs-editor [slabs]="slabs" (slabsChange)="updateSlabs($event)"></app-tax-slabs-editor>
+
+  <div class="actions">
+    <button type="submit">{{ mode === 'create' ? 'Create Rule Set' : 'Save Changes' }}</button>
+  </div>
+</form>
