@@ -1,0 +1,41 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="allowance-type-form">
+  <div class="grid">
+    <label>
+      Code
+      <input type="text" formControlName="code" />
+      <app-form-field-error [control]="form.get('code')"></app-form-field-error>
+    </label>
+    <label>
+      Name
+      <input type="text" formControlName="name" />
+      <app-form-field-error [control]="form.get('name')"></app-form-field-error>
+    </label>
+    <label>
+      Description
+      <textarea formControlName="description" rows="3"></textarea>
+    </label>
+    <label>
+      Basis
+      <select formControlName="basis">
+        <option *ngFor="let option of basisOptions" [value]="option">{{ option }}</option>
+      </select>
+      <app-form-field-error [control]="form.get('basis')"></app-form-field-error>
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" formControlName="isEpfApplicable" /> EPF Applicable
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" formControlName="isEtfApplicable" /> ETF Applicable
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" formControlName="isTaxable" /> Taxable
+    </label>
+    <label class="checkbox" *ngIf="mode === 'edit'">
+      <input type="checkbox" formControlName="isActive" /> Active
+    </label>
+  </div>
+
+  <div class="actions">
+    <button type="submit">{{ mode === 'create' ? 'Create' : 'Save Changes' }}</button>
+  </div>
+</form>

@@ -5,4 +5,17 @@
       {{ link.label }}
     </a>
   </nav>
+  <div class="sidebar__section">
+    <div class="sidebar__section-title">Configuration</div>
+    <nav class="sidebar__nav sidebar__nav--secondary">
+      <a
+        *ngFor="let link of configLinks"
+        [routerLink]="link.path"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        {{ link.label }}
+      </a>
+    </nav>
+  </div>
 </aside>
