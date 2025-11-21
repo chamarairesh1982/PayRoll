@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Payroll.Application.DTOs;
+using Payroll.Application.DTOs.Employees;
 using Payroll.Application.Interfaces;
 
 namespace Payroll.Api.Controllers;
@@ -25,47 +25,28 @@ public class EmployeesController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var employee = await _employeeService.GetEmployeeByIdAsync(id);
+        var employee = await _employeeService.GetByIdAsync(id);
         return employee is null ? NotFound() : Ok(employee);
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateEmployeeRequest request)
+    public async Task<IActionResult> Create([FromBody] CreateEmployeeRequestDto request, CancellationToken cancellationToken)
     {
-        var dto = new EmployeeDto
-        {
-            EmployeeNumber = request.EmployeeNumber,
-            FullName = request.FullName,
-            EmploymentStatus = request.EmploymentStatus,
-            EmployeeType = request.EmployeeType
-        };
-
-        var created = await _employeeService.CreateEmployeeAsync(dto);
+        var created = await _employeeService.CreateAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateEmployeeRequest request)
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateEmployeeRequestDto request, CancellationToken cancellationToken)
     {
-        var dto = new EmployeeDto
-        {
-            EmployeeNumber = request.EmployeeNumber,
-            FullName = request.FullName,
-            EmploymentStatus = request.EmploymentStatus,
-            EmployeeType = request.EmployeeType
-        };
-
-        await _employeeService.UpdateEmployeeAsync(id, dto);
+        await _employeeService.UpdateAsync(id, request, cancellationToken);
         return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        await _employeeService.DeleteEmployeeAsync(id);
+        await _employeeService.DeleteAsync(id, cancellationToken);
         return NoContent();
     }
 }
-
-public record CreateEmployeeRequest(string EmployeeNumber, string FullName, Payroll.Domain.Employees.EmploymentStatus EmploymentStatus, Payroll.Domain.Employees.EmployeeType EmployeeType);
-public record UpdateEmployeeRequest(string EmployeeNumber, string FullName, Payroll.Domain.Employees.EmploymentStatus EmploymentStatus, Payroll.Domain.Employees.EmployeeType EmployeeType);

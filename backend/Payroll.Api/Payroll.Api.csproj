@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+    <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
     <ProjectReference Include="..\Payroll.Application\Payroll.Application.csproj" />
     <ProjectReference Include="..\Payroll.Infrastructure\Payroll.Infrastructure.csproj" />
     <ProjectReference Include="..\Payroll.Shared\Payroll.Shared.csproj" />

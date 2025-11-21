@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Payroll.Application.Interfaces;
 using Payroll.Domain.Attendance;
 using Payroll.Domain.Employees;
 using Payroll.Domain.Leave;
@@ -7,7 +8,7 @@ using Payroll.Domain.Payroll;
 
 namespace Payroll.Infrastructure.Persistence;
 
-public class PayrollDbContext : DbContext
+public class PayrollDbContext : DbContext, IPayrollDbContext
 {
     public PayrollDbContext(DbContextOptions<PayrollDbContext> options) : base(options)
     {
@@ -23,6 +24,6 @@ public class PayrollDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        // TODO: apply configurations
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(PayrollDbContext).Assembly);
     }
 }
