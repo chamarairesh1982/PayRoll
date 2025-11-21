@@ -4,6 +4,7 @@ using Payroll.Domain.Attendance;
 using Payroll.Domain.Employees;
 using Payroll.Domain.Leave;
 using Payroll.Domain.Loans;
+using Payroll.Domain.Overtime;
 using Payroll.Domain.Payroll;
 
 namespace Payroll.Infrastructure.Persistence;
@@ -19,6 +20,7 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public DbSet<PaySlip> PaySlips => Set<PaySlip>();
     public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
+    public DbSet<OvertimeRecord> OvertimeRecords => Set<OvertimeRecord>();
     public DbSet<Loan> Loans => Set<Loan>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
