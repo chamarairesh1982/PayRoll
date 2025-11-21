@@ -5,6 +5,7 @@ import DashboardPage from "../pages/dashboard/DashboardPage";
 import EmployeeListPage from "../pages/employees/EmployeeListPage";
 import EmployeeCreatePage from "../pages/employees/EmployeeCreatePage";
 import EmployeeDetailPage from "../pages/employees/EmployeeDetailPage";
+import EmployeeEditPage from "../pages/employees/EmployeeEditPage";
 import PayRunsListPage from "../pages/payroll/PayRunsListPage";
 import PayRunDetailPage from "../pages/payroll/PayRunDetailPage";
 
@@ -18,6 +19,7 @@ const AppRouter = () => {
           <Route path="/employees" element={<EmployeeListPage />} />
           <Route path="/employees/new" element={<EmployeeCreatePage />} />
           <Route path="/employees/:id" element={<EmployeeDetailPage />} />
+          <Route path="/employees/:id/edit" element={<EmployeeEditPage />} />
           <Route path="/payruns" element={<PayRunsListPage />} />
           <Route path="/payruns/:id" element={<PayRunDetailPage />} />
         </Route>
