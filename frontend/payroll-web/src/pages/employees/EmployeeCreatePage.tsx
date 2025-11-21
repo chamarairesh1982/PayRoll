@@ -1,16 +1,20 @@
+import { useNavigate } from "react-router-dom";
 import EmployeeForm from "../../components/forms/EmployeeForm";
+import { createEmployee } from "../../api/employeesApi";
 import { Employee } from "../../types/Employee";
 
 const EmployeeCreatePage = () => {
-  const handleSubmit = (employee: Partial<Employee>) => {
-    // TODO: call API to create employee
-    console.log("Create employee", employee);
+  const navigate = useNavigate();
+
+  const handleSubmit = async (values: Partial<Employee>) => {
+    await createEmployee(values);
+    navigate("/employees");
   };
 
   return (
     <section>
-      <h1>Create employee</h1>
-      <EmployeeForm onSubmit={handleSubmit} />
+      <h1>Create Employee</h1>
+      <EmployeeForm mode="create" onSubmit={handleSubmit} />
     </section>
   );
 };
