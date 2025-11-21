@@ -1,0 +1,51 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31912.275
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Payroll.Api", "backend\Payroll.Api\Payroll.Api.csproj", "{5E3859FD-9F43-4820-93A5-D19A053F2C32}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Payroll.Application", "backend\Payroll.Application\Payroll.Application.csproj", "{FABFA11D-A13A-462E-B91C-97DF1B1DC620}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Payroll.Domain", "backend\Payroll.Domain\Payroll.Domain.csproj", "{DA27FBD5-F40B-43BC-A9FC-4B5C87F786CF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Payroll.Infrastructure", "backend\Payroll.Infrastructure\Payroll.Infrastructure.csproj", "{3AE1DB17-A897-426E-8F4B-88AB2954FEE4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Payroll.Shared", "backend\Payroll.Shared\Payroll.Shared.csproj", "{529290C7-33CB-4B40-8BFB-33CED40D2DEF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "payroll-web", "frontend\payroll-web\payroll-web.esproj", "{A23BF78F-64CC-48AE-8D99-F73A9E13ABA7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5E3859FD-9F43-4820-93A5-D19A053F2C32}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E3859FD-9F43-4820-93A5-D19A053F2C32}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E3859FD-9F43-4820-93A5-D19A053F2C32}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E3859FD-9F43-4820-93A5-D19A053F2C32}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FABFA11D-A13A-462E-B91C-97DF1B1DC620}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FABFA11D-A13A-462E-B91C-97DF1B1DC620}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FABFA11D-A13A-462E-B91C-97DF1B1DC620}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FABFA11D-A13A-462E-B91C-97DF1B1DC620}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DA27FBD5-F40B-43BC-A9FC-4B5C87F786CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA27FBD5-F40B-43BC-A9FC-4B5C87F786CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA27FBD5-F40B-43BC-A9FC-4B5C87F786CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA27FBD5-F40B-43BC-A9FC-4B5C87F786CF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3AE1DB17-A897-426E-8F4B-88AB2954FEE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3AE1DB17-A897-426E-8F4B-88AB2954FEE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3AE1DB17-A897-426E-8F4B-88AB2954FEE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3AE1DB17-A897-426E-8F4B-88AB2954FEE4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{529290C7-33CB-4B40-8BFB-33CED40D2DEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{529290C7-33CB-4B40-8BFB-33CED40D2DEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{529290C7-33CB-4B40-8BFB-33CED40D2DEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{529290C7-33CB-4B40-8BFB-33CED40D2DEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A23BF78F-64CC-48AE-8D99-F73A9E13ABA7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A23BF78F-64CC-48AE-8D99-F73A9E13ABA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A23BF78F-64CC-48AE-8D99-F73A9E13ABA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A23BF78F-64CC-48AE-8D99-F73A9E13ABA7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
