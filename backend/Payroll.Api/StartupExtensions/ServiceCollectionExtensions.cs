@@ -5,6 +5,7 @@ using Payroll.Api.Configuration;
 using Payroll.Api.Filters;
 using Payroll.Api.Mapping;
 using Payroll.Application.Interfaces;
+using Payroll.Application.Leave;
 using Payroll.Application.Services;
 using Payroll.Application.Validators.Employees;
 using Payroll.Infrastructure.Identity;
@@ -28,7 +29,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEmployeeService, EmployeeService>();
         services.AddScoped<IPayrollService, PayrollService>();
         services.AddScoped<IAttendanceService, AttendanceService>();
-        services.AddScoped<ILeaveService, LeaveService>();
+        services.AddScoped<ILeaveRequestService, LeaveRequestService>();
         services.AddScoped<ILoanService, LoanService>();
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<ICurrentUserService, SimpleCurrentUserService>();
