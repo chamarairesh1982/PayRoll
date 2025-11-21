@@ -357,6 +357,187 @@ partial class PayrollDbContextModelSnapshot : ModelSnapshot
 
             b.ToTable("DeductionTypes", (string)null);
         });
+
+        modelBuilder.Entity("Payroll.Domain.PayrollConfig.EpfEtfRuleSet", b =>
+        {
+            b.Property<Guid>("Id")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("uniqueidentifier");
+
+            b.Property<DateTime>("CreatedAt")
+                .HasColumnType("datetime2");
+
+            b.Property<string>("CreatedBy")
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasColumnType("nvarchar(100)");
+
+            b.Property<DateOnly>("EffectiveFrom")
+                .HasColumnType("date");
+
+            b.Property<DateOnly?>("EffectiveTo")
+                .HasColumnType("date");
+
+            b.Property<decimal>("EmployeeEpfRate")
+                .HasColumnType("decimal(5,2)");
+
+            b.Property<decimal>("EmployerEpfRate")
+                .HasColumnType("decimal(5,2)");
+
+            b.Property<decimal>("EmployerEtfRate")
+                .HasColumnType("decimal(5,2)");
+
+            b.Property<bool>("IsActive")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("bit")
+                .HasDefaultValue(true);
+
+            b.Property<bool>("IsDefault")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("bit")
+                .HasDefaultValue(false);
+
+            b.Property<decimal?>("MaximumEarningForEpf")
+                .HasColumnType("decimal(18,2)");
+
+            b.Property<decimal?>("MaximumEarningForEtf")
+                .HasColumnType("decimal(18,2)");
+
+            b.Property<decimal?>("MinimumWageForEpf")
+                .HasColumnType("decimal(18,2)");
+
+            b.Property<DateTime?>("ModifiedAt")
+                .HasColumnType("datetime2");
+
+            b.Property<string>("ModifiedBy")
+                .HasMaxLength(100)
+                .HasColumnType("nvarchar(100)");
+
+            b.Property<string>("Name")
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasColumnType("nvarchar(100)");
+
+            b.HasKey("Id");
+
+            b.HasIndex("EffectiveFrom", "IsActive", "IsDefault");
+
+            b.ToTable("EpfEtfRuleSets", (string)null);
+        });
+
+        modelBuilder.Entity("Payroll.Domain.PayrollConfig.TaxRuleSet", b =>
+        {
+            b.Property<Guid>("Id")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("uniqueidentifier");
+
+            b.Property<DateTime>("CreatedAt")
+                .HasColumnType("datetime2");
+
+            b.Property<string>("CreatedBy")
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasColumnType("nvarchar(100)");
+
+            b.Property<DateOnly>("EffectiveFrom")
+                .HasColumnType("date");
+
+            b.Property<DateOnly?>("EffectiveTo")
+                .HasColumnType("date");
+
+            b.Property<bool>("IsActive")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("bit")
+                .HasDefaultValue(true);
+
+            b.Property<bool>("IsDefault")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("bit")
+                .HasDefaultValue(false);
+
+            b.Property<DateTime?>("ModifiedAt")
+                .HasColumnType("datetime2");
+
+            b.Property<string>("ModifiedBy")
+                .HasMaxLength(100)
+                .HasColumnType("nvarchar(100)");
+
+            b.Property<string>("Name")
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasColumnType("nvarchar(100)");
+
+            b.Property<int>("YearOfAssessment")
+                .HasColumnType("int");
+
+            b.HasKey("Id");
+
+            b.HasIndex("YearOfAssessment", "IsActive", "IsDefault");
+
+            b.ToTable("TaxRuleSets", (string)null);
+        });
+
+        modelBuilder.Entity("Payroll.Domain.PayrollConfig.TaxSlab", b =>
+        {
+            b.Property<Guid>("Id")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("uniqueidentifier");
+
+            b.Property<DateTime>("CreatedAt")
+                .HasColumnType("datetime2");
+
+            b.Property<string>("CreatedBy")
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasColumnType("nvarchar(100)");
+
+            b.Property<decimal>("FromAmount")
+                .HasColumnType("decimal(18,2)");
+
+            b.Property<bool>("IsActive")
+                .HasColumnType("bit");
+
+            b.Property<decimal>("RatePercent")
+                .HasColumnType("decimal(5,2)");
+
+            b.Property<int>("Order")
+                .HasColumnType("int");
+
+            b.Property<DateTime?>("ModifiedAt")
+                .HasColumnType("datetime2");
+
+            b.Property<string>("ModifiedBy")
+                .HasMaxLength(100)
+                .HasColumnType("nvarchar(100)");
+
+            b.Property<Guid>("TaxRuleSetId")
+                .HasColumnType("uniqueidentifier");
+
+            b.Property<decimal?>("ToAmount")
+                .HasColumnType("decimal(18,2)");
+
+            b.HasKey("Id");
+
+            b.HasIndex("TaxRuleSetId");
+
+            b.ToTable("TaxSlabs", (string)null);
+        });
+
+        modelBuilder.Entity("Payroll.Domain.PayrollConfig.TaxSlab", b =>
+        {
+            b.HasOne("Payroll.Domain.PayrollConfig.TaxRuleSet", "TaxRuleSet")
+                .WithMany("Slabs")
+                .HasForeignKey("TaxRuleSetId")
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired();
+
+            b.Navigation("TaxRuleSet");
+        });
+
+        modelBuilder.Entity("Payroll.Domain.PayrollConfig.TaxRuleSet", b =>
+        {
+            b.Navigation("Slabs");
+        });
 #pragma warning restore 612, 618
     }
 }

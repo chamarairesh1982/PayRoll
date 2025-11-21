@@ -25,6 +25,9 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public DbSet<Loan> Loans => Set<Loan>();
     public DbSet<AllowanceType> AllowanceTypes => Set<AllowanceType>();
     public DbSet<DeductionType> DeductionTypes => Set<DeductionType>();
+    public DbSet<EpfEtfRuleSet> EpfEtfRuleSets => Set<EpfEtfRuleSet>();
+    public DbSet<TaxRuleSet> TaxRuleSets => Set<TaxRuleSet>();
+    public DbSet<TaxSlab> TaxSlabs => Set<TaxSlab>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
