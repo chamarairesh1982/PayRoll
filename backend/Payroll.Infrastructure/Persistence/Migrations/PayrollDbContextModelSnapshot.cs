@@ -104,6 +104,79 @@ partial class PayrollDbContextModelSnapshot : ModelSnapshot
 
             b.ToTable("Employees", (string)null);
         });
+
+        modelBuilder.Entity("Payroll.Domain.Leave.LeaveRequest", b =>
+        {
+            b.Property<Guid>("Id")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("uniqueidentifier");
+
+            b.Property<Guid?>("ApprovedById")
+                .HasColumnType("uniqueidentifier");
+
+            b.Property<DateTimeOffset?>("ApprovedAt")
+                .HasColumnType("datetimeoffset");
+
+            b.Property<DateTime>("CreatedAt")
+                .HasColumnType("datetime2");
+
+            b.Property<string>("CreatedBy")
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasColumnType("nvarchar(100)");
+
+            b.Property<Guid>("EmployeeId")
+                .HasColumnType("uniqueidentifier");
+
+            b.Property<DateOnly>("EndDate")
+                .HasColumnType("date");
+
+            b.Property<string>("HalfDaySession")
+                .HasMaxLength(2)
+                .HasColumnType("nvarchar(2)");
+
+            b.Property<bool>("IsActive")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("bit")
+                .HasDefaultValue(true);
+
+            b.Property<bool?>("IsHalfDay")
+                .HasColumnType("bit");
+
+            b.Property<int>("LeaveType")
+                .HasColumnType("int");
+
+            b.Property<DateTime?>("ModifiedAt")
+                .HasColumnType("datetime2");
+
+            b.Property<string>("ModifiedBy")
+                .HasMaxLength(100)
+                .HasColumnType("nvarchar(100)");
+
+            b.Property<string>("Reason")
+                .HasMaxLength(500)
+                .HasColumnType("nvarchar(500)");
+
+            b.Property<DateTimeOffset>("RequestedAt")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("datetimeoffset")
+                .HasDefaultValueSql("SYSUTCDATETIME()");
+
+            b.Property<DateOnly>("StartDate")
+                .HasColumnType("date");
+
+            b.Property<int>("Status")
+                .HasColumnType("int");
+
+            b.Property<double>("TotalDays")
+                .HasColumnType("float");
+
+            b.HasKey("Id");
+
+            b.HasIndex("EmployeeId", "StartDate");
+
+            b.ToTable("LeaveRequests", (string)null);
+        });
 #pragma warning restore 612, 618
     }
 }

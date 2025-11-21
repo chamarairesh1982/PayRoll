@@ -1,9 +1,11 @@
 namespace Payroll.Domain.Leave;
 
-public enum LeaveType
+public enum LeaveTypeCode
 {
-    Annual = 0,
-    Casual = 1,
-    Medical = 2,
-    Unpaid = 3
+    Annual = 1,
+    Casual = 2,
+    Sick = 3,
+    Maternity = 4,
+    NoPay = 5,
+    Other = 99
 }
