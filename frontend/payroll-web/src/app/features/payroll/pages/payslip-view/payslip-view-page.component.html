@@ -1,0 +1,75 @@
+<div *ngIf="isLoading" class="loading">Loading payslip...</div>
+
+<section *ngIf="paySlip" class="payslip">
+  <div class="payslip__header">
+    <div>
+      <h1>Payslip</h1>
+      <div class="company">Company Name</div>
+    </div>
+    <div class="actions">
+      <button type="button" (click)="goBack()">Back to Pay Run</button>
+    </div>
+  </div>
+
+  <div class="details">
+    <div><strong>Employee:</strong> {{ paySlip.employeeName || paySlip.employeeId }} ({{ paySlip.employeeCode || 'N/A' }})</div>
+    <div><strong>Pay Run:</strong> {{ paySlip.payRunId }}</div>
+    <div><strong>Currency:</strong> {{ paySlip.currency }}</div>
+  </div>
+
+  <div class="columns">
+    <div class="panel">
+      <h3>Earnings</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Description</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let earning of paySlip.earnings">
+            <td>{{ earning.code }}</td>
+            <td>{{ earning.description }}</td>
+            <td>{{ earning.amount }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h3>Deductions</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Description</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let deduction of paySlip.deductions">
+            <td>{{ deduction.code }}</td>
+            <td>{{ deduction.description }}</td>
+            <td>{{ deduction.amount }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="summary">
+    <div><strong>Basic Salary:</strong> {{ paySlip.basicSalary }}</div>
+    <div><strong>Total Earnings:</strong> {{ paySlip.totalEarnings }}</div>
+    <div><strong>Total Deductions:</strong> {{ paySlip.totalDeductions }}</div>
+    <div><strong>Net Pay:</strong> {{ paySlip.netPay }}</div>
+  </div>
+
+  <div class="statutory">
+    <div><strong>Employee EPF:</strong> {{ paySlip.employeeEpf }}</div>
+    <div><strong>Employer EPF:</strong> {{ paySlip.employerEpf }}</div>
+    <div><strong>Employer ETF:</strong> {{ paySlip.employerEtf }}</div>
+    <div><strong>PAYE Tax:</strong> {{ paySlip.payeTax }}</div>
+  </div>
+</section>

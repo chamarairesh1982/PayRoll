@@ -1,0 +1,30 @@
+<div class="page-header">
+  <h1>Pay Runs</h1>
+  <button type="button" (click)="goToCreate()">Create Pay Run</button>
+</div>
+
+<div class="filters">
+  <label>
+    Status
+    <select [(ngModel)]="selectedStatus" (change)="onStatusChange()">
+      <option [value]="''">All</option>
+      <option *ngFor="let status of statusOptions.slice(1)" [value]="status">{{ status }}</option>
+    </select>
+  </label>
+</div>
+
+<div *ngIf="isLoading" class="loading">Loading pay runs...</div>
+
+<ng-template #actions let-payRun>
+  <div class="actions">
+    <button type="button" (click)="viewPayRun(payRun)">View</button>
+  </div>
+</ng-template>
+
+<app-data-table [columns]="columns" [data]="payRuns" [actionsTemplate]="actions"></app-data-table>
+
+<div class="pagination">
+  <button type="button" (click)="previousPage()" [disabled]="page === 1">Previous</button>
+  <span>Page {{ page }}</span>
+  <button type="button" (click)="nextPage()" [disabled]="page * pageSize >= totalCount">Next</button>
+</div>

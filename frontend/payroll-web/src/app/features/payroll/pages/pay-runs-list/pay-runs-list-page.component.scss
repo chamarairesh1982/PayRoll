@@ -1,0 +1,52 @@
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.page-header button {
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  border: none;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.filters {
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.filters label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.filters select {
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.actions button {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #2563eb;
+  background: transparent;
+  color: #2563eb;
+  border-radius: 6px;
+}
+
+.pagination {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.loading {
+  margin: 1rem 0;
+}

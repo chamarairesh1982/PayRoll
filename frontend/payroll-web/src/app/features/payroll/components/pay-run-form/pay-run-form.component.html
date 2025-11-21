@@ -1,0 +1,50 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="pay-run-form">
+  <div class="grid">
+    <label>
+      Name
+      <input type="text" formControlName="name" />
+      <app-form-field-error [control]="form.get('name')"></app-form-field-error>
+    </label>
+
+    <label>
+      Period Type
+      <select formControlName="periodType">
+        <option *ngFor="let type of periodTypes" [value]="type">{{ type }}</option>
+      </select>
+      <app-form-field-error [control]="form.get('periodType')"></app-form-field-error>
+    </label>
+
+    <label>
+      Period Start
+      <input type="date" formControlName="periodStart" />
+      <app-form-field-error [control]="form.get('periodStart')"></app-form-field-error>
+    </label>
+
+    <label>
+      Period End
+      <input type="date" formControlName="periodEnd" />
+      <app-form-field-error [control]="form.get('periodEnd')"></app-form-field-error>
+      <div class="error" *ngIf="periodRangeInvalid">Period end must be on or after start.</div>
+    </label>
+
+    <label>
+      Pay Date
+      <input type="date" formControlName="payDate" />
+      <app-form-field-error [control]="form.get('payDate')"></app-form-field-error>
+    </label>
+
+    <label class="checkbox-field">
+      <input type="checkbox" formControlName="includeActiveEmployeesOnly" />
+      <span>Include Active Employees Only</span>
+    </label>
+
+    <label class="full-width">
+      Employee IDs (comma or space separated)
+      <textarea rows="3" formControlName="employeeIds" placeholder="TODO: Employee picker integration"></textarea>
+    </label>
+  </div>
+
+  <div class="actions">
+    <button type="submit">{{ mode === 'create' ? 'Create Pay Run' : 'Save Changes' }}</button>
+  </div>
+</form>
