@@ -20,6 +20,10 @@ const routes: Routes = [
         path: 'attendance',
         loadChildren: () => import('./features/attendance/attendance.module').then(m => m.AttendanceModule),
       },
+      {
+        path: 'leave',
+        loadChildren: () => import('./features/leave/leave.module').then(m => m.LeaveModule),
+      },
     ],
   },
   { path: '**', redirectTo: '' },
