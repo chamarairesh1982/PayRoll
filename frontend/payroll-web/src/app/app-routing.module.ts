@@ -16,6 +16,10 @@ const routes: Routes = [
         path: 'employees',
         loadChildren: () => import('./features/employees/employees.module').then(m => m.EmployeesModule),
       },
+      {
+        path: 'attendance',
+        loadChildren: () => import('./features/attendance/attendance.module').then(m => m.AttendanceModule),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

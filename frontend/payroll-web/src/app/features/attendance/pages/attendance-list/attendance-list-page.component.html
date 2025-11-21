@@ -1,0 +1,83 @@
+<div class="page-header">
+  <h1>Attendance</h1>
+  <button type="button" (click)="toggleCreateForm()">{{ showCreateForm ? 'Close Form' : 'Add Attendance' }}</button>
+</div>
+
+<div class="filters">
+  <label>
+    Date
+    <input type="date" [(ngModel)]="selectedDate" />
+  </label>
+  <label>
+    Employee
+    <input type="text" [(ngModel)]="selectedEmployeeId" placeholder="Employee ID or Code" />
+  </label>
+  <div class="filter-actions">
+    <button type="button" (click)="applyFilters()">Apply</button>
+    <button type="button" class="secondary" (click)="resetFilters()">Reset</button>
+  </div>
+</div>
+
+<div class="create-section" *ngIf="showCreateForm">
+  <h2>New Attendance Record</h2>
+  <app-attendance-form mode="create" (submitted)="handleCreate($event)"></app-attendance-form>
+</div>
+
+<ng-template #loading>
+  <div class="loading">Loading attendance records...</div>
+</ng-template>
+
+<div class="table-wrapper" *ngIf="!isLoading; else loading">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Employee</th>
+        <th>In Time</th>
+        <th>Out Time</th>
+        <th>Total Hours</th>
+        <th>Status</th>
+        <th>OT Hours</th>
+        <th class="actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let record of records">
+        <td>{{ record.date | date: 'yyyy-MM-dd' }}</td>
+        <td>
+          <div class="employee-cell">
+            <span class="code">{{ record.employeeCode || record.employeeId }}</span>
+            <span class="name" *ngIf="record.employeeName">{{ record.employeeName }}</span>
+          </div>
+        </td>
+        <td>{{ record.inTime || '-' }}</td>
+        <td>{{ record.outTime || '-' }}</td>
+        <td>{{ record.totalHours ?? '-' }}</td>
+        <td>{{ record.status }}</td>
+        <td>{{ record.otHours ?? '-' }}</td>
+        <td class="actions">
+          <button type="button" (click)="editRecord(record)">Edit</button>
+          <button type="button" class="danger" (click)="confirmDelete(record)">Delete</button>
+        </td>
+      </tr>
+      <tr *ngIf="records.length === 0">
+        <td colspan="8" class="empty">No attendance records found.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="pagination">
+  <button type="button" (click)="previousPage()" [disabled]="page === 1">Previous</button>
+  <span>Page {{ page }} of {{ totalPages || 1 }}</span>
+  <button type="button" (click)="nextPage()" [disabled]="page * pageSize >= totalCount">Next</button>
+</div>
+
+<div class="dialog-wrapper" *ngIf="showConfirm">
+  <app-confirm-dialog
+    title="Delete Attendance Record"
+    [message]="'Are you sure you want to delete attendance on ' + (recordToDelete?.date | date: 'yyyy-MM-dd') + '?'"
+    (confirmed)="deleteRecord()"
+    (cancelled)="cancelDelete()"
+  ></app-confirm-dialog>
+</div>
