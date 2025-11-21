@@ -11,6 +11,7 @@ export class SidebarComponent {
     { label: 'Employees', path: '/employees' },
     { label: 'Payroll', path: '/payroll' },
     { label: 'Attendance', path: '/attendance' },
+    { label: 'Leave', path: '/leave' },
     { label: 'Reports', path: '/reports' },
   ];
 }

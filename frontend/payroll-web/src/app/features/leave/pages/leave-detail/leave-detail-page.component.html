@@ -1,0 +1,35 @@
+<h1>Leave Request Details</h1>
+
+<ng-container *ngIf="!isLoading; else loading">
+  <div *ngIf="leaveRequest; else notFound" class="card">
+    <div class="card__header">
+      <div>
+        <div class="label">Employee</div>
+        <div class="value">{{ leaveRequest.employeeName || leaveRequest.employeeCode || leaveRequest.employeeId }}</div>
+      </div>
+      <div class="status">{{ leaveRequest.status }}</div>
+    </div>
+
+    <div class="row"><strong>Leave Type:</strong> <span>{{ leaveRequest.leaveType }}</span></div>
+    <div class="row"><strong>Period:</strong> <span>{{ leaveRequest.startDate | date: 'yyyy-MM-dd' }} – {{ leaveRequest.endDate | date: 'yyyy-MM-dd' }}</span></div>
+    <div class="row"><strong>Total Days:</strong> <span>{{ leaveRequest.totalDays }}</span></div>
+    <div class="row"><strong>Half Day:</strong> <span>{{ leaveRequest.isHalfDay ? (leaveRequest.halfDaySession || 'Yes') : 'No' }}</span></div>
+    <div class="row"><strong>Requested At:</strong> <span>{{ leaveRequest.requestedAt | date: 'medium' }}</span></div>
+    <div class="row"><strong>Reason:</strong> <span>{{ leaveRequest.reason || '-' }}</span></div>
+    <div class="row"><strong>Approved By:</strong> <span>{{ leaveRequest.approvedByName || leaveRequest.approvedById || '-' }}</span></div>
+    <div class="row"><strong>Approved At:</strong> <span>{{ leaveRequest.approvedAt ? (leaveRequest.approvedAt | date: 'medium') : '-' }}</span></div>
+
+    <div class="actions">
+      <button type="button" (click)="editRequest()">Edit</button>
+      <button type="button" class="secondary" (click)="goBack()">Back</button>
+    </div>
+  </div>
+</ng-container>
+
+<ng-template #loading>
+  <div>Loading leave request...</div>
+</ng-template>
+
+<ng-template #notFound>
+  <div class="empty">Leave request not found.</div>
+</ng-template>
