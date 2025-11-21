@@ -19,5 +19,7 @@ export class SidebarComponent {
   configLinks = [
     { label: 'Allowance Types', path: '/config/allowances' },
     { label: 'Deduction Types', path: '/config/deductions' },
+    { label: 'EPF/ETF Rules', path: '/config/epf-etf' },
+    { label: 'PAYE Tax Rules', path: '/config/tax-rules' },
   ];
 }

@@ -1,0 +1,35 @@
+<div class="slabs-header">
+  <h3>Tax Slabs</h3>
+  <button type="button" (click)="addSlab()">Add Slab</button>
+</div>
+
+<div class="slabs-table" *ngIf="slabs.length > 0; else empty">
+  <div class="slabs-row slabs-row--header">
+    <div>Order</div>
+    <div>From Amount</div>
+    <div>To Amount</div>
+    <div>Rate %</div>
+    <div class="actions">Actions</div>
+  </div>
+  <div class="slabs-row" *ngFor="let slab of slabs; index as i">
+    <div>#{{ slab.order }}</div>
+    <div>
+      <input type="number" [(ngModel)]="slab.fromAmount" (change)="onChange()" />
+    </div>
+    <div>
+      <input type="number" [(ngModel)]="slab.toAmount" (change)="onChange()" placeholder="No upper limit" />
+    </div>
+    <div>
+      <input type="number" step="0.01" [(ngModel)]="slab.ratePercent" (change)="onChange()" />
+    </div>
+    <div class="actions">
+      <button type="button" (click)="moveUp(i)" [disabled]="i === 0">↑</button>
+      <button type="button" (click)="moveDown(i)" [disabled]="i === slabs.length - 1">↓</button>
+      <button type="button" class="danger" (click)="removeSlab(i)">Remove</button>
+    </div>
+  </div>
+</div>
+
+<ng-template #empty>
+  <div class="empty">No slabs defined yet.</div>
+</ng-template>
