@@ -1,0 +1,66 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="employee-form">
+  <div class="grid">
+    <label>
+      Employee Code
+      <input type="text" formControlName="employeeCode" />
+      <app-form-field-error [control]="form.get('employeeCode')"></app-form-field-error>
+    </label>
+    <label>
+      First Name
+      <input type="text" formControlName="firstName" />
+      <app-form-field-error [control]="form.get('firstName')"></app-form-field-error>
+    </label>
+    <label>
+      Last Name
+      <input type="text" formControlName="lastName" />
+      <app-form-field-error [control]="form.get('lastName')"></app-form-field-error>
+    </label>
+    <label>
+      NIC Number
+      <input type="text" formControlName="nicNumber" />
+      <app-form-field-error [control]="form.get('nicNumber')"></app-form-field-error>
+    </label>
+    <label>
+      Date of Birth
+      <input type="date" formControlName="dateOfBirth" />
+      <app-form-field-error [control]="form.get('dateOfBirth')"></app-form-field-error>
+    </label>
+    <label>
+      Gender
+      <select formControlName="gender">
+        <option *ngFor="let gender of genders" [value]="gender">{{ gender }}</option>
+      </select>
+    </label>
+    <label>
+      Marital Status
+      <select formControlName="maritalStatus">
+        <option *ngFor="let status of maritalStatuses" [value]="status">{{ status }}</option>
+      </select>
+    </label>
+    <label>
+      Employment Start Date
+      <input type="date" formControlName="employmentStartDate" />
+      <app-form-field-error [control]="form.get('employmentStartDate')"></app-form-field-error>
+    </label>
+    <label>
+      Probation End Date
+      <input type="date" formControlName="probationEndDate" />
+    </label>
+    <label>
+      Confirmation Date
+      <input type="date" formControlName="confirmationDate" />
+    </label>
+    <label>
+      Base Salary
+      <input type="number" formControlName="baseSalary" step="0.01" />
+      <app-form-field-error [control]="form.get('baseSalary')"></app-form-field-error>
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" formControlName="isActive" /> Active
+    </label>
+  </div>
+
+  <div class="actions">
+    <button type="submit">{{ mode === 'create' ? 'Create' : 'Save Changes' }}</button>
+  </div>
+</form>

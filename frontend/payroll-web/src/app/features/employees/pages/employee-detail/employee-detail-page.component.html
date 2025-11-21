@@ -1,0 +1,21 @@
+<div *ngIf="employee" class="card">
+  <div class="card__header">
+    <h2>{{ employee.firstName }} {{ employee.lastName }}</h2>
+    <div class="actions">
+      <button type="button" (click)="editEmployee()">Edit</button>
+      <button type="button" (click)="goBack()">Back</button>
+    </div>
+  </div>
+  <div class="card__body">
+    <div class="row"><strong>Employee Code:</strong> {{ employee.employeeCode }}</div>
+    <div class="row"><strong>NIC:</strong> {{ employee.nicNumber }}</div>
+    <div class="row"><strong>Date of Birth:</strong> {{ employee.dateOfBirth | dateFormat }}</div>
+    <div class="row"><strong>Gender:</strong> {{ employee.gender }}</div>
+    <div class="row"><strong>Marital Status:</strong> {{ employee.maritalStatus }}</div>
+    <div class="row"><strong>Employment Start:</strong> {{ employee.employmentStartDate | dateFormat }}</div>
+    <div class="row"><strong>Probation End:</strong> {{ employee.probationEndDate | dateFormat }}</div>
+    <div class="row"><strong>Confirmation Date:</strong> {{ employee.confirmationDate | dateFormat }}</div>
+    <div class="row"><strong>Base Salary:</strong> {{ employee.baseSalary | number: '1.0-2' }}</div>
+    <div class="row"><strong>Active:</strong> {{ employee.isActive ? 'Yes' : 'No' }}</div>
+  </div>
+</div>

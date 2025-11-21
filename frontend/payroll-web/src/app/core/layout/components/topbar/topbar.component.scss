@@ -1,0 +1,20 @@
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.topbar__title {
+  font-weight: 700;
+}
+
+.topbar__actions button {
+  padding: 0.55rem 1rem;
+  border: none;
+  background: #ef4444;
+  color: #ffffff;
+  border-radius: 6px;
+}

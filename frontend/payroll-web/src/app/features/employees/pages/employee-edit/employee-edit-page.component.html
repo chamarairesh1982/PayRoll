@@ -1,0 +1,7 @@
+<h1>Edit Employee</h1>
+<app-employee-form
+  *ngIf="employee"
+  [mode]="'edit'"
+  [initialValue]="employee"
+  (submitted)="handleSubmit($event)"
+></app-employee-form>

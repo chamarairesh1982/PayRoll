@@ -1,0 +1,20 @@
+<div class="login-page">
+  <div class="login-card">
+    <h1>Payroll Login</h1>
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <label>
+        Username
+        <input type="text" formControlName="username" />
+      </label>
+      <app-form-field-error [control]="form.get('username')"></app-form-field-error>
+
+      <label>
+        Password
+        <input type="password" formControlName="password" />
+      </label>
+      <app-form-field-error [control]="form.get('password')"></app-form-field-error>
+
+      <button type="submit" [disabled]="isSubmitting">Login</button>
+    </form>
+  </div>
+</div>
