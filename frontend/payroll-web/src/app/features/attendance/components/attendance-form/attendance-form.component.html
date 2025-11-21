@@ -1,0 +1,48 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="attendance-form">
+  <div class="grid">
+    <label>
+      Date
+      <input type="date" formControlName="date" />
+      <app-form-field-error [control]="form.get('date')"></app-form-field-error>
+    </label>
+
+    <label>
+      Employee
+      <input type="text" formControlName="employeeId" placeholder="Employee ID or Code" />
+      <app-form-field-error [control]="form.get('employeeId')"></app-form-field-error>
+    </label>
+
+    <label>
+      In Time
+      <input type="time" formControlName="inTime" />
+    </label>
+
+    <label>
+      Out Time
+      <input type="time" formControlName="outTime" />
+    </label>
+
+    <label>
+      Status
+      <select formControlName="status">
+        <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+      </select>
+      <app-form-field-error [control]="form.get('status')"></app-form-field-error>
+    </label>
+
+    <label>
+      OT Hours
+      <input type="number" formControlName="otHours" min="0" step="0.25" />
+      <app-form-field-error [control]="form.get('otHours')"></app-form-field-error>
+    </label>
+
+    <label class="full-width">
+      Remarks
+      <textarea rows="3" formControlName="remarks"></textarea>
+    </label>
+  </div>
+
+  <div class="actions">
+    <button type="submit">{{ mode === 'create' ? 'Create Attendance' : 'Save Changes' }}</button>
+  </div>
+</form>
