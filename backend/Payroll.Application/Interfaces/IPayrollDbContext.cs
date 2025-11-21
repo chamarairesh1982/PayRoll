@@ -13,5 +13,8 @@ public interface IPayrollDbContext
     DbSet<OvertimeRecord> OvertimeRecords { get; }
     DbSet<AllowanceType> AllowanceTypes { get; }
     DbSet<DeductionType> DeductionTypes { get; }
+    DbSet<EpfEtfRuleSet> EpfEtfRuleSets { get; }
+    DbSet<TaxRuleSet> TaxRuleSets { get; }
+    DbSet<TaxSlab> TaxSlabs { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
