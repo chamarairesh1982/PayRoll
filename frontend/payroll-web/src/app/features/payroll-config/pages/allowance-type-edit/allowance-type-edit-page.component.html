@@ -1,0 +1,16 @@
+<div class="page-header">
+  <h1>Edit Allowance Type</h1>
+  <button type="button" class="secondary" (click)="goBack()">Back to List</button>
+</div>
+
+<ng-template #loading>
+  <div class="loading">Loading allowance type...</div>
+</ng-template>
+
+<div *ngIf="allowanceType; else loading">
+  <app-allowance-type-form
+    [initialValue]="allowanceType"
+    mode="edit"
+    (submitted)="handleSubmit($event)"
+  ></app-allowance-type-form>
+</div>

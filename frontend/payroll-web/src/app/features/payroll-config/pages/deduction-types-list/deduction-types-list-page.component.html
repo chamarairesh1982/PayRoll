@@ -1,0 +1,67 @@
+<div class="page-header">
+  <h1>Deduction Types</h1>
+  <button type="button" (click)="navigateToCreate()">New Deduction Type</button>
+</div>
+
+<div class="filters">
+  <label>
+    Status
+    <select [(ngModel)]="filterIsActive" (change)="handleFilterChange()">
+      <option value="all">All</option>
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+    </select>
+  </label>
+</div>
+
+<ng-template #loading>
+  <div class="loading">Loading deduction types...</div>
+</ng-template>
+
+<div class="table-wrapper" *ngIf="!isLoading; else loading">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Name</th>
+        <th>Basis</th>
+        <th>Pre-tax?</th>
+        <th>Post-tax?</th>
+        <th>Active?</th>
+        <th class="actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of items">
+        <td>{{ item.code }}</td>
+        <td>{{ item.name }}</td>
+        <td>{{ item.basis }}</td>
+        <td>{{ item.isPreTax ? 'Yes' : 'No' }}</td>
+        <td>{{ item.isPostTax ? 'Yes' : 'No' }}</td>
+        <td>{{ item.isActive ? 'Yes' : 'No' }}</td>
+        <td class="actions">
+          <button type="button" (click)="navigateToEdit(item)">Edit</button>
+          <button type="button" class="danger" (click)="confirmDelete(item)">Delete</button>
+        </td>
+      </tr>
+      <tr *ngIf="items.length === 0">
+        <td colspan="7" class="empty">No deduction types found.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="pagination">
+  <button type="button" (click)="previousPage()" [disabled]="page === 1">Previous</button>
+  <span>Page {{ page }} of {{ totalPages || 1 }}</span>
+  <button type="button" (click)="nextPage()" [disabled]="page * pageSize >= totalCount">Next</button>
+</div>
+
+<div class="dialog-wrapper" *ngIf="showConfirm">
+  <app-confirm-dialog
+    title="Delete Deduction Type"
+    [message]="'Are you sure you want to delete ' + (selectedItem?.name || 'this deduction type') + '?'"
+    (confirmed)="deleteItem()"
+    (cancelled)="cancelDelete()"
+  ></app-confirm-dialog>
+</div>

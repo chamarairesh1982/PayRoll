@@ -30,3 +30,20 @@
 .sidebar__nav a:hover {
   background: #1e293b;
 }
+
+.sidebar__section {
+  border-top: 1px solid #1e293b;
+  padding-top: 1rem;
+}
+
+.sidebar__section-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 0.5rem;
+}
+
+.sidebar__nav--secondary {
+  gap: 0.5rem;
+}

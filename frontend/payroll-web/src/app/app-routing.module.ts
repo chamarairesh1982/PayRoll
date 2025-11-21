@@ -28,6 +28,11 @@ const routes: Routes = [
         path: 'overtime',
         loadChildren: () => import('./features/overtime/overtime.module').then(m => m.OvertimeModule),
       },
+      {
+        path: 'config',
+        loadChildren: () =>
+          import('./features/payroll-config/payroll-config.module').then(m => m.PayrollConfigModule),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

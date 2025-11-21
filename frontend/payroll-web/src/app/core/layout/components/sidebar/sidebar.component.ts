@@ -15,4 +15,9 @@ export class SidebarComponent {
     { label: 'Overtime', path: '/overtime' },
     { label: 'Reports', path: '/reports' },
   ];
+
+  configLinks = [
+    { label: 'Allowance Types', path: '/config/allowances' },
+    { label: 'Deduction Types', path: '/config/deductions' },
+  ];
 }
