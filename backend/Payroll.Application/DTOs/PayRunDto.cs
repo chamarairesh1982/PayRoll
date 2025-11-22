@@ -1,18 +1,23 @@
 using Payroll.Domain.Payroll;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Payroll.Application.DTOs;
 
-public class PayRunDto
+public class PayRunSummaryDto
 {
     public Guid Id { get; set; }
-    public string Reference { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public PayPeriodType PeriodType { get; set; }
     public DateTime PeriodStart { get; set; }
     public DateTime PeriodEnd { get; set; }
     public DateTime PayDate { get; set; }
-    public bool IsLocked { get; set; }
     public PayRunStatus Status { get; set; }
-    public List<Guid>? EmployeeIds { get; set; }
-    public IEnumerable<PaySlipDto> PaySlips { get; set; } = Enumerable.Empty<PaySlipDto>();
+    public bool IsLocked { get; set; }
+    public int EmployeeCount { get; set; }
+    public decimal TotalNetPay { get; set; }
+}
+
+public class PayRunDetailDto : PayRunSummaryDto
+{
+    public List<PaySlipDto> PaySlips { get; set; } = new();
 }
