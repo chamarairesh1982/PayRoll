@@ -49,6 +49,13 @@ public class PayrollController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{id:guid}/recalculate")]
+    public async Task<IActionResult> Recalculate(Guid id)
+    {
+        var payRun = await _payrollService.RecalculatePayRunAsync(id);
+        return Ok(payRun);
+    }
+
     [HttpGet("payslips/{id:guid}")]
     public async Task<IActionResult> GetPaySlip(Guid id)
     {
