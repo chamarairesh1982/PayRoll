@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Payroll.Domain.PayrollConfig;
+using System;
 
 namespace Payroll.Infrastructure.Persistence.Configurations;
 
@@ -43,5 +44,17 @@ public class EpfEtfRuleSetConfiguration : IEntityTypeConfiguration<EpfEtfRuleSet
             .HasMaxLength(100);
 
         builder.HasIndex(r => new { r.EffectiveFrom, r.IsActive, r.IsDefault });
+
+        builder.HasData(new EpfEtfRuleSet
+        {
+            Id = Guid.Parse("88888888-8888-8888-8888-888888888888"),
+            Name = "Sri Lanka Default EPF/ETF",
+            EffectiveFrom = new DateTime(2020, 1, 1),
+            EmployeeEpfRate = 8,
+            EmployerEpfRate = 12,
+            EmployerEtfRate = 3,
+            IsDefault = true,
+            IsActive = true
+        });
     }
 }

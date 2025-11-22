@@ -7,6 +7,8 @@ public class PaySlipDto
 {
     public Guid Id { get; set; }
     public Guid EmployeeId { get; set; }
+    public string? EmployeeCode { get; set; }
+    public string? EmployeeName { get; set; }
     public decimal BasicSalary { get; set; }
     public decimal TotalEarnings { get; set; }
     public decimal TotalDeductions { get; set; }

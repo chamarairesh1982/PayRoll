@@ -34,24 +34,27 @@ public class PayrollService : IPayrollService
         _taxRuleSetService = taxRuleSetService;
     }
 
-    public async Task<PayRunDto> CreatePayRunAsync(PayRunDto payRunDto, CancellationToken cancellationToken = default)
+    public async Task<PayRunDetailDto> CreatePayRunAsync(CreatePayRunRequest request, CancellationToken cancellationToken = default)
     {
         var payRun = new PayRun
         {
-            Reference = string.IsNullOrWhiteSpace(payRunDto.Reference) ? $"PR-{DateTime.UtcNow:yyyyMMddHHmmss}" : payRunDto.Reference,
-            PeriodStart = payRunDto.PeriodStart,
-            PeriodEnd = payRunDto.PeriodEnd,
-            PayDate = DateOnly.FromDateTime(payRunDto.PayDate == default ? payRunDto.PeriodEnd : payRunDto.PayDate),
+            Reference = $"PR-{DateTime.UtcNow:yyyyMMddHHmmss}",
+            Code = request.Name,
+            Name = request.Name,
+            PeriodType = request.PeriodType,
+            PeriodStart = request.PeriodStart,
+            PeriodEnd = request.PeriodEnd,
+            PayDate = request.PayDate == default ? request.PeriodEnd : request.PayDate,
             Status = PayRunStatus.Draft,
             IsLocked = false
         };
 
-        var employeeIds = payRunDto.EmployeeIds?.Where(id => id != Guid.Empty).Distinct().ToList() ?? new List<Guid>();
+        var employeeIds = request.EmployeeIds?.Where(id => id != Guid.Empty).Distinct().ToList() ?? new List<Guid>();
         if (!employeeIds.Any())
         {
             employeeIds = await _dbContext.Employees
                 .AsNoTracking()
-                .Where(e => e.IsActive)
+                .Where(e => !request.IncludeActiveEmployeesOnly || e.IsActive)
                 .Select(e => e.Id)
                 .ToListAsync(cancellationToken);
         }
@@ -62,10 +65,10 @@ public class PayrollService : IPayrollService
         await _dbContext.PayRuns.AddAsync(payRun, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return MapToDto(payRun);
+        return MapToDetailDto(payRun);
     }
 
-    public async Task<PayRunDto> RecalculatePayRunAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task RecalculatePayRunAsync(Guid id, RecalculatePayRunRequest request, CancellationToken cancellationToken = default)
     {
         var payRun = await _dbContext.PayRuns
             .Include(pr => pr.PaySlips)
@@ -94,10 +97,10 @@ public class PayrollService : IPayrollService
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return MapToDto(payRun);
+        return;
     }
 
-    public async Task ApprovePayRunAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task ChangeStatusAsync(Guid id, ChangePayRunStatusRequest request, CancellationToken cancellationToken = default)
     {
         var payRun = await _dbContext.PayRuns.FirstOrDefaultAsync(pr => pr.Id == id, cancellationToken);
         if (payRun is null)
@@ -105,22 +108,13 @@ public class PayrollService : IPayrollService
             throw new KeyNotFoundException("Pay run not found");
         }
 
-        if (payRun.Status is PayRunStatus.Posted or PayRunStatus.Cancelled)
-        {
-            throw new InvalidOperationException("Pay run cannot be approved from the current status.");
-        }
-
-        payRun.Status = PayRunStatus.Approved;
-
-        if (payRun.Status == PayRunStatus.Posted)
-        {
-            payRun.IsLocked = true;
-        }
+        payRun.Status = request.Status;
+        payRun.IsLocked = request.Status is PayRunStatus.Posted;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<PayRunDto?> GetPayRunAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<PayRunDetailDto?> GetPayRunAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var payRun = await _dbContext.PayRuns
             .Include(pr => pr.PaySlips)
@@ -130,15 +124,19 @@ public class PayrollService : IPayrollService
             .AsNoTracking()
             .FirstOrDefaultAsync(pr => pr.Id == id, cancellationToken);
 
-        return payRun is null ? null : MapToDto(payRun);
+        return payRun is null ? null : MapToDetailDto(payRun);
     }
 
-    public async Task<PaginatedResult<PayRunDto>> GetPayRunsAsync(int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<PayRunSummaryDto>> GetPayRunsAsync(int page, int pageSize, PayRunStatus? status = null, CancellationToken cancellationToken = default)
     {
         page = Math.Max(1, page);
         pageSize = Math.Max(1, pageSize);
 
         var query = _dbContext.PayRuns.AsNoTracking();
+        if (status.HasValue)
+        {
+            query = query.Where(p => p.Status == status);
+        }
         var totalCount = await query.CountAsync(cancellationToken);
         var items = await query
             .OrderByDescending(pr => pr.CreatedAt)
@@ -146,22 +144,22 @@ public class PayrollService : IPayrollService
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        return new PaginatedResult<PayRunDto>
+        return new PaginatedResult<PayRunSummaryDto>
         {
-            Items = items.Select(MapToDto).ToList(),
+            Items = items.Select(MapToSummaryDto).ToList(),
             Page = page,
             PageSize = pageSize,
             TotalCount = totalCount
         };
     }
 
-    public async Task<PaySlipDto?> GetPaySlipAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<PaySlipDto?> GetPaySlipAsync(Guid payRunId, Guid paySlipId, CancellationToken cancellationToken = default)
     {
         var paySlip = await _dbContext.PaySlips
             .Include(ps => ps.Earnings)
             .Include(ps => ps.Deductions)
             .AsNoTracking()
-            .FirstOrDefaultAsync(ps => ps.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(ps => ps.Id == paySlipId && ps.PayRunId == payRunId, cancellationToken);
 
         return paySlip is null ? null : MapToDto(paySlip);
     }
@@ -177,8 +175,8 @@ public class PayrollService : IPayrollService
 
         var attendance = await _dbContext.AttendanceRecords
             .Where(a => employeeIds.Contains(a.EmployeeId)
-                        && a.Period.StartDate <= periodEnd.ToDateTime(TimeOnly.MinValue)
-                        && a.Period.EndDate >= periodStart.ToDateTime(TimeOnly.MinValue))
+                        && a.Period.Start <= periodEnd
+                        && a.Period.End >= periodStart)
             .ToListAsync(ct);
 
         var overtime = await _dbContext.OvertimeRecords
@@ -193,8 +191,9 @@ public class PayrollService : IPayrollService
             .Where(l => employeeIds.Contains(l.EmployeeId) && l.Status == LoanStatus.Active)
             .ToListAsync(ct);
 
-        var epfEtfRule = await _epfEtfRuleSetService.GetActiveRuleForDateAsync(payRun.PayDate);
-        var taxRuleSet = await _taxRuleSetService.GetActiveRuleForDateAsync(payRun.PayDate);
+        var payDateOnly = DateOnly.FromDateTime(payRun.PayDate);
+        var epfEtfRule = await _epfEtfRuleSetService.GetActiveRuleForDateAsync(payDateOnly);
+        var taxRuleSet = await _taxRuleSetService.GetActiveRuleForDateAsync(payDateOnly);
 
         var paySlips = new List<PaySlip>();
 
@@ -358,18 +357,14 @@ public class PayrollService : IPayrollService
     {
         foreach (var loan in ctx.ActiveLoans)
         {
-            if (loan.Status != LoanStatus.Active || loan.Outstanding <= 0)
+            if (loan.Status != LoanStatus.Active || loan.OutstandingPrincipal <= 0)
             {
                 continue;
             }
 
-            var installment = loan.Repayments.FirstOrDefault(r => !r.IsPaid)?.Amount ?? 0m;
-            if (installment <= 0)
-            {
-                installment = loan.Principal > 0 ? loan.Principal / 12m : loan.Outstanding;
-            }
+            var installment = loan.Repayments.FirstOrDefault(r => !r.IsPaid)?.Amount ?? loan.InstallmentAmount;
 
-            installment = Math.Min(loan.Outstanding, installment);
+            installment = Math.Min(loan.OutstandingPrincipal, installment);
             installment = RoundCurrency(installment);
 
             if (installment <= 0)
@@ -388,8 +383,8 @@ public class PayrollService : IPayrollService
                 IsPostTax = false
             });
 
-            loan.Outstanding -= installment;
-            if (loan.Outstanding <= 0)
+            loan.OutstandingPrincipal -= installment;
+            if (loan.OutstandingPrincipal <= 0)
             {
                 loan.Status = LoanStatus.Closed;
             }
@@ -512,17 +507,43 @@ public class PayrollService : IPayrollService
         ctx.PayeTax = paye;
     }
 
-    private static PayRunDto MapToDto(PayRun payRun)
+    private static PayRunSummaryDto MapToSummaryDto(PayRun payRun)
     {
-        return new PayRunDto
+        var employeeCount = payRun.PaySlips.Count;
+        var totalNet = payRun.PaySlips.Sum(ps => ps.NetPay);
+
+        return new PayRunSummaryDto
         {
             Id = payRun.Id,
-            Reference = payRun.Reference,
+            Code = payRun.Code,
+            Name = payRun.Name,
+            PeriodType = payRun.PeriodType,
             PeriodStart = payRun.PeriodStart,
             PeriodEnd = payRun.PeriodEnd,
-            PayDate = payRun.PayDate.ToDateTime(TimeOnly.MinValue),
+            PayDate = payRun.PayDate,
             Status = payRun.Status,
             IsLocked = payRun.IsLocked,
+            EmployeeCount = employeeCount,
+            TotalNetPay = totalNet
+        };
+    }
+
+    private static PayRunDetailDto MapToDetailDto(PayRun payRun)
+    {
+        var summary = MapToSummaryDto(payRun);
+        return new PayRunDetailDto
+        {
+            Id = summary.Id,
+            Code = summary.Code,
+            Name = summary.Name,
+            PeriodType = summary.PeriodType,
+            PeriodStart = summary.PeriodStart,
+            PeriodEnd = summary.PeriodEnd,
+            PayDate = summary.PayDate,
+            Status = summary.Status,
+            IsLocked = summary.IsLocked,
+            EmployeeCount = summary.EmployeeCount,
+            TotalNetPay = summary.TotalNetPay,
             PaySlips = payRun.PaySlips.Select(MapToDto).ToList()
         };
     }
@@ -533,6 +554,8 @@ public class PayrollService : IPayrollService
         {
             Id = paySlip.Id,
             EmployeeId = paySlip.EmployeeId,
+            EmployeeCode = paySlip.Employee?.Code,
+            EmployeeName = paySlip.Employee?.FullName,
             BasicSalary = paySlip.BasicSalary,
             TotalEarnings = paySlip.TotalEarnings,
             TotalDeductions = paySlip.TotalDeductions,
