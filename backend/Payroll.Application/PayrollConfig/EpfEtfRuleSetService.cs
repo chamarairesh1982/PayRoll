@@ -58,6 +58,19 @@ public class EpfEtfRuleSetService : IEpfEtfRuleSetService
         return ruleSet is null ? null : MapToDto(ruleSet);
     }
 
+    public async Task<EpfEtfRuleSetDto?> GetActiveRuleForDateAsync(DateOnly date)
+    {
+        var ruleSet = await _dbContext.EpfEtfRuleSets
+            .AsNoTracking()
+            .Where(r => r.IsActive
+                        && r.EffectiveFrom <= date
+                        && (r.EffectiveTo == null || r.EffectiveTo >= date))
+            .OrderByDescending(r => r.EffectiveFrom)
+            .FirstOrDefaultAsync();
+
+        return ruleSet is null ? null : MapToDto(ruleSet);
+    }
+
     public async Task<EpfEtfRuleSetDto> CreateAsync(CreateEpfEtfRuleSetRequest request)
     {
         ValidateDates(request.EffectiveFrom, request.EffectiveTo);

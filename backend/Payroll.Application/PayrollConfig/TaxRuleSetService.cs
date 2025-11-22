@@ -3,6 +3,7 @@ using Payroll.Application.Interfaces;
 using Payroll.Application.PayrollConfig.DTOs;
 using Payroll.Domain.PayrollConfig;
 using Payroll.Shared;
+using System;
 
 namespace Payroll.Application.PayrollConfig;
 
@@ -58,6 +59,21 @@ public class TaxRuleSetService : ITaxRuleSetService
             .Include(r => r.Slabs)
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.Id == id);
+
+        return ruleSet is null ? null : MapToDto(ruleSet);
+    }
+
+    public async Task<TaxRuleSetDto?> GetActiveRuleForDateAsync(DateOnly payDate)
+    {
+        var ruleSet = await _dbContext.TaxRuleSets
+            .Include(r => r.Slabs)
+            .AsNoTracking()
+            .Where(r => r.IsActive
+                        && r.EffectiveFrom <= payDate
+                        && (r.EffectiveTo == null || r.EffectiveTo >= payDate))
+            .OrderByDescending(r => r.IsDefault)
+            .ThenByDescending(r => r.EffectiveFrom)
+            .FirstOrDefaultAsync();
 
         return ruleSet is null ? null : MapToDto(ruleSet);
     }

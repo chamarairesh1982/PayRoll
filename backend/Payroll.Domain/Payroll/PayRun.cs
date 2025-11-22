@@ -8,6 +8,8 @@ public class PayRun : AuditableEntity, IAggregateRoot
     public string Reference { get; set; } = string.Empty;
     public DateTime PeriodStart { get; set; }
     public DateTime PeriodEnd { get; set; }
+    public DateOnly PayDate { get; set; }
+    public bool IsLocked { get; set; }
     public PayRunStatus Status { get; set; } = PayRunStatus.Draft;
     public ICollection<PaySlip> PaySlips { get; set; } = new List<PaySlip>();
 }
