@@ -205,7 +205,7 @@ public static class TestDataSeeder
         var record = new AttendanceRecord
         {
             EmployeeId = employee.Id,
-            Period = new DateRange(date.ToDateTime(TimeOnly.MinValue), date.ToDateTime(TimeOnly.MinValue)),
+            Period = new DateRange(date, date),
             HoursWorked = 0,
             CreatedBy = "seed"
         };

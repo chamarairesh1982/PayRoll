@@ -15,8 +15,8 @@ public class AttendanceRecordConfiguration : IEntityTypeConfiguration<Attendance
 
         builder.OwnsOne(a => a.Period, b =>
         {
-            b.Property(p => p.Start).HasColumnName("PeriodStart");
-            b.Property(p => p.End).HasColumnName("PeriodEnd");
+            b.Property(p => p.Start).HasColumnName("PeriodStart").HasColumnType("date");
+            b.Property(p => p.End).HasColumnName("PeriodEnd").HasColumnType("date");
         });
 
         builder.HasIndex("EmployeeId", "PeriodStart", "PeriodEnd");
