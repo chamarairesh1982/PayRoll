@@ -5,7 +5,7 @@ using Payroll.Application.PayrollConfig.DTOs;
 namespace Payroll.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/epf-etf-rules")]
 public class EpfEtfRulesController : ControllerBase
 {
     private readonly IEpfEtfRuleSetService _service;

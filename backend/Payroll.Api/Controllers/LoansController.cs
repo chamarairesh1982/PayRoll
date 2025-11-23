@@ -4,7 +4,7 @@ using Payroll.Application.Interfaces;
 namespace Payroll.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/loans")]
 public class LoansController : ControllerBase
 {
     private readonly ILoanService _loanService;

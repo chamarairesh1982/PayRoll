@@ -553,9 +553,11 @@ public class PayrollService : IPayrollService
         return new PaySlipDto
         {
             Id = paySlip.Id,
+            PayRunId = paySlip.PayRunId,
             EmployeeId = paySlip.EmployeeId,
             EmployeeCode = paySlip.Employee?.Code,
             EmployeeName = paySlip.Employee?.FullName,
+            Currency = "LKR",
             BasicSalary = paySlip.BasicSalary,
             TotalEarnings = paySlip.TotalEarnings,
             TotalDeductions = paySlip.TotalDeductions,
@@ -564,8 +566,8 @@ public class PayrollService : IPayrollService
             EmployerEpf = paySlip.EmployerEpf,
             EmployerEtf = paySlip.EmployerEtf,
             PayeTax = paySlip.PayeTax,
-            Earnings = paySlip.Earnings.Select(e => new EarningDto(e.Code, e.Description, e.Amount, e.IsEpfApplicable, e.IsEtfApplicable, e.IsTaxable)).ToList(),
-            Deductions = paySlip.Deductions.Select(d => new DeductionDto(d.Code, d.Description, d.Amount, d.IsPreTax, d.IsPostTax)).ToList()
+            Earnings = paySlip.Earnings.Select(e => new EarningDto(e.Id, e.Code, e.Description, e.Amount, e.IsEpfApplicable, e.IsEtfApplicable, e.IsTaxable)).ToList(),
+            Deductions = paySlip.Deductions.Select(d => new DeductionDto(d.Id, d.Code, d.Description, d.Amount, d.IsPreTax, d.IsPostTax)).ToList()
         };
     }
 

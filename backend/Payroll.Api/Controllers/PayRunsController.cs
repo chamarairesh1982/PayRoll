@@ -6,7 +6,7 @@ using Payroll.Domain.Payroll;
 namespace Payroll.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/payruns")]
 public class PayRunsController : ControllerBase
 {
     private readonly IPayrollService _payrollService;

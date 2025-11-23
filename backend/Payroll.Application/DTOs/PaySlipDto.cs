@@ -6,9 +6,11 @@ namespace Payroll.Application.DTOs;
 public class PaySlipDto
 {
     public Guid Id { get; set; }
+    public Guid PayRunId { get; set; }
     public Guid EmployeeId { get; set; }
     public string? EmployeeCode { get; set; }
     public string? EmployeeName { get; set; }
+    public string Currency { get; set; } = string.Empty;
     public decimal BasicSalary { get; set; }
     public decimal TotalEarnings { get; set; }
     public decimal TotalDeductions { get; set; }
@@ -21,6 +23,6 @@ public class PaySlipDto
     public IEnumerable<DeductionDto> Deductions { get; set; } = Enumerable.Empty<DeductionDto>();
 }
 
-public record EarningDto(string Code, string Description, decimal Amount, bool IsEpfApplicable, bool IsEtfApplicable, bool IsTaxable);
+public record EarningDto(Guid Id, string Code, string Description, decimal Amount, bool IsEpfApplicable, bool IsEtfApplicable, bool IsTaxable);
 
-public record DeductionDto(string Code, string Description, decimal Amount, bool IsPreTax, bool IsPostTax);
+public record DeductionDto(Guid Id, string Code, string Description, decimal Amount, bool IsPreTax, bool IsPostTax);

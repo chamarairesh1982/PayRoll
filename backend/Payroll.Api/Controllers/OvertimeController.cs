@@ -6,7 +6,7 @@ using Payroll.Domain.Overtime;
 namespace Payroll.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/overtime")]
 public class OvertimeController : ControllerBase
 {
     private readonly IOvertimeService _service;

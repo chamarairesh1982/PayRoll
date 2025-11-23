@@ -5,7 +5,7 @@ using Payroll.Application.PayrollConfig.DTOs;
 namespace Payroll.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/tax-rule-sets")]
 public class TaxRuleSetsController : ControllerBase
 {
     private readonly ITaxRuleSetService _service;
