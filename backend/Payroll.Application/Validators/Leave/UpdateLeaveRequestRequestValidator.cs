@@ -9,7 +9,7 @@ public class UpdateLeaveRequestRequestValidator : AbstractValidator<UpdateLeaveR
     {
         When(x => x.StartDate.HasValue && x.EndDate.HasValue, () =>
         {
-            RuleFor(x => x.EndDate.Value)
+            RuleFor(x => x.EndDate!.Value)
                 .GreaterThanOrEqualTo(x => x.StartDate!.Value)
                 .WithMessage("End date must be on or after start date.");
         });

@@ -4,8 +4,6 @@ namespace Payroll.Domain.PayrollConfig;
 
 public class EpfEtfRuleSet : AuditableEntity
 {
-    public Guid Id { get; set; }
-
     public string Name { get; set; } = null!;
     public DateOnly EffectiveFrom { get; set; }
     public DateOnly? EffectiveTo { get; set; }
@@ -19,5 +17,4 @@ public class EpfEtfRuleSet : AuditableEntity
     public decimal? MaximumEarningForEtf { get; set; }
 
     public bool IsDefault { get; set; }
-    public bool IsActive { get; set; } = true;
 }

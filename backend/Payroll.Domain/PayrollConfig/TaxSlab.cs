@@ -4,8 +4,6 @@ namespace Payroll.Domain.PayrollConfig;
 
 public class TaxSlab : AuditableEntity
 {
-    public Guid Id { get; set; }
-
     public Guid TaxRuleSetId { get; set; }
     public TaxRuleSet TaxRuleSet { get; set; } = null!;
 

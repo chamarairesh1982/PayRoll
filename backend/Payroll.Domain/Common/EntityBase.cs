@@ -2,5 +2,5 @@ namespace Payroll.Domain.Common;
 
 public abstract class EntityBase
 {
-    public Guid Id { get; protected set; } = Guid.NewGuid();
+    public Guid Id { get; set; } = Guid.NewGuid();
 }
