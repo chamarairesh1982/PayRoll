@@ -18,5 +18,10 @@ public class LoanConfiguration : IEntityTypeConfiguration<Loan>
         builder.Property(l => l.Status).HasConversion<int>();
 
         builder.HasIndex(l => new { l.EmployeeId, l.Status });
+
+        builder.HasMany(l => l.Repayments)
+            .WithOne(r => r.Loan)
+            .HasForeignKey(r => r.LoanId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
