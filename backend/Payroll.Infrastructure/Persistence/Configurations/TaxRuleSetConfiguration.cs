@@ -41,7 +41,7 @@ public class TaxRuleSetConfiguration : IEntityTypeConfiguration<TaxRuleSet>
             Id = Guid.Parse("99999999-9999-9999-9999-999999999999"),
             Name = "Sri Lanka PAYE YA 2025/26",
             YearOfAssessment = 2025,
-            EffectiveFrom = new DateTime(2025, 4, 1),
+            EffectiveFrom = new DateOnly(2025, 4, 1),
             IsDefault = true,
             IsActive = true
         });
