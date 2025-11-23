@@ -2,3 +2,28 @@ node_modules/
 dist/
 .DS_Store
 npm-debug.log
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build output
+**/bin/
+**/obj/
+
+# VS workspace state
+*.db
+*.db-shm
+*.db-wal
+
+# Rider
+.idea/
+
+# Logs
+*.log
+
+# Backup files
+*.bak
+*.backup
