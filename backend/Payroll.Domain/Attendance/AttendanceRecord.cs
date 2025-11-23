@@ -6,6 +6,6 @@ namespace Payroll.Domain.Attendance;
 public class AttendanceRecord : AuditableEntity
 {
     public Guid EmployeeId { get; set; }
-    public DateRange Period { get; set; }
+    public DateRange Period { get; set; } = null!;
     public decimal HoursWorked { get; set; }
 }
