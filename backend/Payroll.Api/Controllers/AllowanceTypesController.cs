@@ -5,7 +5,7 @@ using Payroll.Application.PayrollConfig.DTOs;
 namespace Payroll.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/allowance-types")]
 public class AllowanceTypesController : ControllerBase
 {
     private readonly IAllowanceTypeService _service;

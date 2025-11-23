@@ -25,6 +25,8 @@ app.UseAuthorization();
 app.UseMiddleware<Payroll.Api.Middleware.RequestLoggingMiddleware>();
 app.UseMiddleware<Payroll.Api.Middleware.CurrentUserMiddleware>();
 
+app.UseCors("AllowAngularDev");
+
 app.MapControllers();
 
 app.Run();

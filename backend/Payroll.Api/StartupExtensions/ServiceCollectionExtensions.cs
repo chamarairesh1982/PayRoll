@@ -25,6 +25,14 @@ public static class ServiceCollectionExtensions
         services.Configure<DatabaseOptions>(configuration.GetSection("Database"));
         services.Configure<PayrollRulesOptions>(configuration.GetSection("PayrollRules"));
 
+        services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAngularDev", policy =>
+                policy.WithOrigins("http://localhost:4200")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod());
+        });
+
         services.AddAutoMapper(typeof(MappingProfile).Assembly);
         services.AddFluentValidationAutoValidation();
         services.AddValidatorsFromAssemblyContaining<CreateEmployeeRequestDtoValidator>();

@@ -5,7 +5,7 @@ using Payroll.Application.Interfaces;
 namespace Payroll.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/attendance")]
 public class AttendanceController : ControllerBase
 {
     private readonly IAttendanceService _attendanceService;

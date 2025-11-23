@@ -56,7 +56,7 @@ export class TaxRuleSetFormComponent implements OnChanges {
       slabs: this.slabs.map(slab => ({
         ...slab,
         fromAmount: Number(slab.fromAmount),
-        toAmount: slab.toAmount === null || slab.toAmount === undefined || slab.toAmount === '' ? null : Number(slab.toAmount),
+        toAmount: slab.toAmount === null || slab.toAmount === undefined ? null : Number(slab.toAmount),
         ratePercent: Number(slab.ratePercent),
         order: slab.order,
       })),

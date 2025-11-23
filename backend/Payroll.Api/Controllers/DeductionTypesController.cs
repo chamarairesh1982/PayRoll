@@ -5,7 +5,7 @@ using Payroll.Application.PayrollConfig.DTOs;
 namespace Payroll.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/deduction-types")]
 public class DeductionTypesController : ControllerBase
 {
     private readonly IDeductionTypeService _service;
