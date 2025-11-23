@@ -49,7 +49,7 @@ public class EpfEtfRuleSetConfiguration : IEntityTypeConfiguration<EpfEtfRuleSet
         {
             Id = Guid.Parse("88888888-8888-8888-8888-888888888888"),
             Name = "Sri Lanka Default EPF/ETF",
-            EffectiveFrom = new DateTime(2020, 1, 1),
+            EffectiveFrom = new DateOnly(2020, 1, 1),
             EmployeeEpfRate = 8,
             EmployerEpfRate = 12,
             EmployerEtfRate = 3,
