@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Payroll.Domain.Attendance;
+using Payroll.Domain.ValueObjects;
 
 namespace Payroll.Infrastructure.Persistence.Configurations;
 
@@ -9,16 +10,23 @@ public class AttendanceRecordConfiguration : IEntityTypeConfiguration<Attendance
     public void Configure(EntityTypeBuilder<AttendanceRecord> builder)
     {
         builder.ToTable("AttendanceRecords");
-        builder.HasKey(a => a.Id);
 
-        builder.Property(a => a.EmployeeId).IsRequired();
+        builder.HasKey(x => x.Id);
 
-        builder.OwnsOne(a => a.Period, b =>
+        builder.Property(x => x.EmployeeId)
+            .IsRequired();
+
+        builder.Property(x => x.HoursWorked)
+            .HasColumnType("decimal(18,2)");
+
+        // Map the DateRange value object as an owned type
+        builder.OwnsOne(x => x.Period, period =>
         {
-            b.Property(p => p.Start).HasColumnName("PeriodStart").HasColumnType("date");
-            b.Property(p => p.End).HasColumnName("PeriodEnd").HasColumnType("date");
-        });
+            period.Property(p => p.Start)
+                .HasColumnName("PeriodStart");
 
-        builder.HasIndex("EmployeeId", "PeriodStart", "PeriodEnd");
+            period.Property(p => p.End)
+                .HasColumnName("PeriodEnd");
+        });
     }
 }
