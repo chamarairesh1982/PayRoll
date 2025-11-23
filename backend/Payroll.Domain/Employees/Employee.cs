@@ -1,4 +1,5 @@
 using Payroll.Domain.Common;
+using System.Linq;
 
 namespace Payroll.Domain.Employees;
 
@@ -53,6 +54,8 @@ public class Employee : AuditableEntity, IAggregateRoot
     public DateTime? ProbationEndDate { get; private set; }
     public DateTime? ConfirmationDate { get; private set; }
     public decimal BaseSalary { get; private set; }
+    public string Code => EmployeeCode;
+    public string FullName => string.Join(" ", new[] { FirstName, LastName }.Where(n => !string.IsNullOrWhiteSpace(n)));
 
     public static Employee Create(
         string employeeCode,

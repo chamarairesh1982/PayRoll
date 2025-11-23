@@ -175,8 +175,8 @@ public class PayrollService : IPayrollService
 
         var attendance = await _dbContext.AttendanceRecords
             .Where(a => employeeIds.Contains(a.EmployeeId)
-                        && a.Period.Start <= periodEnd
-                        && a.Period.End >= periodStart)
+                        && DateOnly.FromDateTime(a.Period.Start) <= periodEnd
+                        && DateOnly.FromDateTime(a.Period.End) >= periodStart)
             .ToListAsync(ct);
 
         var overtime = await _dbContext.OvertimeRecords
