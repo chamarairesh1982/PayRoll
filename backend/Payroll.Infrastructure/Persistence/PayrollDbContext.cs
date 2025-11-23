@@ -23,6 +23,7 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
     public DbSet<OvertimeRecord> OvertimeRecords => Set<OvertimeRecord>();
     public DbSet<Loan> Loans => Set<Loan>();
+    public DbSet<LoanRepayment> LoanRepayments => Set<LoanRepayment>();
     public DbSet<AllowanceType> AllowanceTypes => Set<AllowanceType>();
     public DbSet<DeductionType> DeductionTypes => Set<DeductionType>();
     public DbSet<EpfEtfRuleSet> EpfEtfRuleSets => Set<EpfEtfRuleSet>();
