@@ -43,6 +43,8 @@ public class DeductionTypeConfiguration : IEntityTypeConfiguration<DeductionType
                 Code = "EPF_EE",
                 Name = "Employee EPF",
                 Basis = CalculationBasis.FixedAmount,
+                CreatedAt = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                CreatedBy = "system",
                 IsPreTax = true,
                 IsPostTax = false,
                 IsActive = true
@@ -53,6 +55,8 @@ public class DeductionTypeConfiguration : IEntityTypeConfiguration<DeductionType
                 Code = "LOAN",
                 Name = "Loan Installment",
                 Basis = CalculationBasis.FixedAmount,
+                CreatedAt = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                CreatedBy = "system",
                 IsPreTax = true,
                 IsPostTax = false,
                 IsActive = true
@@ -63,6 +67,8 @@ public class DeductionTypeConfiguration : IEntityTypeConfiguration<DeductionType
                 Code = "NOPAY",
                 Name = "No Pay Deduction",
                 Basis = CalculationBasis.FixedAmount,
+                CreatedAt = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                CreatedBy = "system",
                 IsPreTax = true,
                 IsPostTax = false,
                 IsActive = true
@@ -73,6 +79,8 @@ public class DeductionTypeConfiguration : IEntityTypeConfiguration<DeductionType
                 Code = "PAYE",
                 Name = "PAYE Tax",
                 Basis = CalculationBasis.FixedAmount,
+                CreatedAt = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                CreatedBy = "system",
                 IsPreTax = false,
                 IsPostTax = true,
                 IsActive = true

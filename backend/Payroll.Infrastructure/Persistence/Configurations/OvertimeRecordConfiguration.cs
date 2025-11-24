@@ -16,7 +16,11 @@ public class OvertimeRecordConfiguration : IEntityTypeConfiguration<OvertimeReco
         builder.Property(o => o.Date).IsRequired().HasColumnType("date");
         builder.Property(o => o.Hours).IsRequired();
         builder.Property(o => o.Type).IsRequired().HasConversion<int>();
-        builder.Property(o => o.Status).IsRequired().HasConversion<int>().HasDefaultValue(OvertimeStatus.Pending);
+        builder.Property(o => o.Status)
+            .IsRequired()
+            .HasConversion<int>()
+            .HasDefaultValue(OvertimeStatus.Pending)
+            .HasSentinel((int)OvertimeStatus.Pending);
         builder.Property(o => o.IsLockedForPayroll).HasDefaultValue(false);
 
         builder.Property(o => o.Reason).HasMaxLength(500);

@@ -29,6 +29,15 @@ public class EpfEtfRuleSetConfiguration : IEntityTypeConfiguration<EpfEtfRuleSet
             .HasColumnType("decimal(5,2)")
             .IsRequired();
 
+        builder.Property(r => r.MinimumWageForEpf)
+            .HasPrecision(18, 2);
+
+        builder.Property(r => r.MaximumEarningForEpf)
+            .HasPrecision(18, 2);
+
+        builder.Property(r => r.MaximumEarningForEtf)
+            .HasPrecision(18, 2);
+
         builder.Property(r => r.IsDefault)
             .IsRequired()
             .HasDefaultValue(false);
@@ -53,6 +62,8 @@ public class EpfEtfRuleSetConfiguration : IEntityTypeConfiguration<EpfEtfRuleSet
             EmployeeEpfRate = 8,
             EmployerEpfRate = 12,
             EmployerEtfRate = 3,
+            CreatedAt = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            CreatedBy = "system",
             IsDefault = true,
             IsActive = true
         });

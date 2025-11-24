@@ -42,6 +42,8 @@ public class TaxRuleSetConfiguration : IEntityTypeConfiguration<TaxRuleSet>
             Name = "Sri Lanka PAYE YA 2025/26",
             YearOfAssessment = 2025,
             EffectiveFrom = new DateOnly(2025, 4, 1),
+            CreatedAt = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            CreatedBy = "system",
             IsDefault = true,
             IsActive = true
         });

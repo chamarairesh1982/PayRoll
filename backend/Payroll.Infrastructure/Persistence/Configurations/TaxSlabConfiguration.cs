@@ -47,6 +47,8 @@ public class TaxSlabConfiguration : IEntityTypeConfiguration<TaxSlab>
                 FromAmount = 0,
                 ToAmount = 100000,
                 RatePercent = 0,
+                CreatedAt = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                CreatedBy = "system",
                 Order = 1
             },
             new TaxSlab
@@ -56,6 +58,8 @@ public class TaxSlabConfiguration : IEntityTypeConfiguration<TaxSlab>
                 FromAmount = 100000,
                 ToAmount = 141667,
                 RatePercent = 6,
+                CreatedAt = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                CreatedBy = "system",
                 Order = 2
             },
             new TaxSlab
@@ -65,6 +69,8 @@ public class TaxSlabConfiguration : IEntityTypeConfiguration<TaxSlab>
                 FromAmount = 141667,
                 ToAmount = 183333,
                 RatePercent = 12,
+                CreatedAt = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                CreatedBy = "system",
                 Order = 3
             },
             new TaxSlab
@@ -74,6 +80,8 @@ public class TaxSlabConfiguration : IEntityTypeConfiguration<TaxSlab>
                 FromAmount = 183333,
                 ToAmount = null,
                 RatePercent = 18,
+                CreatedAt = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                CreatedBy = "system",
                 Order = 4
             }
         );
