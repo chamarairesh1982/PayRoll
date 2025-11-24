@@ -70,6 +70,7 @@ public partial class AddEpfEtfAndTaxRuleSets : Migration
                 ToAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                 RatePercent = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
                 Order = table.Column<int>(type: "int", nullable: false),
+                IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                 CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                 CreatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                 ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
