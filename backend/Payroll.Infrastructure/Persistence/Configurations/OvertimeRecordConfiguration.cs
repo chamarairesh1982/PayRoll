@@ -20,7 +20,7 @@ public class OvertimeRecordConfiguration : IEntityTypeConfiguration<OvertimeReco
             .IsRequired()
             .HasConversion<int>()
             .HasDefaultValue(OvertimeStatus.Pending)
-            .HasSentinel((int)OvertimeStatus.Pending);
+            .HasSentinel(OvertimeStatus.Pending);
         builder.Property(o => o.IsLockedForPayroll).HasDefaultValue(false);
 
         builder.Property(o => o.Reason).HasMaxLength(500);
