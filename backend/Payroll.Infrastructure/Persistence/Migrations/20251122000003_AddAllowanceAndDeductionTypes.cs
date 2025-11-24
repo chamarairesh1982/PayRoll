@@ -1,10 +1,14 @@
 using System;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Payroll.Infrastructure.Persistence;
 
 #nullable disable
 
 namespace Payroll.Infrastructure.Persistence.Migrations;
 
+[DbContext(typeof(PayrollDbContext))]
+[Migration("20251122000003_AddAllowanceAndDeductionTypes")]
 public partial class AddAllowanceAndDeductionTypes : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)

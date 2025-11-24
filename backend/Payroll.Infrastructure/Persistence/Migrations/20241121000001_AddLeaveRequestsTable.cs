@@ -1,10 +1,14 @@
 using System;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Payroll.Infrastructure.Persistence;
 
 #nullable disable
 
 namespace Payroll.Infrastructure.Persistence.Migrations;
 
+[DbContext(typeof(PayrollDbContext))]
+[Migration("20241121000001_AddLeaveRequestsTable")]
 public partial class AddLeaveRequestsTable : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)

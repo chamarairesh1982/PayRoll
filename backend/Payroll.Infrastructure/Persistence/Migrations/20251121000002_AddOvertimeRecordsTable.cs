@@ -1,10 +1,14 @@
 using System;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Payroll.Infrastructure.Persistence;
 
 #nullable disable
 
 namespace Payroll.Infrastructure.Persistence.Migrations;
 
+[DbContext(typeof(PayrollDbContext))]
+[Migration("20251121000002_AddOvertimeRecordsTable")]
 public partial class AddOvertimeRecordsTable : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
