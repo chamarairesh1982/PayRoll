@@ -1,10 +1,14 @@
 using System;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Payroll.Infrastructure.Persistence;
 
 #nullable disable
 
 namespace Payroll.Infrastructure.Persistence.Migrations;
 
+[DbContext(typeof(PayrollDbContext))]
+[Migration("20251122000004_AddEpfEtfAndTaxRuleSets")]
 public partial class AddEpfEtfAndTaxRuleSets : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
