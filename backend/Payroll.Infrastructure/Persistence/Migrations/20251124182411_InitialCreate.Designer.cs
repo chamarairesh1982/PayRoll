@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Payroll.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using Payroll.Infrastructure.Persistence;
 namespace Payroll.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(PayrollDbContext))]
-    partial class PayrollDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251124182411_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -616,7 +619,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                             Id = new Guid("11111111-1111-1111-1111-111111111111"),
                             Basis = 1,
                             Code = "BASIC",
-                            CreatedAt = new DateTime(2025, 11, 24, 18, 53, 10, 641, DateTimeKind.Utc).AddTicks(3833),
+                            CreatedAt = new DateTime(2025, 11, 24, 18, 24, 11, 11, DateTimeKind.Utc).AddTicks(8895),
                             CreatedBy = "",
                             IsActive = true,
                             IsEpfApplicable = true,
@@ -629,7 +632,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                             Id = new Guid("22222222-2222-2222-2222-222222222222"),
                             Basis = 1,
                             Code = "TRA",
-                            CreatedAt = new DateTime(2025, 11, 24, 18, 53, 10, 641, DateTimeKind.Utc).AddTicks(5485),
+                            CreatedAt = new DateTime(2025, 11, 24, 18, 24, 11, 12, DateTimeKind.Utc).AddTicks(587),
                             CreatedBy = "",
                             IsActive = true,
                             IsEpfApplicable = true,
@@ -642,7 +645,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                             Id = new Guid("33333333-3333-3333-3333-333333333333"),
                             Basis = 1,
                             Code = "ATD",
-                            CreatedAt = new DateTime(2025, 11, 24, 18, 53, 10, 641, DateTimeKind.Utc).AddTicks(5496),
+                            CreatedAt = new DateTime(2025, 11, 24, 18, 24, 11, 12, DateTimeKind.Utc).AddTicks(597),
                             CreatedBy = "",
                             IsActive = true,
                             IsEpfApplicable = true,
@@ -713,7 +716,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                             Id = new Guid("44444444-4444-4444-4444-444444444444"),
                             Basis = 1,
                             Code = "EPF_EE",
-                            CreatedAt = new DateTime(2025, 11, 24, 18, 53, 10, 675, DateTimeKind.Utc).AddTicks(5172),
+                            CreatedAt = new DateTime(2025, 11, 24, 18, 24, 11, 55, DateTimeKind.Utc).AddTicks(7179),
                             CreatedBy = "",
                             IsActive = true,
                             IsPostTax = false,
@@ -725,7 +728,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                             Id = new Guid("55555555-5555-5555-5555-555555555555"),
                             Basis = 1,
                             Code = "LOAN",
-                            CreatedAt = new DateTime(2025, 11, 24, 18, 53, 10, 675, DateTimeKind.Utc).AddTicks(6021),
+                            CreatedAt = new DateTime(2025, 11, 24, 18, 24, 11, 55, DateTimeKind.Utc).AddTicks(8039),
                             CreatedBy = "",
                             IsActive = true,
                             IsPostTax = false,
@@ -737,7 +740,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                             Id = new Guid("66666666-6666-6666-6666-666666666666"),
                             Basis = 1,
                             Code = "NOPAY",
-                            CreatedAt = new DateTime(2025, 11, 24, 18, 53, 10, 675, DateTimeKind.Utc).AddTicks(6028),
+                            CreatedAt = new DateTime(2025, 11, 24, 18, 24, 11, 55, DateTimeKind.Utc).AddTicks(8045),
                             CreatedBy = "",
                             IsActive = true,
                             IsPostTax = false,
@@ -749,7 +752,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                             Id = new Guid("77777777-7777-7777-7777-777777777777"),
                             Basis = 1,
                             Code = "PAYE",
-                            CreatedAt = new DateTime(2025, 11, 24, 18, 53, 10, 675, DateTimeKind.Utc).AddTicks(6031),
+                            CreatedAt = new DateTime(2025, 11, 24, 18, 24, 11, 55, DateTimeKind.Utc).AddTicks(8048),
                             CreatedBy = "",
                             IsActive = true,
                             IsPostTax = true,
@@ -828,7 +831,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         new
                         {
                             Id = new Guid("88888888-8888-8888-8888-888888888888"),
-                            CreatedAt = new DateTime(2025, 11, 24, 18, 53, 10, 683, DateTimeKind.Utc).AddTicks(14),
+                            CreatedAt = new DateTime(2025, 11, 24, 18, 24, 11, 63, DateTimeKind.Utc).AddTicks(7323),
                             CreatedBy = "",
                             EffectiveFrom = new DateOnly(2020, 1, 1),
                             EmployeeEpfRate = 8m,
@@ -895,7 +898,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         new
                         {
                             Id = new Guid("99999999-9999-9999-9999-999999999999"),
-                            CreatedAt = new DateTime(2025, 11, 24, 18, 53, 10, 700, DateTimeKind.Utc).AddTicks(2030),
+                            CreatedAt = new DateTime(2025, 11, 24, 18, 24, 11, 82, DateTimeKind.Utc).AddTicks(2664),
                             CreatedBy = "",
                             EffectiveFrom = new DateOnly(2025, 4, 1),
                             IsActive = true,
@@ -954,7 +957,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         new
                         {
                             Id = new Guid("aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaa1"),
-                            CreatedAt = new DateTime(2025, 11, 24, 18, 53, 10, 702, DateTimeKind.Utc).AddTicks(6332),
+                            CreatedAt = new DateTime(2025, 11, 24, 18, 24, 11, 84, DateTimeKind.Utc).AddTicks(7601),
                             CreatedBy = "",
                             FromAmount = 0m,
                             IsActive = true,
@@ -966,7 +969,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         new
                         {
                             Id = new Guid("aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaa2"),
-                            CreatedAt = new DateTime(2025, 11, 24, 18, 53, 10, 702, DateTimeKind.Utc).AddTicks(7549),
+                            CreatedAt = new DateTime(2025, 11, 24, 18, 24, 11, 84, DateTimeKind.Utc).AddTicks(9080),
                             CreatedBy = "",
                             FromAmount = 100000m,
                             IsActive = true,
@@ -978,7 +981,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         new
                         {
                             Id = new Guid("aaaaaaa3-aaaa-aaaa-aaaa-aaaaaaaaaaa3"),
-                            CreatedAt = new DateTime(2025, 11, 24, 18, 53, 10, 702, DateTimeKind.Utc).AddTicks(7583),
+                            CreatedAt = new DateTime(2025, 11, 24, 18, 24, 11, 84, DateTimeKind.Utc).AddTicks(9090),
                             CreatedBy = "",
                             FromAmount = 141667m,
                             IsActive = true,
@@ -990,7 +993,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         new
                         {
                             Id = new Guid("aaaaaaa4-aaaa-aaaa-aaaa-aaaaaaaaaaa4"),
-                            CreatedAt = new DateTime(2025, 11, 24, 18, 53, 10, 702, DateTimeKind.Utc).AddTicks(7585),
+                            CreatedAt = new DateTime(2025, 11, 24, 18, 24, 11, 84, DateTimeKind.Utc).AddTicks(9093),
                             CreatedBy = "",
                             FromAmount = 183333m,
                             IsActive = true,
