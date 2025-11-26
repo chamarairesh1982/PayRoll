@@ -1,5 +1,7 @@
 node_modules/
 dist/
+.angular/
+angular-webpack/
 .DS_Store
 npm-debug.log
 # Visual Studio
