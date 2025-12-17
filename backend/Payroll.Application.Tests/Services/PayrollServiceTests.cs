@@ -74,6 +74,111 @@ public class PayrollServiceTests
     }
 
     [Fact]
+    public async Task CreatePayRun_Should_Apply_Fixed_Recurring_Allowance()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP010", "Fiona", 100_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+
+        var allowanceType = TestDataSeeder.SeedAllowanceType(context.DbContext, "ALW_TRAN", "Transport Allowance", true, true, true);
+        TestDataSeeder.SeedEmployeePayItem(context.DbContext, employee, PayItemType.Allowance, allowanceType.Code, 5_000m, null);
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+
+        var result = await payrollService.CreatePayRunAsync(request);
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        var expectedEpfBase = 105_000m;
+        var expectedEmployeeEpf = Math.Round(expectedEpfBase * 0.08m, 2, MidpointRounding.AwayFromZero);
+
+        paySlip.Earnings.Should().Contain(e => e.Code == "ALW_TRAN" && e.Amount == 5_000m && e.IsEpfApplicable && e.IsTaxable);
+        paySlip.TotalEarnings.Should().Be(105_000m);
+        paySlip.EmployeeEpf.Should().Be(expectedEmployeeEpf);
+        paySlip.NetPay.Should().Be(105_000m - paySlip.TotalDeductions);
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Apply_Percentage_Allowance_On_Basic_Salary()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP011", "Grace", 100_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+
+        var allowanceType = TestDataSeeder.SeedAllowanceType(context.DbContext, "ALW_COMM", "Commission", true, false, false);
+        TestDataSeeder.SeedEmployeePayItem(context.DbContext, employee, PayItemType.Allowance, allowanceType.Code, null, 10m);
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+
+        var result = await payrollService.CreatePayRunAsync(request);
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        var expectedAllowance = 10_000m;
+        var expectedEmployeeEpf = Math.Round(100_000m * 0.08m, 2, MidpointRounding.AwayFromZero);
+
+        paySlip.Earnings.Should().Contain(e => e.Code == "ALW_COMM" && e.Amount == expectedAllowance && !e.IsEpfApplicable);
+        paySlip.TotalEarnings.Should().Be(110_000m);
+        paySlip.EmployeeEpf.Should().Be(expectedEmployeeEpf);
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Respect_Taxable_Flag_For_Allowances()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP012", "Hank", 200_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+
+        var taxableAllowance = TestDataSeeder.SeedAllowanceType(context.DbContext, "ALW_TAX", "Taxable Allowance", true, false, false);
+        var nonTaxableAllowance = TestDataSeeder.SeedAllowanceType(context.DbContext, "ALW_NONTAX", "Non Taxable Allowance", false, false, false);
+
+        TestDataSeeder.SeedEmployeePayItem(context.DbContext, employee, PayItemType.Allowance, taxableAllowance.Code, 10_000m, null);
+        TestDataSeeder.SeedEmployeePayItem(context.DbContext, employee, PayItemType.Allowance, nonTaxableAllowance.Code, 5_000m, null);
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+
+        var result = await payrollService.CreatePayRunAsync(request);
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        var expectedTaxableIncome = (200_000m + 10_000m) - Math.Round(200_000m * 0.08m, 2, MidpointRounding.AwayFromZero);
+        var expectedPaye = CalculateProgressiveTax(expectedTaxableIncome);
+
+        paySlip.Earnings.Should().Contain(e => e.Code == "ALW_TAX" && e.IsTaxable);
+        paySlip.Earnings.Should().Contain(e => e.Code == "ALW_NONTAX" && !e.IsTaxable);
+        paySlip.TotalEarnings.Should().Be(215_000m);
+        paySlip.PayeTax.Should().Be(expectedPaye);
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Apply_PreTax_Deduction_Before_Paye()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP013", "Ivy", 200_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+
+        var deductionType = TestDataSeeder.SeedDeductionType(context.DbContext, "DED_PRE", "Pre Tax Deduction", true, false);
+        TestDataSeeder.SeedEmployeePayItem(context.DbContext, employee, PayItemType.Deduction, deductionType.Code, 10_000m, null);
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+
+        var result = await payrollService.CreatePayRunAsync(request);
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        var epf = Math.Round(200_000m * 0.08m, 2, MidpointRounding.AwayFromZero);
+        var expectedTaxableIncome = 200_000m - (epf + 10_000m);
+        var expectedPaye = CalculateProgressiveTax(expectedTaxableIncome);
+
+        paySlip.Deductions.Should().Contain(d => d.Code == "DED_PRE" && d.IsPreTax && d.Amount == 10_000m);
+        paySlip.PayeTax.Should().Be(expectedPaye);
+    }
+
+    [Fact]
     public async Task CreatePayRun_Should_Apply_NoPay_Deduction_For_Absences()
     {
         using var context = new TestContext();
