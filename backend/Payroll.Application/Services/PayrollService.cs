@@ -75,6 +75,7 @@ public class PayrollService : IPayrollService
                 .ThenInclude(ps => ps.Earnings)
             .Include(pr => pr.PaySlips)
                 .ThenInclude(ps => ps.Deductions)
+            .Include(pr => pr.Approvals)
             .FirstOrDefaultAsync(pr => pr.Id == id, cancellationToken);
 
         if (payRun is null)
@@ -82,9 +83,9 @@ public class PayrollService : IPayrollService
             throw new KeyNotFoundException("Pay run not found");
         }
 
-        if (payRun.Status is PayRunStatus.Approved or PayRunStatus.Posted or PayRunStatus.Cancelled)
+        if (payRun.Status == PayRunStatus.Locked || payRun.IsLocked)
         {
-            throw new InvalidOperationException("Cannot recalculate an approved, posted, or cancelled pay run.");
+            throw new InvalidOperationException("Cannot recalculate a locked pay run.");
         }
 
         var employeeIds = payRun.PaySlips.Select(ps => ps.EmployeeId).ToList();
@@ -102,16 +103,131 @@ public class PayrollService : IPayrollService
 
     public async Task ChangeStatusAsync(Guid id, ChangePayRunStatusRequest request, CancellationToken cancellationToken = default)
     {
-        var payRun = await _dbContext.PayRuns.FirstOrDefaultAsync(pr => pr.Id == id, cancellationToken);
+        switch (request.Status)
+        {
+            case PayRunStatus.Approved:
+                await ApprovePayRunAsync(id, new PayRunActionRequest { ActionedBy = "system" }, cancellationToken);
+                break;
+            case PayRunStatus.Locked:
+                await LockPayRunAsync(id, new PayRunActionRequest { ActionedBy = "system" }, cancellationToken);
+                break;
+            case PayRunStatus.Calculated:
+                await ResetToCalculatedAsync(id, cancellationToken);
+                break;
+            default:
+                throw new InvalidOperationException("Unsupported pay run status transition.");
+        }
+    }
+
+    public async Task ApprovePayRunAsync(Guid id, PayRunActionRequest request, CancellationToken cancellationToken = default)
+    {
+        var payRun = await _dbContext.PayRuns
+            .Include(pr => pr.Approvals)
+            .FirstOrDefaultAsync(pr => pr.Id == id, cancellationToken);
+
         if (payRun is null)
         {
             throw new KeyNotFoundException("Pay run not found");
         }
 
-        payRun.Status = request.Status;
-        payRun.IsLocked = request.Status is PayRunStatus.Posted;
+        if (payRun.Status != PayRunStatus.Calculated)
+        {
+            throw new InvalidOperationException("Only calculated pay runs can be approved.");
+        }
+
+        AddApprovalLog(payRun, PayRunStatus.Calculated, PayRunStatus.Approved, request);
+        payRun.Status = PayRunStatus.Approved;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task LockPayRunAsync(Guid id, PayRunActionRequest request, CancellationToken cancellationToken = default)
+    {
+        var payRun = await _dbContext.PayRuns
+            .Include(pr => pr.Approvals)
+            .FirstOrDefaultAsync(pr => pr.Id == id, cancellationToken);
+
+        if (payRun is null)
+        {
+            throw new KeyNotFoundException("Pay run not found");
+        }
+
+        if (payRun.Status != PayRunStatus.Approved)
+        {
+            throw new InvalidOperationException("Only approved pay runs can be locked.");
+        }
+
+        AddApprovalLog(payRun, PayRunStatus.Approved, PayRunStatus.Locked, request);
+        payRun.Status = PayRunStatus.Locked;
+        payRun.IsLocked = true;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task UnlockPayRunAsync(Guid id, PayRunActionRequest request, CancellationToken cancellationToken = default)
+    {
+        var payRun = await _dbContext.PayRuns
+            .Include(pr => pr.Approvals)
+            .FirstOrDefaultAsync(pr => pr.Id == id, cancellationToken);
+
+        if (payRun is null)
+        {
+            throw new KeyNotFoundException("Pay run not found");
+        }
+
+        if (payRun.Status != PayRunStatus.Locked)
+        {
+            throw new InvalidOperationException("Only locked pay runs can be unlocked.");
+        }
+
+        AddApprovalLog(payRun, PayRunStatus.Locked, PayRunStatus.Approved, request);
+        payRun.Status = PayRunStatus.Approved;
+        payRun.IsLocked = false;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task ResetToCalculatedAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var payRun = await _dbContext.PayRuns
+            .Include(pr => pr.Approvals)
+            .FirstOrDefaultAsync(pr => pr.Id == id, cancellationToken);
+
+        if (payRun is null)
+        {
+            throw new KeyNotFoundException("Pay run not found");
+        }
+
+        if (payRun.Status == PayRunStatus.Locked || payRun.IsLocked)
+        {
+            throw new InvalidOperationException("Cannot reset status for a locked pay run.");
+        }
+
+        if (payRun.Status != PayRunStatus.Calculated)
+        {
+            AddApprovalLog(payRun, payRun.Status, PayRunStatus.Calculated, new PayRunActionRequest { ActionedBy = "system" });
+        }
+
+        payRun.Status = PayRunStatus.Calculated;
+        payRun.IsLocked = false;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private void AddApprovalLog(PayRun payRun, PayRunStatus fromStatus, PayRunStatus toStatus, PayRunActionRequest request)
+    {
+        var actionedBy = string.IsNullOrWhiteSpace(request.ActionedBy) ? "Unknown" : request.ActionedBy;
+
+        payRun.Approvals.Add(new PayRunApproval
+        {
+            Id = Guid.NewGuid(),
+            PayRunId = payRun.Id,
+            FromStatus = fromStatus,
+            ToStatus = toStatus,
+            ActionedBy = actionedBy,
+            Comments = request.Comments,
+            ActionedAt = DateTime.UtcNow
+        });
     }
 
     public async Task<PayRunDetailDto?> GetPayRunAsync(Guid id, CancellationToken cancellationToken = default)
@@ -121,6 +237,7 @@ public class PayrollService : IPayrollService
                 .ThenInclude(ps => ps.Earnings)
             .Include(pr => pr.PaySlips)
                 .ThenInclude(ps => ps.Deductions)
+            .Include(pr => pr.Approvals)
             .AsNoTracking()
             .FirstOrDefaultAsync(pr => pr.Id == id, cancellationToken);
 
@@ -612,7 +729,24 @@ public class PayrollService : IPayrollService
             IsLocked = summary.IsLocked,
             EmployeeCount = summary.EmployeeCount,
             TotalNetPay = summary.TotalNetPay,
-            PaySlips = payRun.PaySlips.Select(MapToDto).ToList()
+            PaySlips = payRun.PaySlips.Select(MapToDto).ToList(),
+            Approvals = payRun.Approvals
+                .OrderByDescending(a => a.ActionedAt)
+                .Select(MapToDto)
+                .ToList()
+        };
+    }
+
+    private static PayRunApprovalDto MapToDto(PayRunApproval approval)
+    {
+        return new PayRunApprovalDto
+        {
+            Id = approval.Id,
+            FromStatus = approval.FromStatus,
+            ToStatus = approval.ToStatus,
+            ActionedBy = approval.ActionedBy,
+            Comments = approval.Comments,
+            ActionedAt = approval.ActionedAt
         };
     }
 

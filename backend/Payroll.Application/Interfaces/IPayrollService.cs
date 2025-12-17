@@ -11,5 +11,8 @@ public interface IPayrollService
     Task<PayRunDetailDto> CreatePayRunAsync(CreatePayRunRequest request, CancellationToken cancellationToken = default);
     Task RecalculatePayRunAsync(Guid id, RecalculatePayRunRequest request, CancellationToken cancellationToken = default);
     Task ChangeStatusAsync(Guid id, ChangePayRunStatusRequest request, CancellationToken cancellationToken = default);
+    Task ApprovePayRunAsync(Guid id, PayRunActionRequest request, CancellationToken cancellationToken = default);
+    Task LockPayRunAsync(Guid id, PayRunActionRequest request, CancellationToken cancellationToken = default);
+    Task UnlockPayRunAsync(Guid id, PayRunActionRequest request, CancellationToken cancellationToken = default);
     Task<PaySlipDto?> GetPaySlipAsync(Guid payRunId, Guid paySlipId, CancellationToken cancellationToken = default);
 }

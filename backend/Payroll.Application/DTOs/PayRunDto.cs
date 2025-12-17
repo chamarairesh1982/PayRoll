@@ -20,4 +20,15 @@ public class PayRunSummaryDto
 public class PayRunDetailDto : PayRunSummaryDto
 {
     public List<PaySlipDto> PaySlips { get; set; } = new();
+    public List<PayRunApprovalDto> Approvals { get; set; } = new();
+}
+
+public class PayRunApprovalDto
+{
+    public Guid Id { get; set; }
+    public PayRunStatus FromStatus { get; set; }
+    public PayRunStatus ToStatus { get; set; }
+    public string ActionedBy { get; set; } = string.Empty;
+    public string? Comments { get; set; }
+    public DateTime ActionedAt { get; set; }
 }

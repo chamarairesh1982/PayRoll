@@ -48,6 +48,27 @@ public class PayRunsController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{id:guid}/approve")]
+    public async Task<IActionResult> Approve(Guid id, [FromBody] PayRunActionRequest request, CancellationToken cancellationToken = default)
+    {
+        await _payrollService.ApprovePayRunAsync(id, request, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/lock")]
+    public async Task<IActionResult> Lock(Guid id, [FromBody] PayRunActionRequest request, CancellationToken cancellationToken = default)
+    {
+        await _payrollService.LockPayRunAsync(id, request, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/unlock")]
+    public async Task<IActionResult> Unlock(Guid id, [FromBody] PayRunActionRequest request, CancellationToken cancellationToken = default)
+    {
+        await _payrollService.UnlockPayRunAsync(id, request, cancellationToken);
+        return NoContent();
+    }
+
     [HttpPost("{id:guid}/status")]
     public async Task<IActionResult> ChangeStatus(Guid id, [FromBody] ChangePayRunStatusRequest request, CancellationToken cancellationToken = default)
     {
