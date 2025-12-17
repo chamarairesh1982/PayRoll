@@ -23,15 +23,18 @@ public class PayrollService : IPayrollService
     private readonly IPayrollDbContext _dbContext;
     private readonly IEpfEtfRuleSetService _epfEtfRuleSetService;
     private readonly ITaxRuleSetService _taxRuleSetService;
+    private readonly IAuditLogger _auditLogger;
 
     public PayrollService(
         IPayrollDbContext dbContext,
         IEpfEtfRuleSetService epfEtfRuleSetService,
-        ITaxRuleSetService taxRuleSetService)
+        ITaxRuleSetService taxRuleSetService,
+        IAuditLogger auditLogger)
     {
         _dbContext = dbContext;
         _epfEtfRuleSetService = epfEtfRuleSetService;
         _taxRuleSetService = taxRuleSetService;
+        _auditLogger = auditLogger;
     }
 
     public async Task<PayRunDetailDto> CreatePayRunAsync(CreatePayRunRequest request, CancellationToken cancellationToken = default)
@@ -59,8 +62,19 @@ public class PayrollService : IPayrollService
                 .ToListAsync(cancellationToken);
         }
 
+        var beforeSnapshot = CreatePayRunSnapshot(payRun);
+
         payRun.PaySlips = await GeneratePaySlipsForPayRunAsync(payRun, employeeIds, cancellationToken);
         payRun.Status = PayRunStatus.Calculated;
+
+        await _auditLogger.LogAsync(
+            nameof(PayRun),
+            payRun.Id.ToString(),
+            "PayRunCalculated",
+            beforeSnapshot,
+            CreatePayRunSnapshot(payRun),
+            null,
+            cancellationToken);
 
         await _dbContext.PayRuns.AddAsync(payRun, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -88,6 +102,8 @@ public class PayrollService : IPayrollService
             throw new InvalidOperationException("Cannot recalculate a locked pay run.");
         }
 
+        var beforeSnapshot = CreatePayRunSnapshot(payRun);
+
         var employeeIds = payRun.PaySlips.Select(ps => ps.EmployeeId).ToList();
 
         _dbContext.PaySlips.RemoveRange(payRun.PaySlips);
@@ -95,6 +111,15 @@ public class PayrollService : IPayrollService
 
         payRun.PaySlips = await GeneratePaySlipsForPayRunAsync(payRun, employeeIds, cancellationToken);
         payRun.Status = PayRunStatus.Calculated;
+
+        await _auditLogger.LogAsync(
+            nameof(PayRun),
+            payRun.Id.ToString(),
+            "PayRunRecalculated",
+            beforeSnapshot,
+            CreatePayRunSnapshot(payRun),
+            null,
+            cancellationToken);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -135,8 +160,19 @@ public class PayrollService : IPayrollService
             throw new InvalidOperationException("Only calculated pay runs can be approved.");
         }
 
+        var beforeSnapshot = CreatePayRunSnapshot(payRun);
+
         AddApprovalLog(payRun, PayRunStatus.Calculated, PayRunStatus.Approved, request);
         payRun.Status = PayRunStatus.Approved;
+
+        await _auditLogger.LogAsync(
+            nameof(PayRun),
+            payRun.Id.ToString(),
+            "PayRunApproved",
+            beforeSnapshot,
+            CreatePayRunSnapshot(payRun),
+            request.ActionedBy,
+            cancellationToken);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -157,9 +193,20 @@ public class PayrollService : IPayrollService
             throw new InvalidOperationException("Only approved pay runs can be locked.");
         }
 
+        var beforeSnapshot = CreatePayRunSnapshot(payRun);
+
         AddApprovalLog(payRun, PayRunStatus.Approved, PayRunStatus.Locked, request);
         payRun.Status = PayRunStatus.Locked;
         payRun.IsLocked = true;
+
+        await _auditLogger.LogAsync(
+            nameof(PayRun),
+            payRun.Id.ToString(),
+            "PayRunLocked",
+            beforeSnapshot,
+            CreatePayRunSnapshot(payRun),
+            request.ActionedBy,
+            cancellationToken);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -180,9 +227,20 @@ public class PayrollService : IPayrollService
             throw new InvalidOperationException("Only locked pay runs can be unlocked.");
         }
 
+        var beforeSnapshot = CreatePayRunSnapshot(payRun);
+
         AddApprovalLog(payRun, PayRunStatus.Locked, PayRunStatus.Approved, request);
         payRun.Status = PayRunStatus.Approved;
         payRun.IsLocked = false;
+
+        await _auditLogger.LogAsync(
+            nameof(PayRun),
+            payRun.Id.ToString(),
+            "PayRunUnlocked",
+            beforeSnapshot,
+            CreatePayRunSnapshot(payRun),
+            request.ActionedBy,
+            cancellationToken);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -228,6 +286,29 @@ public class PayrollService : IPayrollService
             Comments = request.Comments,
             ActionedAt = DateTime.UtcNow
         });
+    }
+
+    private static object CreatePayRunSnapshot(PayRun payRun)
+    {
+        return new
+        {
+            payRun.Id,
+            payRun.Status,
+            payRun.IsLocked,
+            payRun.PeriodStart,
+            payRun.PeriodEnd,
+            payRun.PayDate,
+            PaySlipCount = payRun.PaySlips.Count,
+            PaySlips = payRun.PaySlips.Select(ps => new
+            {
+                ps.Id,
+                ps.EmployeeId,
+                ps.BasicSalary,
+                ps.TotalEarnings,
+                ps.TotalDeductions,
+                ps.NetPay
+            }).ToList()
+        };
     }
 
     public async Task<PayRunDetailDto?> GetPayRunAsync(Guid id, CancellationToken cancellationToken = default)

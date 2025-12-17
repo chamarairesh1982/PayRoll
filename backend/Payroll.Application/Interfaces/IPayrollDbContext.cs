@@ -6,7 +6,7 @@ using Payroll.Domain.Leave;
 using Payroll.Domain.Overtime;
 using Payroll.Domain.Payroll;
 using Payroll.Domain.PayrollConfig;
-using Payroll.Domain.Employees;
+using Payroll.Domain.Auditing;
 
 namespace Payroll.Application.Interfaces;
 
@@ -26,5 +26,6 @@ public interface IPayrollDbContext
     DbSet<TaxRuleSet> TaxRuleSets { get; }
     DbSet<TaxSlab> TaxSlabs { get; }
     DbSet<EmployeePayItem> EmployeePayItems { get; }
+    DbSet<AuditLog> AuditLogs { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

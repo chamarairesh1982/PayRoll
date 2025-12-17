@@ -47,6 +47,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDeductionTypeService, DeductionTypeService>();
         services.AddScoped<IEpfEtfRuleSetService, EpfEtfRuleSetService>();
         services.AddScoped<ITaxRuleSetService, TaxRuleSetService>();
+        services.AddScoped<IAuditLogger, AuditLogger>();
         services.AddScoped<ICurrentUserService, SimpleCurrentUserService>();
 
         services.AddControllers(options => options.Filters.Add<ApiExceptionFilter>());
