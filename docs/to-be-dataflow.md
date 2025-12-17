@@ -2,7 +2,7 @@
 
 ## To-Be DFD (Level 0)
 ```mermaid
-graph TD
+flowchart TD
     HR[Admin/HR]
     Emp[Employee]
     Bank[Bank]
@@ -11,7 +11,7 @@ graph TD
     ACC[Accounting]
     Audit[Audit/Auditor]
 
-    subgraph PayrollSystem
+    subgraph PayrollSystem [Payroll System]
       P1[Employee & Recurring Item Setup]
       P2[Attendance & Leave Capture]
       P3[Payroll Run]
@@ -46,11 +46,11 @@ graph TD
 
 ## To-Be DFD (Level 1 – Payroll Run)
 ```mermaid
-graph TD
+flowchart TD
     HR[Admin/HR]
     Emp[Employee]
 
-    subgraph DataStores
+    subgraph DataStores [Data Stores]
       D1[(Employee Master & Recurring Items)]
       D2[(Attendance & OT)]
       D3[(Leave Adjustments)]
