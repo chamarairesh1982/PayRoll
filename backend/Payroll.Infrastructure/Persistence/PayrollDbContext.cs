@@ -28,6 +28,7 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public DbSet<LoanRepayment> LoanRepayments => Set<LoanRepayment>();
     public DbSet<AllowanceType> AllowanceTypes => Set<AllowanceType>();
     public DbSet<DeductionType> DeductionTypes => Set<DeductionType>();
+    public DbSet<EmployeeRecurringPayItem> EmployeeRecurringPayItems => Set<EmployeeRecurringPayItem>();
     public DbSet<EpfEtfRuleSet> EpfEtfRuleSets => Set<EpfEtfRuleSet>();
     public DbSet<TaxRuleSet> TaxRuleSets => Set<TaxRuleSet>();
     public DbSet<TaxSlab> TaxSlabs => Set<TaxSlab>();
@@ -37,6 +38,7 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         ValidateEmployeePayItems();
+        ValidateEmployeeRecurringPayItems();
 
         return base.SaveChangesAsync(cancellationToken);
     }
@@ -85,6 +87,58 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
             if (overlaps)
             {
                 throw new InvalidOperationException("Overlapping employee pay item date ranges are not allowed.");
+            }
+        }
+    }
+
+    private void ValidateEmployeeRecurringPayItems()
+    {
+        var pendingPayItems = ChangeTracker.Entries<EmployeeRecurringPayItem>()
+            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
+            .Select(e => e.Entity)
+            .ToList();
+
+        foreach (var payItem in pendingPayItems)
+        {
+            var hasAmount = payItem.Amount.HasValue;
+            var hasPercentage = payItem.Percentage.HasValue;
+
+            if (hasAmount == hasPercentage)
+            {
+                throw new InvalidOperationException(
+                    "Employee recurring pay items must have either amount or percentage set, but not both.");
+            }
+
+            if ((hasAmount && payItem.Amount <= 0) || (hasPercentage && payItem.Percentage <= 0))
+            {
+                throw new InvalidOperationException("Employee recurring pay item values must be greater than zero.");
+            }
+
+            if (payItem.PayItemKind == PayItemKind.Allowance)
+            {
+                if (payItem.AllowanceTypeId == null || payItem.DeductionTypeId != null)
+                {
+                    throw new InvalidOperationException(
+                        "Allowance recurring pay items must reference an allowance type and not a deduction type.");
+                }
+            }
+            else if (payItem.PayItemKind == PayItemKind.Deduction)
+            {
+                if (payItem.DeductionTypeId == null || payItem.AllowanceTypeId != null)
+                {
+                    throw new InvalidOperationException(
+                        "Deduction recurring pay items must reference a deduction type and not an allowance type.");
+                }
+            }
+            else
+            {
+                throw new InvalidOperationException("Invalid pay item kind for recurring pay item.");
+            }
+
+            if (payItem.EffectiveTo.HasValue && payItem.EffectiveTo.Value < payItem.EffectiveFrom)
+            {
+                throw new InvalidOperationException(
+                    "Recurring pay item effective to date cannot be earlier than effective from date.");
             }
         }
     }
