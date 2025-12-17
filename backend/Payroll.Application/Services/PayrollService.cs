@@ -8,6 +8,7 @@ using Payroll.Domain.Employees;
 using Payroll.Domain.Loans;
 using Payroll.Domain.Overtime;
 using Payroll.Domain.Payroll;
+using Payroll.Domain.PayrollConfig;
 using Payroll.Shared;
 
 namespace Payroll.Application.Services;
