@@ -98,3 +98,51 @@ graph TD
     PR11 -->|GL summary/posting| D9
     D9 --> ACC[Accounting]
 ```
+
+## To-Be Data Dictionary (Sri Lanka Readiness Extensions)
+
+The following entities extend the as-is data dictionary to cover Sri Lankan compliance and operational readiness.
+
+### PayRunApproval
+- **Id** (PK): Unique identifier.
+- **PayRunId** (FK → PayRun): Pay run that requires approval.
+- **ApprovedBy** (FK → User/Role): Approver reference.
+- **ApprovedAt**: Timestamp of approval action.
+- **Status**: Pending/Approved/Rejected.
+- **Comments**: Approver remarks.
+
+### AuditLog
+- **Id** (PK): Unique identifier.
+- **EntityName**: Name of the audited entity (e.g., Employee, PayRun).
+- **EntityId**: Identifier of the audited entity instance.
+- **Action**: Created/Updated/Deleted/Approved.
+- **BeforeJson**: Snapshot prior to change.
+- **AfterJson**: Snapshot after change.
+- **PerformedBy** (FK → User): Actor reference.
+- **PerformedAt**: Timestamp of the action.
+
+### EmployeeRecurringPayItem
+- **Id** (PK): Unique identifier.
+- **EmployeeId** (FK → Employee): Employee receiving the item.
+- **PayItemType** (FK → PayItemType): Code for allowance/deduction.
+- **Amount**: Fixed amount (nullable when percentage used).
+- **Percentage**: Percentage of base (nullable when amount used).
+- **EffectiveFrom** / **EffectiveTo**: Validity window for the item.
+- **IsTaxable**: Whether subject to PAYE.
+- **IsEpfApplicable**: EPF contribution applicability.
+- **IsEtfApplicable**: ETF contribution applicability.
+
+### BankExportTemplate
+- **Id** (PK): Unique identifier.
+- **Name**: Template name (e.g., bank format variant).
+- **FieldMappings (JSON)**: Maps internal fields to bank file fields.
+- **Delimiter**: Separator used in the export file.
+- **Extension**: File extension (e.g., .txt, .csv).
+
+### ReportRun
+- **Id** (PK): Unique identifier.
+- **Type**: Report type (e.g., PAYE schedule, EPF/ETF, GL summary).
+- **Parameters (JSON)**: Filters and parameters used to generate the report.
+- **GeneratedBy** (FK → User): Initiator of the report.
+- **GeneratedAt**: Timestamp when report was created.
+- **FileUrl**: Link to generated artifact.
