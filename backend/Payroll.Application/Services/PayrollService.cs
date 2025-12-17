@@ -386,6 +386,7 @@ public class PayrollService : IPayrollService
             .ToListAsync(ct);
 
         var loans = await _dbContext.Loans
+            .Include(l => l.Repayments)
             .Where(l => employeeIds.Contains(l.EmployeeId) && l.Status == LoanStatus.Active)
             .ToListAsync(ct);
 
