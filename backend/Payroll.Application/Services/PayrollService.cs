@@ -405,6 +405,16 @@ public class PayrollService : IPayrollService
                         && (pi.EffectiveTo == null || pi.EffectiveTo >= periodStart))
             .ToListAsync(ct);
 
+        var recurringPayItems = await _dbContext.EmployeeRecurringPayItems
+            .AsNoTracking()
+            .Include(pi => pi.AllowanceType)
+            .Include(pi => pi.DeductionType)
+            .Where(pi => employeeIds.Contains(pi.EmployeeId)
+                        && pi.IsActive
+                        && pi.EffectiveFrom <= periodEnd
+                        && (pi.EffectiveTo == null || pi.EffectiveTo >= periodStart))
+            .ToListAsync(ct);
+
         var payDateOnly = DateOnly.FromDateTime(payRun.PayDate);
         var epfEtfRule = await _epfEtfRuleSetService.GetActiveRuleForDateAsync(payDateOnly);
         var taxRuleSet = await _taxRuleSetService.GetActiveRuleForDateAsync(payDateOnly);
@@ -426,6 +436,7 @@ public class PayrollService : IPayrollService
                     Overtime = overtime.Where(o => o.EmployeeId == employee.Id).ToList(),
                     ActiveLoans = loans.Where(l => l.EmployeeId == employee.Id).ToList(),
                     PayItems = payItems.Where(pi => pi.EmployeeId == employee.Id).ToList(),
+                    RecurringPayItems = recurringPayItems.Where(pi => pi.EmployeeId == employee.Id).ToList(),
                     AllowanceTypes = allowanceTypes,
                     DeductionTypes = deductionTypes
                 },
@@ -560,15 +571,24 @@ public class PayrollService : IPayrollService
 
     private Task ApplyFixedAllowancesAsync(PaySlipCalculationContext ctx, PayRun payRun)
     {
-        foreach (var payItem in ctx.PayItems.Where(pi => pi.PayItemType == PayItemType.Allowance))
+        var allowanceLines = ctx.PayItems
+            .Where(pi => pi.PayItemType == PayItemType.Allowance)
+            .Select(pi => (AllowanceType: ctx.AllowanceTypes.TryGetValue(pi.PayItemCode, out var allowanceType)
+                ? allowanceType
+                : null,
+                Amount: ResolvePayItemAmount(pi, ctx.BasicSalary)))
+            .Concat(ctx.RecurringPayItems
+                .Where(pi => pi.PayItemKind == PayItemKind.Allowance)
+                .Select(pi => (AllowanceType: pi.AllowanceType, Amount: ResolveRecurringPayItemAmount(pi, ctx.BasicSalary))));
+
+        foreach (var allowance in allowanceLines)
         {
-            if (!ctx.AllowanceTypes.TryGetValue(payItem.PayItemCode, out var allowanceType))
+            if (allowance.AllowanceType is null)
             {
                 continue;
             }
 
-            var amount = ResolvePayItemAmount(payItem, ctx.BasicSalary);
-            if (amount <= 0)
+            if (allowance.Amount <= 0)
             {
                 continue;
             }
@@ -577,12 +597,12 @@ public class PayrollService : IPayrollService
             {
                 Id = Guid.NewGuid(),
                 PaySlipId = ctx.PaySlipId,
-                Code = payItem.PayItemCode,
-                Description = allowanceType.Name,
-                Amount = amount,
-                IsEpfApplicable = allowanceType.IsEpfApplicable,
-                IsEtfApplicable = allowanceType.IsEtfApplicable,
-                IsTaxable = allowanceType.IsTaxable
+                Code = allowance.AllowanceType.Code,
+                Description = allowance.AllowanceType.Name,
+                Amount = allowance.Amount,
+                IsEpfApplicable = allowance.AllowanceType.IsEpfApplicable,
+                IsEtfApplicable = allowance.AllowanceType.IsEtfApplicable,
+                IsTaxable = allowance.AllowanceType.IsTaxable
             });
         }
 
@@ -591,15 +611,24 @@ public class PayrollService : IPayrollService
 
     private Task ApplyFixedDeductionsAsync(PaySlipCalculationContext ctx, PayRun payRun)
     {
-        foreach (var payItem in ctx.PayItems.Where(pi => pi.PayItemType == PayItemType.Deduction))
+        var deductionLines = ctx.PayItems
+            .Where(pi => pi.PayItemType == PayItemType.Deduction)
+            .Select(pi => (DeductionType: ctx.DeductionTypes.TryGetValue(pi.PayItemCode, out var deductionType)
+                ? deductionType
+                : null,
+                Amount: ResolvePayItemAmount(pi, ctx.BasicSalary)))
+            .Concat(ctx.RecurringPayItems
+                .Where(pi => pi.PayItemKind == PayItemKind.Deduction)
+                .Select(pi => (DeductionType: pi.DeductionType, Amount: ResolveRecurringPayItemAmount(pi, ctx.BasicSalary))));
+
+        foreach (var deduction in deductionLines)
         {
-            if (!ctx.DeductionTypes.TryGetValue(payItem.PayItemCode, out var deductionType))
+            if (deduction.DeductionType is null)
             {
                 continue;
             }
 
-            var amount = ResolvePayItemAmount(payItem, ctx.BasicSalary);
-            if (amount <= 0)
+            if (deduction.Amount <= 0)
             {
                 continue;
             }
@@ -608,11 +637,11 @@ public class PayrollService : IPayrollService
             {
                 Id = Guid.NewGuid(),
                 PaySlipId = ctx.PaySlipId,
-                Code = payItem.PayItemCode,
-                Description = deductionType.Name,
-                Amount = amount,
-                IsPreTax = deductionType.IsPreTax,
-                IsPostTax = deductionType.IsPostTax
+                Code = deduction.DeductionType.Code,
+                Description = deduction.DeductionType.Name,
+                Amount = deduction.Amount,
+                IsPreTax = deduction.DeductionType.IsPreTax,
+                IsPostTax = deduction.DeductionType.IsPostTax
             });
         }
 
@@ -871,6 +900,21 @@ public class PayrollService : IPayrollService
         return 0;
     }
 
+    private decimal ResolveRecurringPayItemAmount(EmployeeRecurringPayItem payItem, decimal basicSalary)
+    {
+        if (payItem.Amount.HasValue)
+        {
+            return RoundCurrency(payItem.Amount.Value);
+        }
+
+        if (payItem.Percentage.HasValue)
+        {
+            return RoundCurrency(basicSalary * payItem.Percentage.Value / 100m);
+        }
+
+        return 0;
+    }
+
     private sealed class PaySlipCalculationContext
     {
         public Guid PaySlipId { get; init; }
@@ -880,6 +924,7 @@ public class PayrollService : IPayrollService
         public List<OvertimeRecord> Overtime { get; init; } = new();
         public List<Loan> ActiveLoans { get; init; } = new();
         public List<EmployeePayItem> PayItems { get; init; } = new();
+        public List<EmployeeRecurringPayItem> RecurringPayItems { get; init; } = new();
         public IReadOnlyDictionary<string, AllowanceType> AllowanceTypes { get; init; } = new Dictionary<string, AllowanceType>();
         public IReadOnlyDictionary<string, DeductionType> DeductionTypes { get; init; } = new Dictionary<string, DeductionType>();
         public List<EarningLine> Earnings { get; } = new();
