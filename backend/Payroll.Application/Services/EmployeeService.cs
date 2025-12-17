@@ -10,11 +10,13 @@ public class EmployeeService : IEmployeeService
 {
     private readonly IPayrollDbContext _dbContext;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAuditLogger _auditLogger;
 
-    public EmployeeService(IPayrollDbContext dbContext, ICurrentUserService currentUserService)
+    public EmployeeService(IPayrollDbContext dbContext, ICurrentUserService currentUserService, IAuditLogger auditLogger)
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
+        _auditLogger = auditLogger;
     }
 
     public async Task<PaginatedResult<EmployeeDto>> GetEmployeesAsync(int page, int pageSize, CancellationToken cancellationToken = default)
@@ -92,6 +94,9 @@ public class EmployeeService : IEmployeeService
 
         var modifiedBy = _currentUserService.UserName ?? "system";
 
+        var salaryChanged = employee.BaseSalary != request.BaseSalary;
+        var salaryBefore = salaryChanged ? CreateSalarySnapshot(employee) : null;
+
         employee.Update(
             request.EmployeeCode,
             request.FirstName,
@@ -109,6 +114,19 @@ public class EmployeeService : IEmployeeService
             modifiedBy);
 
         employee.IsActive = request.IsActive;
+
+        if (salaryChanged)
+        {
+            var salaryAfter = CreateSalarySnapshot(employee);
+            await _auditLogger.LogAsync(
+                nameof(Employee),
+                employee.Id.ToString(),
+                "SalaryUpdated",
+                salaryBefore,
+                salaryAfter,
+                modifiedBy,
+                cancellationToken);
+        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -151,6 +169,18 @@ public class EmployeeService : IEmployeeService
         {
             throw new InvalidOperationException("NIC number must be unique.");
         }
+    }
+
+    private static object CreateSalarySnapshot(Employee employee)
+    {
+        return new
+        {
+            employee.Id,
+            employee.EmployeeCode,
+            employee.BaseSalary,
+            employee.ModifiedAt,
+            employee.ModifiedBy
+        };
     }
 
     private static EmployeeDto MapToDto(Employee employee)

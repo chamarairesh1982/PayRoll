@@ -7,6 +7,7 @@ using Payroll.Domain.Loans;
 using Payroll.Domain.Overtime;
 using Payroll.Domain.Payroll;
 using Payroll.Domain.PayrollConfig;
+using Payroll.Domain.Auditing;
 
 namespace Payroll.Infrastructure.Persistence;
 
@@ -31,6 +32,7 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public DbSet<TaxRuleSet> TaxRuleSets => Set<TaxRuleSet>();
     public DbSet<TaxSlab> TaxSlabs => Set<TaxSlab>();
     public DbSet<EmployeePayItem> EmployeePayItems => Set<EmployeePayItem>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
