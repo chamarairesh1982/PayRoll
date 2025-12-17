@@ -98,7 +98,7 @@ graph TD
     PR2 --> PR5[Compute basic & no-pay]
     PR3 --> PR6[Add OT earnings]
     PR4 --> PR7[Apply loan deductions]
-    PR5 --> PR8[Apply statutory (EPF/ETF, PAYE)]
+    PR5 --> PR8[Apply statutory EPF/ETF and PAYE]
     PR6 --> PR8
     PR7 --> PR8
     D5 --> PR8
