@@ -199,6 +199,74 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.HasCheckConstraint("CK_EmployeePayItems_PositiveValues", "((Amount IS NULL OR Amount > 0) AND (Percentage IS NULL OR Percentage > 0))");
                 });
 
+            modelBuilder.Entity("Payroll.Domain.Employees.EmployeeRecurringPayItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AllowanceTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid?>("DeductionTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("EffectiveTo")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal?>("Percentage")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("PayItemKind")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AllowanceTypeId");
+
+                    b.HasIndex("DeductionTypeId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("EmployeeId", "PayItemKind", "AllowanceTypeId", "DeductionTypeId", "EffectiveFrom");
+
+                    b.ToTable("EmployeeRecurringPayItems", (string)null);
+
+                    b.HasCheckConstraint("CK_EmployeeRecurringPayItems_AmountOrPercentage", "((Amount IS NOT NULL AND Percentage IS NULL) OR (Amount IS NULL AND Percentage IS NOT NULL))");
+                    b.HasCheckConstraint("CK_EmployeeRecurringPayItems_EffectiveDates", "([EffectiveTo] IS NULL OR [EffectiveTo] >= [EffectiveFrom])");
+                    b.HasCheckConstraint("CK_EmployeeRecurringPayItems_KindAndType", "((PayItemKind = 1 AND AllowanceTypeId IS NOT NULL AND DeductionTypeId IS NULL) OR (PayItemKind = 2 AND DeductionTypeId IS NOT NULL AND AllowanceTypeId IS NULL))");
+                    b.HasCheckConstraint("CK_EmployeeRecurringPayItems_PositiveValues", "((Amount IS NULL OR Amount > 0) AND (Percentage IS NULL OR Percentage > 0))");
+                });
+
             modelBuilder.Entity("Payroll.Domain.Leave.LeaveRequest", b =>
                 {
                     b.Property<Guid>("Id")

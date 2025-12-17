@@ -22,6 +22,7 @@ public interface IPayrollDbContext
     DbSet<PayRunApproval> PayRunApprovals { get; }
     DbSet<AllowanceType> AllowanceTypes { get; }
     DbSet<DeductionType> DeductionTypes { get; }
+    DbSet<EmployeeRecurringPayItem> EmployeeRecurringPayItems { get; }
     DbSet<EpfEtfRuleSet> EpfEtfRuleSets { get; }
     DbSet<TaxRuleSet> TaxRuleSets { get; }
     DbSet<TaxSlab> TaxSlabs { get; }
