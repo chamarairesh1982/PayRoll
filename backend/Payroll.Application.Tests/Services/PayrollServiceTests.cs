@@ -155,6 +155,115 @@ public class PayrollServiceTests
     }
 
     [Fact]
+    public async Task CreatePayRun_Should_Apply_Fixed_Allowance_Amount()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP020", "Harry", 80_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+
+        var allowanceType = TestDataSeeder.SeedAllowanceType(context.DbContext, "ALW_MEAL", "Meal Allowance", true, true, true);
+        TestDataSeeder.SeedEmployeePayItem(context.DbContext, employee, PayItemType.Allowance, allowanceType.Code, 7_500m, null);
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+
+        var result = await payrollService.CreatePayRunAsync(request);
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        paySlip.Earnings.Should().Contain(e => e.Code == "ALW_MEAL" && e.Amount == 7_500m);
+        paySlip.TotalEarnings.Should().Be(87_500m);
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Apply_Percentage_Allowance_As_Percentage_Of_Basic()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP021", "Isla", 90_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+
+        var allowanceType = TestDataSeeder.SeedAllowanceType(context.DbContext, "ALW_PER", "Performance Bonus", true, true, true);
+        TestDataSeeder.SeedEmployeePayItem(context.DbContext, employee, PayItemType.Allowance, allowanceType.Code, null, 15m);
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+
+        var result = await payrollService.CreatePayRunAsync(request);
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        paySlip.Earnings.Should().Contain(e => e.Code == "ALW_PER" && e.Amount == 13_500m);
+        paySlip.TotalEarnings.Should().Be(103_500m);
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Reduce_TaxableIncome_With_PreTax_Deduction()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP022", "Jane", 150_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+
+        var deductionType = TestDataSeeder.SeedDeductionType(context.DbContext, "DED_GROSS", "Gross Reduction", true, false);
+        TestDataSeeder.SeedEmployeePayItem(context.DbContext, employee, PayItemType.Deduction, deductionType.Code, 5_000m, null);
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+
+        var result = await payrollService.CreatePayRunAsync(request);
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        var epf = Math.Round(150_000m * 0.08m, 2, MidpointRounding.AwayFromZero);
+        var expectedTaxableIncome = 150_000m - (epf + 5_000m);
+        var expectedPaye = CalculateProgressiveTax(expectedTaxableIncome);
+
+        paySlip.Deductions.Should().Contain(d => d.Code == "DED_GROSS" && d.IsPreTax && d.Amount == 5_000m);
+        paySlip.PayeTax.Should().Be(expectedPaye);
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Lock_Overtime_Record_When_Included_In_PaySlip()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP023", "Kyle", 70_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+        var overtime = TestDataSeeder.SeedOvertime(context.DbContext, employee, new DateOnly(2025, 4, 12), 4, OvertimeType.Weekend);
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+
+        var result = await payrollService.CreatePayRunAsync(request);
+
+        var persistedOvertime = await context.DbContext.OvertimeRecords.FindAsync(overtime.Id);
+        persistedOvertime.Should().NotBeNull();
+        persistedOvertime!.IsLockedForPayroll.Should().BeTrue();
+        persistedOvertime.PayRunId.Should().Be(result.Id);
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Use_Loan_Repayment_Schedule_When_Available()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP024", "Liam", 120_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+        var loan = TestDataSeeder.SeedActiveLoan(context.DbContext, employee, 50_000m, 10_000m);
+        TestDataSeeder.SeedLoanRepayment(context.DbContext, loan, new DateTime(2025, 4, 10), 6_000m);
+        TestDataSeeder.SeedLoanRepayment(context.DbContext, loan, new DateTime(2025, 5, 10), 6_000m);
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+
+        var result = await payrollService.CreatePayRunAsync(request);
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        paySlip.Deductions.Should().Contain(d => d.Code == "LOAN" && d.Amount == 6_000m);
+        loan.OutstandingPrincipal.Should().Be(44_000m);
+        loan.Repayments.Should().ContainSingle(r => r.IsPaid && r.Amount == 6_000m);
+    }
+
+    [Fact]
     public async Task CreatePayRun_Should_Apply_PreTax_Deduction_Before_Paye()
     {
         using var context = new TestContext();

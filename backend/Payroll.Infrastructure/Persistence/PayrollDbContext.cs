@@ -33,6 +33,7 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public DbSet<TaxRuleSet> TaxRuleSets => Set<TaxRuleSet>();
     public DbSet<TaxSlab> TaxSlabs => Set<TaxSlab>();
     public DbSet<EmployeePayItem> EmployeePayItems => Set<EmployeePayItem>();
+    public DbSet<PayrollSettings> PayrollSettings => Set<PayrollSettings>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

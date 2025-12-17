@@ -14,11 +14,11 @@ namespace Payroll.Application.Services;
 
 public class PayrollService : IPayrollService
 {
-    private const int WorkingDaysPerMonth = 26; // TODO: move to configuration
-    private const int WorkingHoursPerDay = 8; // TODO: move to configuration
-    private const decimal WeekdayOvertimeMultiplier = 1.5m; // TODO: move to configuration
-    private const decimal WeekendOvertimeMultiplier = 2.0m; // TODO: move to configuration
-    private const decimal PublicHolidayOvertimeMultiplier = 2.0m; // TODO: move to configuration
+    private const int DefaultWorkingDaysPerMonth = 26;
+    private const int DefaultWorkingHoursPerDay = 8;
+    private const decimal DefaultWeekdayOvertimeMultiplier = 1.5m;
+    private const decimal DefaultWeekendOvertimeMultiplier = 2.0m;
+    private const decimal DefaultPublicHolidayOvertimeMultiplier = 2.0m;
 
     private readonly IPayrollDbContext _dbContext;
     private readonly IEpfEtfRuleSetService _epfEtfRuleSetService;
@@ -377,12 +377,15 @@ public class PayrollService : IPayrollService
                         && a.Period.End >= periodStart)
             .ToListAsync(ct);
 
+        var payrollSettings = await GetPayrollSettingsAsync(ct);
+
         var overtime = await _dbContext.OvertimeRecords
             .Where(o => employeeIds.Contains(o.EmployeeId)
                         && o.Date >= periodStart
                         && o.Date <= periodEnd
                         && o.Status == OvertimeStatus.Approved
-                        && !o.IsLockedForPayroll)
+                        && (!o.IsLockedForPayroll || o.PayRunId == payRun.Id)
+                        && (o.PayRunId == null || o.PayRunId == payRun.Id))
             .ToListAsync(ct);
 
         var loans = await _dbContext.Loans
@@ -439,7 +442,12 @@ public class PayrollService : IPayrollService
                     PayItems = payItems.Where(pi => pi.EmployeeId == employee.Id).ToList(),
                     RecurringPayItems = recurringPayItems.Where(pi => pi.EmployeeId == employee.Id).ToList(),
                     AllowanceTypes = allowanceTypes,
-                    DeductionTypes = deductionTypes
+                    DeductionTypes = deductionTypes,
+                    WorkingDaysPerMonth = payrollSettings.WorkingDaysPerMonth,
+                    WorkingHoursPerDay = payrollSettings.WorkingHoursPerDay,
+                    WeekdayOvertimeMultiplier = payrollSettings.WeekdayOvertimeMultiplier,
+                    WeekendOvertimeMultiplier = payrollSettings.WeekendOvertimeMultiplier,
+                    HolidayOvertimeMultiplier = payrollSettings.HolidayOvertimeMultiplier
                 },
                 ct);
 
@@ -448,6 +456,20 @@ public class PayrollService : IPayrollService
         }
 
         return paySlips;
+    }
+
+    private async Task<PayrollSettingsSnapshot> GetPayrollSettingsAsync(CancellationToken ct)
+    {
+        var settings = await _dbContext.PayrollSettings.AsNoTracking().FirstOrDefaultAsync(ct);
+
+        return new PayrollSettingsSnapshot
+        {
+            WorkingDaysPerMonth = settings?.WorkingDaysPerMonth ?? DefaultWorkingDaysPerMonth,
+            WorkingHoursPerDay = settings?.WorkingHoursPerDay ?? DefaultWorkingHoursPerDay,
+            WeekdayOvertimeMultiplier = settings?.WeekdayOvertimeMultiplier ?? DefaultWeekdayOvertimeMultiplier,
+            WeekendOvertimeMultiplier = settings?.WeekendOvertimeMultiplier ?? DefaultWeekendOvertimeMultiplier,
+            HolidayOvertimeMultiplier = settings?.HolidayOvertimeMultiplier ?? DefaultPublicHolidayOvertimeMultiplier
+        };
     }
 
     private async Task<PaySlip> CalculatePaySlipForEmployeeAsync(
@@ -514,7 +536,7 @@ public class PayrollService : IPayrollService
     private Task ApplyNoPayDeductionsAsync(PaySlipCalculationContext ctx, PayRun payRun)
     {
         var absentDays = ctx.Attendance.Count(a => a.HoursWorked <= 0);
-        var dailyRate = RoundCurrency(ctx.BasicSalary / WorkingDaysPerMonth);
+        var dailyRate = RoundCurrency(ctx.BasicSalary / ctx.WorkingDaysPerMonth);
         var noPayAmount = RoundCurrency(dailyRate * absentDays);
 
         if (noPayAmount > 0)
@@ -536,15 +558,15 @@ public class PayrollService : IPayrollService
 
     private Task ApplyOvertimeEarningsAsync(PaySlipCalculationContext ctx, PayRun payRun)
     {
-        var baseHourlyRate = ctx.BasicSalary / (WorkingDaysPerMonth * WorkingHoursPerDay);
+        var baseHourlyRate = ctx.BasicSalary / (ctx.WorkingDaysPerMonth * ctx.WorkingHoursPerDay);
 
         foreach (var overtime in ctx.Overtime)
         {
             var multiplier = overtime.Type switch
             {
-                OvertimeType.Weekend => WeekendOvertimeMultiplier,
-                OvertimeType.PublicHoliday => PublicHolidayOvertimeMultiplier,
-                _ => WeekdayOvertimeMultiplier
+                OvertimeType.Weekend => ctx.WeekendOvertimeMultiplier,
+                OvertimeType.PublicHoliday => ctx.HolidayOvertimeMultiplier,
+                _ => ctx.WeekdayOvertimeMultiplier
             };
 
             var otAmount = RoundCurrency((decimal)overtime.Hours * baseHourlyRate * multiplier);
@@ -565,6 +587,9 @@ public class PayrollService : IPayrollService
                 IsEtfApplicable = true,
                 IsTaxable = true
             });
+
+            overtime.PayRunId = payRun.Id;
+            overtime.IsLockedForPayroll = true;
         }
 
         return Task.CompletedTask;
@@ -658,7 +683,12 @@ public class PayrollService : IPayrollService
                 continue;
             }
 
-            var installment = loan.Repayments.FirstOrDefault(r => !r.IsPaid)?.Amount ?? loan.InstallmentAmount;
+            var scheduledRepayment = loan.Repayments
+                .Where(r => !r.IsPaid)
+                .OrderBy(r => r.DueDate)
+                .FirstOrDefault();
+
+            var installment = scheduledRepayment?.Amount ?? loan.InstallmentAmount;
 
             installment = Math.Min(loan.OutstandingPrincipal, installment);
             installment = RoundCurrency(installment);
@@ -680,6 +710,11 @@ public class PayrollService : IPayrollService
             });
 
             loan.OutstandingPrincipal -= installment;
+            if (scheduledRepayment is not null)
+            {
+                scheduledRepayment.IsPaid = true;
+            }
+
             if (loan.OutstandingPrincipal <= 0)
             {
                 loan.Status = LoanStatus.Closed;
@@ -936,6 +971,20 @@ public class PayrollService : IPayrollService
         public decimal PayeTax { get; set; }
         public decimal TotalEarnings => Earnings.Sum(x => x.Amount);
         public decimal TotalDeductions => Deductions.Sum(x => x.Amount);
+        public int WorkingDaysPerMonth { get; init; }
+        public int WorkingHoursPerDay { get; init; }
+        public decimal WeekdayOvertimeMultiplier { get; init; }
+        public decimal WeekendOvertimeMultiplier { get; init; }
+        public decimal HolidayOvertimeMultiplier { get; init; }
+    }
+
+    private sealed class PayrollSettingsSnapshot
+    {
+        public int WorkingDaysPerMonth { get; init; }
+        public int WorkingHoursPerDay { get; init; }
+        public decimal WeekdayOvertimeMultiplier { get; init; }
+        public decimal WeekendOvertimeMultiplier { get; init; }
+        public decimal HolidayOvertimeMultiplier { get; init; }
     }
 
     // TODO: Add integration tests to cover basic, overtime, and statutory calculation scenarios.

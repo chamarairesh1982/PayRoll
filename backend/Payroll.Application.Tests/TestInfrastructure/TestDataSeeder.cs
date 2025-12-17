@@ -318,6 +318,24 @@ public static class TestDataSeeder
         return loan;
     }
 
+    public static LoanRepayment SeedLoanRepayment(PayrollDbContext context, Loan loan, DateTime dueDate, decimal amount, bool isPaid = false)
+    {
+        var repayment = new LoanRepayment
+        {
+            LoanId = loan.Id,
+            DueDate = dueDate,
+            Amount = amount,
+            IsPaid = isPaid
+        };
+
+        context.LoanRepayments.Add(repayment);
+        context.SaveChanges();
+
+        loan.Repayments.Add(repayment);
+
+        return repayment;
+    }
+
     public static EmployeePayItem SeedEmployeePayItem(
         PayrollDbContext context,
         Employee employee,

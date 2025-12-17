@@ -24,5 +24,7 @@ public class OvertimeRecordDto
     public string? ApprovedByName { get; set; }
     public DateTime? ApprovedAt { get; set; }
 
+    public Guid? PayRunId { get; set; }
+
     public bool IsLockedForPayroll { get; set; }
 }

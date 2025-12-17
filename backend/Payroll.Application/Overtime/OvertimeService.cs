@@ -239,6 +239,7 @@ public class OvertimeService : IOvertimeService
             ApprovedById = overtime.ApprovedById,
             ApprovedByName = approvedBy is null ? null : $"{approvedBy.FirstName} {approvedBy.LastName}",
             ApprovedAt = overtime.ApprovedAt?.UtcDateTime,
+            PayRunId = overtime.PayRunId,
             IsLockedForPayroll = overtime.IsLockedForPayroll
         };
     }
