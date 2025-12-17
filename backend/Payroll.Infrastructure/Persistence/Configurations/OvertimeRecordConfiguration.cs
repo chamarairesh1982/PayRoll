@@ -22,6 +22,7 @@ public class OvertimeRecordConfiguration : IEntityTypeConfiguration<OvertimeReco
             .HasDefaultValue(OvertimeStatus.Pending)
             .HasSentinel(OvertimeStatus.Pending);
         builder.Property(o => o.IsLockedForPayroll).HasDefaultValue(false);
+        builder.Property(o => o.PayRunId).IsRequired(false);
 
         builder.Property(o => o.Reason).HasMaxLength(500);
         builder.Property(o => o.CreatedBy).HasMaxLength(100);

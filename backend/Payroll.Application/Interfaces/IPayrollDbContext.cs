@@ -27,6 +27,7 @@ public interface IPayrollDbContext
     DbSet<TaxRuleSet> TaxRuleSets { get; }
     DbSet<TaxSlab> TaxSlabs { get; }
     DbSet<EmployeePayItem> EmployeePayItems { get; }
+    DbSet<PayrollSettings> PayrollSettings { get; }
     DbSet<AuditLog> AuditLogs { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

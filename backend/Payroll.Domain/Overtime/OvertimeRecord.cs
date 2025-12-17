@@ -20,5 +20,7 @@ public class OvertimeRecord : AuditableEntity
 
     public DateTimeOffset? ApprovedAt { get; set; }
 
+    public Guid? PayRunId { get; set; }
+
     public bool IsLockedForPayroll { get; set; }
 }
