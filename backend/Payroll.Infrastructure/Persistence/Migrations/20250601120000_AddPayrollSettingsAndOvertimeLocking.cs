@@ -10,12 +10,6 @@ public partial class AddPayrollSettingsAndOvertimeLocking : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
     {
-        migrationBuilder.AddColumn<Guid>(
-            name: "PayRunId",
-            table: "OvertimeRecords",
-            type: "uniqueidentifier",
-            nullable: true);
-
         migrationBuilder.CreateTable(
             name: "PayrollSettings",
             columns: table => new
@@ -42,9 +36,5 @@ public partial class AddPayrollSettingsAndOvertimeLocking : Migration
     {
         migrationBuilder.DropTable(
             name: "PayrollSettings");
-
-        migrationBuilder.DropColumn(
-            name: "PayRunId",
-            table: "OvertimeRecords");
     }
 }
