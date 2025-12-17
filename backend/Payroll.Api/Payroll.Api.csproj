@@ -11,7 +11,7 @@
     <ProjectReference Include="..\Payroll.Application\Payroll.Application.csproj" />
     <ProjectReference Include="..\Payroll.Infrastructure\Payroll.Infrastructure.csproj" />
     <ProjectReference Include="..\Payroll.Shared\Payroll.Shared.csproj" />
-          <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.7">
+          <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.2">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	  </PackageReference>
