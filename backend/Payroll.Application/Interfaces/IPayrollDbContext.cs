@@ -19,6 +19,7 @@ public interface IPayrollDbContext
     DbSet<Loan> Loans { get; }
     DbSet<PayRun> PayRuns { get; }
     DbSet<PaySlip> PaySlips { get; }
+    DbSet<PayRunApproval> PayRunApprovals { get; }
     DbSet<AllowanceType> AllowanceTypes { get; }
     DbSet<DeductionType> DeductionTypes { get; }
     DbSet<EpfEtfRuleSet> EpfEtfRuleSets { get; }
