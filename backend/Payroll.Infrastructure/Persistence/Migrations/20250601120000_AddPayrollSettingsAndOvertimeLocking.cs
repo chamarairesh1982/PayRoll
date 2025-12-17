@@ -1,5 +1,4 @@
 using System;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Payroll.Infrastructure.Persistence;
 
@@ -7,8 +6,6 @@ using Payroll.Infrastructure.Persistence;
 
 namespace Payroll.Infrastructure.Persistence.Migrations;
 
-[DbContext(typeof(PayrollDbContext))]
-[Migration("20250601120000_AddPayrollSettingsAndOvertimeLocking")]
 public partial class AddPayrollSettingsAndOvertimeLocking : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
