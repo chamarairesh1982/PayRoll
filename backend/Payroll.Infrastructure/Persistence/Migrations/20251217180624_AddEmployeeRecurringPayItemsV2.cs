@@ -61,47 +61,11 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                 name: "IX_PayRunApprovals_PayRunId",
                 table: "PayRunApprovals",
                 column: "PayRunId");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_EmployeeRecurringPayItems_AllowanceTypes_AllowanceTypeId",
-                table: "EmployeeRecurringPayItems",
-                column: "AllowanceTypeId",
-                principalTable: "AllowanceTypes",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Restrict);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_EmployeeRecurringPayItems_DeductionTypes_DeductionTypeId",
-                table: "EmployeeRecurringPayItems",
-                column: "DeductionTypeId",
-                principalTable: "DeductionTypes",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Restrict);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_EmployeeRecurringPayItems_Employees_EmployeeId",
-                table: "EmployeeRecurringPayItems",
-                column: "EmployeeId",
-                principalTable: "Employees",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_EmployeeRecurringPayItems_AllowanceTypes_AllowanceTypeId",
-                table: "EmployeeRecurringPayItems");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_EmployeeRecurringPayItems_DeductionTypes_DeductionTypeId",
-                table: "EmployeeRecurringPayItems");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_EmployeeRecurringPayItems_Employees_EmployeeId",
-                table: "EmployeeRecurringPayItems");
-
             migrationBuilder.DropTable(
                 name: "AuditLogs");
 
