@@ -3,6 +3,7 @@ using Payroll.Domain.Attendance;
 using Payroll.Domain.Employees;
 using Payroll.Domain.Loans;
 using Payroll.Domain.Overtime;
+using Payroll.Domain.Payroll;
 using Payroll.Domain.PayrollConfig;
 using Payroll.Domain.ValueObjects;
 using Payroll.Infrastructure.Persistence;
@@ -176,6 +177,68 @@ public static class TestDataSeeder
         context.SaveChanges();
     }
 
+    public static AllowanceType SeedAllowanceType(
+        PayrollDbContext context,
+        string code,
+        string name,
+        bool isTaxable = true,
+        bool isEpfApplicable = true,
+        bool isEtfApplicable = true)
+    {
+        var existing = context.AllowanceTypes.FirstOrDefault(a => a.Code == code);
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        var allowanceType = new AllowanceType
+        {
+            Code = code,
+            Name = name,
+            Basis = CalculationBasis.FixedAmount,
+            IsTaxable = isTaxable,
+            IsEpfApplicable = isEpfApplicable,
+            IsEtfApplicable = isEtfApplicable,
+            IsActive = true,
+            CreatedBy = "seed"
+        };
+
+        context.AllowanceTypes.Add(allowanceType);
+        context.SaveChanges();
+
+        return allowanceType;
+    }
+
+    public static DeductionType SeedDeductionType(
+        PayrollDbContext context,
+        string code,
+        string name,
+        bool isPreTax = true,
+        bool isPostTax = false)
+    {
+        var existing = context.DeductionTypes.FirstOrDefault(d => d.Code == code);
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        var deductionType = new DeductionType
+        {
+            Code = code,
+            Name = name,
+            Basis = CalculationBasis.FixedAmount,
+            IsPreTax = isPreTax,
+            IsPostTax = isPostTax,
+            IsActive = true,
+            CreatedBy = "seed"
+        };
+
+        context.DeductionTypes.Add(deductionType);
+        context.SaveChanges();
+
+        return deductionType;
+    }
+
     public static Employee SeedEmployee(PayrollDbContext context, string code, string name, decimal basicSalary)
     {
         var employee = Employee.Create(
@@ -253,6 +316,66 @@ public static class TestDataSeeder
         context.SaveChanges();
 
         return loan;
+    }
+
+    public static EmployeePayItem SeedEmployeePayItem(
+        PayrollDbContext context,
+        Employee employee,
+        PayItemType payItemType,
+        string payItemCode,
+        decimal? amount,
+        decimal? percentage,
+        DateOnly? effectiveFrom = null,
+        DateOnly? effectiveTo = null)
+    {
+        if ((amount.HasValue && percentage.HasValue) || (!amount.HasValue && !percentage.HasValue))
+        {
+            throw new ArgumentException("Exactly one of amount or percentage must be provided.");
+        }
+
+        if (amount.HasValue && amount.Value <= 0)
+        {
+            throw new ArgumentException("Amount must be greater than zero.");
+        }
+
+        if (percentage.HasValue && percentage.Value <= 0)
+        {
+            throw new ArgumentException("Percentage must be greater than zero.");
+        }
+
+        var start = effectiveFrom ?? new DateOnly(2025, 4, 1);
+        var end = effectiveTo ?? DateOnly.MaxValue;
+
+        var overlapExists = context.EmployeePayItems.Any(pi =>
+            pi.EmployeeId == employee.Id
+            && pi.PayItemType == payItemType
+            && pi.PayItemCode == payItemCode
+            && pi.IsActive
+            && pi.EffectiveFrom <= end
+            && (pi.EffectiveTo == null || pi.EffectiveTo >= start));
+
+        if (overlapExists)
+        {
+            throw new InvalidOperationException("Overlapping pay item range detected for employee");
+        }
+
+        var payItem = new EmployeePayItem
+        {
+            EmployeeId = employee.Id,
+            PayItemType = payItemType,
+            PayItemCode = payItemCode,
+            Amount = amount,
+            Percentage = percentage,
+            EffectiveFrom = start,
+            EffectiveTo = effectiveTo,
+            IsActive = true,
+            CreatedBy = "seed"
+        };
+
+        context.EmployeePayItems.Add(payItem);
+        context.SaveChanges();
+
+        return payItem;
     }
 }
 
