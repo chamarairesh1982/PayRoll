@@ -9,4 +9,7 @@
   <ItemGroup>
     <None Include="**/*" Exclude="bin/**;obj/**;node_modules/**;dist/**;.angular/**" />
   </ItemGroup>
+
+  <!-- Prevent MSBuild from expecting resource-generation targets that are not needed for the SPA project. -->
+  <Target Name="CreateManifestResourceNames" />
 </Project>
