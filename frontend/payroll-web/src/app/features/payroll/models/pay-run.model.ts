@@ -24,14 +24,21 @@ export interface PayRunSummary {
 
 export interface PayRunDetail extends PayRunSummary {
   paySlips: PaySlip[];
-  approvals?: PayRunApproval[];
+  statusHistory?: PayRunStatusHistory[];
+  preparedAt?: string | null;
+  preparedByUserName?: string | null;
+  approvedAt?: string | null;
+  approvedByUserName?: string | null;
+  lockedAt?: string | null;
+  lockedByUserName?: string | null;
 }
 
-export interface PayRunApproval {
+export interface PayRunStatusHistory {
   id: string;
   fromStatus: PayRunStatus;
   toStatus: PayRunStatus;
-  actionedBy: string;
-  comments?: string | null;
+  actorUserName: string;
+  actorUserId?: string | null;
+  comment?: string | null;
   actionedAt: string;
 }

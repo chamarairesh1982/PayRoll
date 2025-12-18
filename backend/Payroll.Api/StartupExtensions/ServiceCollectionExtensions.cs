@@ -76,4 +76,5 @@ public class SimpleCurrentUserService : ICurrentUserService
 {
     public string? UserId { get; set; }
     public string? UserName { get; set; }
+    public IReadOnlyCollection<string> Roles { get; set; } = Array.Empty<string>();
 }

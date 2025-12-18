@@ -21,6 +21,7 @@ public class ApiExceptionFilter : IExceptionFilter
             ArgumentException ex => (StatusCodes.Status400BadRequest, ex.Message),
             InvalidOperationException ex => (StatusCodes.Status400BadRequest, ex.Message),
             KeyNotFoundException ex => (StatusCodes.Status404NotFound, ex.Message),
+            Payroll.Application.Exceptions.ForbiddenAccessException ex => (StatusCodes.Status403Forbidden, ex.Message),
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred")
         };
 

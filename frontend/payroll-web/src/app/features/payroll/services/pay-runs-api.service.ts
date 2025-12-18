@@ -7,8 +7,7 @@ import { PayPeriodType, PayRunDetail, PayRunStatus, PayRunSummary } from '../mod
 import { PaySlip } from '../models/payslip.model';
 
 export interface PayRunActionRequest {
-  actionedBy?: string;
-  comments?: string;
+  comment?: string;
 }
 
 @Injectable({ providedIn: 'root' })

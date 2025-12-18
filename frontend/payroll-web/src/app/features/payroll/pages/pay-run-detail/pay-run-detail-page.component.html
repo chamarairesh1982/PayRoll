@@ -18,32 +18,52 @@
     <div><strong>Employees:</strong> {{ payRun.employeeCount }}</div>
     <div><strong>Total Net Pay:</strong> {{ payRun.totalNetPay }}</div>
     <div><strong>Locked:</strong> {{ payRun.isLocked ? 'Yes' : 'No' }}</div>
+    <div *ngIf="payRun.preparedAt"><strong>Prepared:</strong> {{ payRun.preparedAt }} by {{ payRun.preparedByUserName || 'Unknown' }}</div>
+    <div *ngIf="payRun.approvedAt"><strong>Approved:</strong> {{ payRun.approvedAt }} by {{ payRun.approvedByUserName || 'Unknown' }}</div>
+    <div *ngIf="payRun.lockedAt"><strong>Locked:</strong> {{ payRun.lockedAt }} by {{ payRun.lockedByUserName || 'Unknown' }}</div>
   </div>
 
   <div class="approval-form">
-    <h3>Approval details</h3>
+    <h3>Action comment</h3>
     <label>
-      Actioned by
-      <input type="text" [(ngModel)]="actionedBy" placeholder="Approver name" />
+      Comment
+      <textarea [(ngModel)]="actionComment" rows="2" placeholder="Add approval or lock notes"></textarea>
     </label>
-    <label>
-      Comments
-      <textarea [(ngModel)]="approvalComments" rows="2" placeholder="Add approval notes"></textarea>
-    </label>
-    <div class="helper-text">Comments are sent with approvals, locks, and unlocks for audit tracking.</div>
+    <div class="helper-text">Comments are required for approvals and locking and stored in the status history.</div>
   </div>
 
   <div class="actions">
+    <button type="button" (click)="prepare()" [disabled]="!canPrepare || isChangingStatus">Prepare</button>
     <button type="button" (click)="recalculate()" [disabled]="!canRecalculate || isRecalculating">
       {{ isRecalculating ? 'Recalculating...' : 'Recalculate' }}
     </button>
-    <button type="button" (click)="changeStatus('Approved')" [disabled]="!canApprove || isChangingStatus">
-      Approve
-    </button>
-    <button type="button" (click)="changeStatus('Locked')" [disabled]="!canLock || isChangingStatus">
-      Lock
-    </button>
-    <button type="button" (click)="changeStatus('Approved')" [disabled]="!canUnlock || isChangingStatus">Unlock</button>
+    <button type="button" (click)="approve()" [disabled]="!canApprove || isChangingStatus">Approve</button>
+    <button type="button" (click)="lock()" [disabled]="!canLock || isChangingStatus">Lock</button>
+  </div>
+
+  <div class="status-history">
+    <h2>Status history</h2>
+    <table class="table" *ngIf="payRun.statusHistory?.length; else noHistory">
+      <thead>
+        <tr>
+          <th>When</th>
+          <th>Actor</th>
+          <th>From → To</th>
+          <th>Comment</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let history of payRun.statusHistory">
+          <td>{{ history.actionedAt }}</td>
+          <td>{{ history.actorUserName }}</td>
+          <td>{{ history.fromStatus }} → {{ history.toStatus }}</td>
+          <td>{{ history.comment || '—' }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <ng-template #noHistory>
+      <div>No status changes recorded yet.</div>
+    </ng-template>
   </div>
 
   <div class="payslips">
