@@ -6,6 +6,11 @@ import { PaginatedResult } from '../../employees/models/employee.model';
 import { PayPeriodType, PayRunDetail, PayRunStatus, PayRunSummary } from '../models/pay-run.model';
 import { PaySlip } from '../models/payslip.model';
 
+export interface PayRunActionRequest {
+  actionedBy?: string;
+  comments?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PayRunsApiService {
   private baseUrl = `${environment.apiBaseUrl}/payruns`;
@@ -60,6 +65,18 @@ export class PayRunsApiService {
 
   changeStatus(id: string, status: PayRunStatus): Observable<void> {
     return this.http.post<void>(`${this.baseUrl}/${id}/status`, { status });
+  }
+
+  approvePayRun(id: string, payload?: PayRunActionRequest): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${id}/approve`, payload ?? {});
+  }
+
+  lockPayRun(id: string, payload?: PayRunActionRequest): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${id}/lock`, payload ?? {});
+  }
+
+  unlockPayRun(id: string, payload?: PayRunActionRequest): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${id}/unlock`, payload ?? {});
   }
 
   getPaySlip(payRunId: string, paySlipId: string): Observable<PaySlip> {

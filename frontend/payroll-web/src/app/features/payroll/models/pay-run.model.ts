@@ -1,6 +1,6 @@
 import { PaySlip } from './payslip.model';
 
-export type PayRunStatus = 'Draft' | 'Calculated' | 'UnderReview' | 'Approved' | 'Posted' | 'Cancelled';
+export type PayRunStatus = 'Draft' | 'Calculated' | 'Approved' | 'Locked';
 
 export type PayPeriodType = 'Monthly' | 'Weekly' | 'Custom';
 
@@ -20,4 +20,14 @@ export interface PayRunSummary {
 
 export interface PayRunDetail extends PayRunSummary {
   paySlips: PaySlip[];
+  approvals?: PayRunApproval[];
+}
+
+export interface PayRunApproval {
+  id: string;
+  fromStatus: PayRunStatus;
+  toStatus: PayRunStatus;
+  actionedBy: string;
+  comments?: string | null;
+  actionedAt: string;
 }

@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
 import { AttendanceApiService } from '../../services/attendance-api.service';
 import { AttendanceRecord } from '../../models/attendance-record.model';
 import { PaginatedResult } from '../../../employees/models/employee.model';
@@ -16,15 +15,10 @@ export class AttendanceListPageComponent implements OnInit {
   totalCount = 0;
   isLoading = false;
 
-  selectedDate?: string;
-  selectedEmployeeId?: string;
-
-  showConfirm = false;
-  recordToDelete: AttendanceRecord | null = null;
-
   showCreateForm = false;
+  errorMessage: string | null = null;
 
-  constructor(private attendanceApi: AttendanceApiService, private router: Router) {}
+  constructor(private attendanceApi: AttendanceApiService) {}
 
   ngOnInit(): void {
     this.loadRecords();
@@ -32,8 +26,9 @@ export class AttendanceListPageComponent implements OnInit {
 
   loadRecords(): void {
     this.isLoading = true;
+    this.errorMessage = null;
     this.attendanceApi
-      .getAttendanceRecords({ page: this.page, pageSize: this.pageSize, date: this.selectedDate, employeeId: this.selectedEmployeeId })
+      .getAttendanceRecords({ page: this.page, pageSize: this.pageSize })
       .subscribe({
         next: (result: PaginatedResult<AttendanceRecord>) => {
           this.records = result.items;
@@ -44,20 +39,10 @@ export class AttendanceListPageComponent implements OnInit {
         },
         error: err => {
           console.error('Failed to load attendance records', err);
+          this.errorMessage = 'Failed to load attendance records. Please try again.';
           this.isLoading = false;
         },
       });
-  }
-
-  applyFilters(): void {
-    this.page = 1;
-    this.loadRecords();
-  }
-
-  resetFilters(): void {
-    this.selectedDate = undefined;
-    this.selectedEmployeeId = undefined;
-    this.applyFilters();
   }
 
   toggleCreateForm(): void {
@@ -65,42 +50,15 @@ export class AttendanceListPageComponent implements OnInit {
   }
 
   handleCreate(payload: Partial<AttendanceRecord>): void {
-    this.attendanceApi.createAttendanceRecord(payload).subscribe({
+    this.errorMessage = null;
+    this.attendanceApi.recordAttendance(payload).subscribe({
       next: () => {
         this.showCreateForm = false;
         this.loadRecords();
       },
-      error: err => console.error('Failed to create attendance record', err),
-    });
-  }
-
-  editRecord(record: AttendanceRecord): void {
-    this.router.navigate(['/attendance', record.id, 'edit']);
-  }
-
-  confirmDelete(record: AttendanceRecord): void {
-    this.recordToDelete = record;
-    this.showConfirm = true;
-  }
-
-  cancelDelete(): void {
-    this.recordToDelete = null;
-    this.showConfirm = false;
-  }
-
-  deleteRecord(): void {
-    if (!this.recordToDelete) {
-      return;
-    }
-
-    this.attendanceApi.deleteAttendanceRecord(this.recordToDelete.id).subscribe({
-      next: () => {
-        this.cancelDelete();
-        this.loadRecords();
-      },
       error: err => {
-        console.error('Failed to delete attendance record', err);
-        this.cancelDelete();
+        console.error('Failed to record attendance', err);
+        this.errorMessage = 'Failed to record attendance. Please check the details and try again.';
       },
     });
   }
