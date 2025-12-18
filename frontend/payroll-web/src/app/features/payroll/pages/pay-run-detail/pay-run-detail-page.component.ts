@@ -88,17 +88,23 @@ export class PayRunDetailPageComponent implements OnInit {
     this.errorMessage = null;
     this.isChangingStatus = true;
 
-    let request$: ReturnType<PayRunsApiService['approvePayRun']> | ReturnType<PayRunsApiService['lockPayRun']> | ReturnType<PayRunsApiService['unlockPayRun']>;
+    let request$:
+      | ReturnType<PayRunsApiService['approvePayRun']>
+      | ReturnType<PayRunsApiService['lockPayRun']>
+      | ReturnType<PayRunsApiService['unlockPayRun']>;
 
     switch (newStatus) {
       case 'Approved':
-        request$ = this.payRunsApi.approvePayRun(this.payRun.id, action);
+        request$ =
+          this.payRun.status === 'Locked'
+            ? this.payRunsApi.unlockPayRun(this.payRun.id, action)
+            : this.payRunsApi.approvePayRun(this.payRun.id, action);
         break;
       case 'Locked':
         request$ = this.payRunsApi.lockPayRun(this.payRun.id, action);
         break;
       default:
-        request$ = this.payRunsApi.unlockPayRun(this.payRun.id, action);
+        request$ = this.payRunsApi.changeStatus(this.payRun.id, newStatus);
         break;
     }
 
@@ -124,11 +130,11 @@ export class PayRunDetailPageComponent implements OnInit {
   }
 
   get canRecalculate(): boolean {
-    return !!this.payRun && !this.payRun.isLocked && (this.payRun.status === 'Draft' || this.payRun.status === 'Calculated');
+    return !!this.payRun && !this.payRun.isLocked && (this.payRun.status === 'Draft' || this.payRun.status === 'Prepared');
   }
 
   get canApprove(): boolean {
-    return !!this.payRun && !this.payRun.isLocked && this.payRun.status === 'Calculated';
+    return !!this.payRun && !this.payRun.isLocked && this.payRun.status === 'Prepared';
   }
 
   get canLock(): boolean {

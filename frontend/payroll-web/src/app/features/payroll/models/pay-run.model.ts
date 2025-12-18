@@ -1,6 +1,6 @@
 import { PaySlip } from './payslip.model';
 
-export type PayRunStatus = 'Draft' | 'Calculated' | 'Approved' | 'Locked';
+export type PayRunStatus = 'Draft' | 'Prepared' | 'Approved' | 'Locked';
 
 export type PayPeriodType = 'Monthly' | 'Weekly' | 'Custom';
 
