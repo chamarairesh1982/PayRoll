@@ -13,6 +13,7 @@ using Payroll.Application.Interfaces;
 using Payroll.Application.PayrollConfig;
 using Payroll.Application.PayrollConfig.DTOs;
 using Payroll.Application.Exceptions;
+using Payroll.Domain.GeneralLedger;
 using Payroll.Domain.Attendance;
 using Payroll.Domain.Employees;
 using Payroll.Domain.Loans;
@@ -366,6 +367,12 @@ public class PayrollService : IPayrollService
             payRun.ApprovedByUserName,
             payRun.LockedAt,
             payRun.LockedByUserName,
+            payRun.GeneralLedgerStatus,
+            payRun.GeneralLedgerReviewedAt,
+            payRun.GeneralLedgerReviewedByUserName,
+            payRun.GeneralLedgerApprovedAt,
+            payRun.GeneralLedgerApprovedByUserName,
+            payRun.GeneralLedgerExportedAt,
             payRun.PeriodStart,
             payRun.PeriodEnd,
             payRun.PayDate,
@@ -622,6 +629,226 @@ public class PayrollService : IPayrollService
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<GeneralLedgerExportDto> GenerateGeneralLedgerExportAsync(Guid payRunId, CancellationToken cancellationToken = default)
+    {
+        EnsureRole("Maker", "generate general ledger exports");
+
+        var payRun = await LoadPayRunWithSlipsForUpdateAsync(payRunId, cancellationToken);
+        if (payRun is null)
+        {
+            throw new KeyNotFoundException("Pay run not found");
+        }
+
+        if (payRun.Status != PayRunStatus.Approved && payRun.Status != PayRunStatus.Locked)
+        {
+            throw new InvalidOperationException("General ledger exports can only be generated for approved or locked pay runs.");
+        }
+
+        var mappings = await _dbContext.GeneralLedgerAccountMappings.AsNoTracking().ToListAsync(cancellationToken);
+        if (!mappings.Any())
+        {
+            throw new InvalidOperationException("No general ledger account mappings have been configured.");
+        }
+
+        var export = BuildGeneralLedgerExport(payRun, mappings);
+
+        var beforeSnapshot = CreatePayRunSnapshot(payRun);
+        payRun.GeneralLedgerStatus = GeneralLedgerExportStatus.Generated;
+        payRun.GeneralLedgerExportedAt = null;
+        export.Status = payRun.GeneralLedgerStatus;
+
+        await _auditLogger.LogAsync(
+            nameof(PayRun),
+            payRun.Id.ToString(),
+            "GeneralLedgerGenerated",
+            beforeSnapshot,
+            CreatePayRunSnapshot(payRun),
+            _currentUserService.UserName,
+            cancellationToken);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return export;
+    }
+
+    public async Task ReviewGeneralLedgerExportAsync(Guid payRunId, GeneralLedgerActionRequest request, CancellationToken cancellationToken = default)
+    {
+        EnsureRole("Approver", "review general ledger exports");
+
+        var payRun = await _dbContext.PayRuns.FirstOrDefaultAsync(pr => pr.Id == payRunId, cancellationToken);
+        if (payRun is null)
+        {
+            throw new KeyNotFoundException("Pay run not found");
+        }
+
+        if (payRun.GeneralLedgerStatus != GeneralLedgerExportStatus.Generated)
+        {
+            throw new InvalidOperationException("Only generated exports can be moved to review.");
+        }
+
+        var actor = GetActor();
+        var beforeSnapshot = CreatePayRunSnapshot(payRun);
+
+        payRun.GeneralLedgerStatus = GeneralLedgerExportStatus.Reviewed;
+        payRun.GeneralLedgerReviewedAt = DateTime.UtcNow;
+        payRun.GeneralLedgerReviewedByUserId = string.IsNullOrWhiteSpace(actor.UserId) ? null : actor.UserId;
+        payRun.GeneralLedgerReviewedByUserName = actor.UserName;
+
+        await _auditLogger.LogAsync(
+            nameof(PayRun),
+            payRun.Id.ToString(),
+            "GeneralLedgerReviewed",
+            beforeSnapshot,
+            CreatePayRunSnapshot(payRun),
+            actor.UserName,
+            cancellationToken,
+            request.Comment);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task ApproveGeneralLedgerExportAsync(Guid payRunId, GeneralLedgerActionRequest request, CancellationToken cancellationToken = default)
+    {
+        EnsureRole("Approver", "approve general ledger exports");
+
+        var payRun = await _dbContext.PayRuns.FirstOrDefaultAsync(pr => pr.Id == payRunId, cancellationToken);
+        if (payRun is null)
+        {
+            throw new KeyNotFoundException("Pay run not found");
+        }
+
+        if (payRun.GeneralLedgerStatus != GeneralLedgerExportStatus.Reviewed)
+        {
+            throw new InvalidOperationException("General ledger exports must be reviewed before approval.");
+        }
+
+        var actor = GetActor();
+        var beforeSnapshot = CreatePayRunSnapshot(payRun);
+
+        payRun.GeneralLedgerStatus = GeneralLedgerExportStatus.Approved;
+        payRun.GeneralLedgerApprovedAt = DateTime.UtcNow;
+        payRun.GeneralLedgerApprovedByUserId = string.IsNullOrWhiteSpace(actor.UserId) ? null : actor.UserId;
+        payRun.GeneralLedgerApprovedByUserName = actor.UserName;
+
+        await _auditLogger.LogAsync(
+            nameof(PayRun),
+            payRun.Id.ToString(),
+            "GeneralLedgerApproved",
+            beforeSnapshot,
+            CreatePayRunSnapshot(payRun),
+            actor.UserName,
+            cancellationToken,
+            request.Comment);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<FileExportResultDto?> ExportGeneralLedgerAsync(Guid payRunId, CancellationToken cancellationToken = default)
+    {
+        EnsureRole("Approver", "export general ledger postings");
+
+        var payRun = await LoadPayRunWithSlipsForUpdateAsync(payRunId, cancellationToken);
+        if (payRun is null)
+        {
+            return null;
+        }
+
+        if (payRun.GeneralLedgerStatus != GeneralLedgerExportStatus.Approved)
+        {
+            throw new InvalidOperationException("General ledger exports can only be generated after approval.");
+        }
+
+        var mappings = await _dbContext.GeneralLedgerAccountMappings.AsNoTracking().ToListAsync(cancellationToken);
+        if (!mappings.Any())
+        {
+            throw new InvalidOperationException("No general ledger account mappings have been configured.");
+        }
+
+        var export = BuildGeneralLedgerExport(payRun, mappings);
+        var builder = new StringBuilder();
+        builder.AppendLine("DebitAccount,CreditAccount,Amount,Narrative");
+        foreach (var entry in export.Entries)
+        {
+            builder.AppendLine($"{entry.DebitAccount},{entry.CreditAccount},{entry.Amount:N2},\"{entry.Narrative.Replace("\"", "''")}\"");
+        }
+
+        var beforeSnapshot = CreatePayRunSnapshot(payRun);
+        payRun.GeneralLedgerStatus = GeneralLedgerExportStatus.Exported;
+        payRun.GeneralLedgerExportedAt = DateTime.UtcNow;
+
+        await _auditLogger.LogAsync(
+            nameof(PayRun),
+            payRun.Id.ToString(),
+            "GeneralLedgerExported",
+            beforeSnapshot,
+            CreatePayRunSnapshot(payRun),
+            _currentUserService.UserName,
+            cancellationToken);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return new FileExportResultDto
+        {
+            FileName = $"GL-{payRun.Code}-{DateTime.UtcNow:yyyyMMddHHmmss}.csv",
+            ContentType = "text/csv",
+            ContentBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(builder.ToString()))
+        };
+    }
+
+    public async Task<List<GeneralLedgerAccountMappingDto>> GetGeneralLedgerAccountMappingsAsync(CancellationToken cancellationToken = default)
+    {
+        var mappings = await _dbContext.GeneralLedgerAccountMappings
+            .AsNoTracking()
+            .OrderBy(m => m.MappingType)
+            .ThenBy(m => m.Code)
+            .ToListAsync(cancellationToken);
+
+        return mappings.Select(MapToDto).ToList();
+    }
+
+    public async Task<GeneralLedgerAccountMappingDto> UpsertGeneralLedgerAccountMappingAsync(UpsertGeneralLedgerAccountMappingRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Code))
+        {
+            throw new ValidationException("Mapping code is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.DebitAccount) || string.IsNullOrWhiteSpace(request.CreditAccount))
+        {
+            throw new ValidationException("Both debit and credit accounts must be provided.");
+        }
+
+        GeneralLedgerAccountMapping mapping;
+        if (request.Id.HasValue)
+        {
+            mapping = await _dbContext.GeneralLedgerAccountMappings.FirstOrDefaultAsync(m => m.Id == request.Id.Value, cancellationToken)
+                ?? throw new KeyNotFoundException("Mapping not found");
+        }
+        else
+        {
+            mapping = new GeneralLedgerAccountMapping
+            {
+                Id = Guid.NewGuid(),
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = _currentUserService.UserName ?? "System"
+            };
+            await _dbContext.GeneralLedgerAccountMappings.AddAsync(mapping, cancellationToken);
+        }
+
+        mapping.Code = request.Code.Trim();
+        mapping.Name = request.Name.Trim();
+        mapping.MappingType = request.MappingType;
+        mapping.DebitAccount = request.DebitAccount.Trim();
+        mapping.CreditAccount = request.CreditAccount.Trim();
+        mapping.Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
+        mapping.ModifiedAt = DateTime.UtcNow;
+        mapping.ModifiedBy = _currentUserService.UserName;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return MapToDto(mapping);
+    }
+
     public async Task<ApitReportDto?> GetApitReportAsync(Guid payRunId, CancellationToken cancellationToken = default)
     {
         var payRun = await LoadPayRunWithSlipsAsync(payRunId, cancellationToken);
@@ -874,6 +1101,16 @@ public class PayrollService : IPayrollService
                 .ThenInclude(ps => ps.Employee)
             .Include(pr => pr.Approvals)
             .AsNoTracking()
+            .FirstOrDefaultAsync(pr => pr.Id == payRunId, cancellationToken);
+    }
+
+    private Task<PayRun?> LoadPayRunWithSlipsForUpdateAsync(Guid payRunId, CancellationToken cancellationToken)
+    {
+        return _dbContext.PayRuns
+            .Include(pr => pr.PaySlips)
+                .ThenInclude(ps => ps.Earnings)
+            .Include(pr => pr.PaySlips)
+                .ThenInclude(ps => ps.Deductions)
             .FirstOrDefaultAsync(pr => pr.Id == payRunId, cancellationToken);
     }
 
@@ -1543,6 +1780,12 @@ public class PayrollService : IPayrollService
             ExportedBank = payRun.ExportedBank,
             ExportedAt = payRun.ExportedAt,
             ExportDownloadedAt = payRun.ExportDownloadedAt,
+            GeneralLedgerStatus = payRun.GeneralLedgerStatus,
+            GeneralLedgerReviewedAt = payRun.GeneralLedgerReviewedAt,
+            GeneralLedgerReviewedByUserName = payRun.GeneralLedgerReviewedByUserName,
+            GeneralLedgerApprovedAt = payRun.GeneralLedgerApprovedAt,
+            GeneralLedgerApprovedByUserName = payRun.GeneralLedgerApprovedByUserName,
+            GeneralLedgerExportedAt = payRun.GeneralLedgerExportedAt,
             IsLocked = payRun.IsLocked,
             EmployeeCount = employeeCount,
             TotalNetPay = totalNet
@@ -1622,6 +1865,126 @@ public class PayrollService : IPayrollService
             Earnings = paySlip.Earnings.Select(e => new EarningDto(e.Id, e.Code, e.Description, e.Amount, e.IsEpfApplicable, e.IsEtfApplicable, e.IsTaxable)).ToList(),
             Deductions = paySlip.Deductions.Select(d => new DeductionDto(d.Id, d.Code, d.Description, d.Amount, d.IsPreTax, d.IsPostTax)).ToList()
         };
+    }
+
+    private static GeneralLedgerAccountMappingDto MapToDto(GeneralLedgerAccountMapping mapping)
+    {
+        return new GeneralLedgerAccountMappingDto
+        {
+            Id = mapping.Id,
+            Code = mapping.Code,
+            Name = mapping.Name,
+            MappingType = mapping.MappingType,
+            DebitAccount = mapping.DebitAccount,
+            CreditAccount = mapping.CreditAccount,
+            Notes = mapping.Notes
+        };
+    }
+
+    private GeneralLedgerExportDto BuildGeneralLedgerExport(PayRun payRun, List<GeneralLedgerAccountMapping> mappings)
+    {
+        var journal = new Dictionary<(string Debit, string Credit, string Narrative), decimal>(StringComparer.OrdinalIgnoreCase);
+
+        void AddEntry(GeneralLedgerAccountMapping mapping, decimal amount, string narrative)
+        {
+            if (amount == 0)
+            {
+                return;
+            }
+
+            var key = (mapping.DebitAccount, mapping.CreditAccount, narrative);
+            journal[key] = journal.TryGetValue(key, out var existing)
+                ? existing + amount
+                : amount;
+        }
+
+        foreach (var paySlip in payRun.PaySlips)
+        {
+            foreach (var earning in paySlip.Earnings)
+            {
+                var mapping = ResolveMapping(mappings, earning.Code, GeneralLedgerMappingType.Earning);
+                AddEntry(mapping, earning.Amount, earning.Description);
+            }
+
+            foreach (var deduction in paySlip.Deductions)
+            {
+                var mapping = ResolveMapping(mappings, deduction.Code, GeneralLedgerMappingType.Deduction);
+                AddEntry(mapping, deduction.Amount, deduction.Description);
+            }
+
+            if (paySlip.EmployerEpf > 0)
+            {
+                var mapping = TryResolveMapping(mappings, "EPF_ER", GeneralLedgerMappingType.EmployerContribution);
+                if (mapping is not null)
+                {
+                    AddEntry(mapping, paySlip.EmployerEpf, "Employer EPF");
+                }
+            }
+
+            if (paySlip.EmployerEtf > 0)
+            {
+                var mapping = TryResolveMapping(mappings, "ETF_ER", GeneralLedgerMappingType.EmployerContribution);
+                if (mapping is not null)
+                {
+                    AddEntry(mapping, paySlip.EmployerEtf, "Employer ETF");
+                }
+            }
+        }
+
+        var netPayTotal = payRun.PaySlips.Sum(ps => ps.NetPay);
+        var netPayMapping = TryResolveMapping(mappings, "NET_PAY", GeneralLedgerMappingType.NetPayClearing);
+        if (netPayMapping is not null)
+        {
+            AddEntry(netPayMapping, netPayTotal, "Net pay clearing");
+        }
+
+        var entries = journal
+            .Select(kvp => new GeneralLedgerJournalEntryDto
+            {
+                DebitAccount = kvp.Key.Debit,
+                CreditAccount = kvp.Key.Credit,
+                Narrative = kvp.Key.Narrative,
+                Amount = RoundCurrency(kvp.Value)
+            })
+            .OrderBy(e => e.DebitAccount)
+            .ThenBy(e => e.CreditAccount)
+            .ThenBy(e => e.Narrative)
+            .ToList();
+
+        var total = entries.Sum(e => e.Amount);
+
+        return new GeneralLedgerExportDto
+        {
+            PayRunId = payRun.Id,
+            Status = payRun.GeneralLedgerStatus,
+            Entries = entries,
+            TotalDebits = total,
+            TotalCredits = total,
+            IsBalanced = true,
+            GeneratedAt = DateTime.UtcNow
+        };
+    }
+
+    private static GeneralLedgerAccountMapping ResolveMapping(IEnumerable<GeneralLedgerAccountMapping> mappings, string code, GeneralLedgerMappingType type)
+    {
+        var mapping = TryResolveMapping(mappings, code, type);
+        if (mapping is null)
+        {
+            throw new InvalidOperationException($"No general ledger mapping configured for {code} ({type}).");
+        }
+
+        return mapping;
+    }
+
+    private static GeneralLedgerAccountMapping? TryResolveMapping(IEnumerable<GeneralLedgerAccountMapping> mappings, string code, GeneralLedgerMappingType type)
+    {
+        var direct = mappings.FirstOrDefault(m => m.MappingType == type && string.Equals(m.Code, code, StringComparison.OrdinalIgnoreCase));
+        if (direct is not null)
+        {
+            return direct;
+        }
+
+        return mappings.FirstOrDefault(m => m.MappingType == type && m.Code == "*");
     }
 
     private static string BuildPayslipHash(PayRun payRun, PaySlip paySlip)

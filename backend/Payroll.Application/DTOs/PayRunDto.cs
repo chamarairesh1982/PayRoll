@@ -21,6 +21,12 @@ public class PayRunSummaryDto
     public string? ExportedBank { get; set; }
     public DateTime? ExportedAt { get; set; }
     public DateTime? ExportDownloadedAt { get; set; }
+    public GeneralLedgerExportStatus GeneralLedgerStatus { get; set; }
+    public DateTime? GeneralLedgerReviewedAt { get; set; }
+    public string? GeneralLedgerReviewedByUserName { get; set; }
+    public DateTime? GeneralLedgerApprovedAt { get; set; }
+    public string? GeneralLedgerApprovedByUserName { get; set; }
+    public DateTime? GeneralLedgerExportedAt { get; set; }
     public int EmployeeCount { get; set; }
     public decimal TotalNetPay { get; set; }
 }
