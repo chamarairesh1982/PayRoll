@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { PaginatedResult } from '../../employees/models/employee.model';
-import { TaxRuleSet, TaxSlab } from '../models/tax-rule-set.model';
+import { TaxRelief, TaxRuleSet, TaxSlab } from '../models/tax-rule-set.model';
 
 @Injectable({ providedIn: 'root' })
 export class TaxRuleSetsApiService {
@@ -53,6 +53,14 @@ export class TaxRuleSetsApiService {
           toAmount: slab.toAmount ?? null,
           ratePercent: slab.ratePercent,
           order: slab.order,
+        })) || [],
+      reliefs:
+        payload.reliefs?.map((relief: TaxRelief) => ({
+          id: relief.id,
+          name: relief.name,
+          amount: relief.amount,
+          reliefType: relief.reliefType,
+          frequency: relief.frequency,
         })) || [],
     };
   }

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { PaginatedResult } from '../../employees/models/employee.model';
 import { BankExportResult, PayPeriodType, PayRunDetail, PayRunStatus, PayRunSummary } from '../models/pay-run.model';
+import { ApitReport, FileExportResult } from '../models/apit-report.model';
 import { PaySlip } from '../models/payslip.model';
 
 export interface PayRunActionRequest {
@@ -120,5 +121,13 @@ export class PayRunsApiService {
 
   getPaySlip(payRunId: string, paySlipId: string): Observable<PaySlip> {
     return this.http.get<PaySlip>(`${this.baseUrl}/${payRunId}/payslips/${paySlipId}`);
+  }
+
+  getApitReport(payRunId: string): Observable<ApitReport> {
+    return this.http.get<ApitReport>(`${this.baseUrl}/${payRunId}/apit-report`);
+  }
+
+  downloadApitCertificate(payRunId: string, paySlipId: string): Observable<FileExportResult> {
+    return this.http.get<FileExportResult>(`${this.baseUrl}/${payRunId}/payslips/${paySlipId}/apit-certificate`);
   }
 }

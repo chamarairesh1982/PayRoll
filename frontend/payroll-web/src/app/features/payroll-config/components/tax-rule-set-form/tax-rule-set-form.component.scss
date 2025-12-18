@@ -47,3 +47,32 @@ button {
   color: #ffffff;
   font-weight: 700;
 }
+
+.reliefs {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.reliefs__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.relief-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  align-items: end;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.relief-grid .danger {
+  background: #dc2626;
+}
