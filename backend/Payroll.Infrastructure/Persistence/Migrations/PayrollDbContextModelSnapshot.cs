@@ -1459,6 +1459,55 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Payroll.Domain.PayrollConfig.TaxRelief", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Frequency")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("ReliefType")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TaxRuleSetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TaxRuleSetId");
+
+                    b.ToTable("TaxReliefs", (string)null);
+                });
+
             modelBuilder.Entity("Payroll.Domain.PayrollConfig.TaxSlab", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1663,6 +1712,17 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.Navigation("PayRun");
                 });
 
+            modelBuilder.Entity("Payroll.Domain.PayrollConfig.TaxRelief", b =>
+                {
+                    b.HasOne("Payroll.Domain.PayrollConfig.TaxRuleSet", "TaxRuleSet")
+                        .WithMany("Reliefs")
+                        .HasForeignKey("TaxRuleSetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TaxRuleSet");
+                });
+
             modelBuilder.Entity("Payroll.Domain.PayrollConfig.TaxSlab", b =>
                 {
                     b.HasOne("Payroll.Domain.PayrollConfig.TaxRuleSet", "TaxRuleSet")
@@ -1705,6 +1765,8 @@ namespace Payroll.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Payroll.Domain.PayrollConfig.TaxRuleSet", b =>
                 {
+                    b.Navigation("Reliefs");
+
                     b.Navigation("Slabs");
                 });
 #pragma warning restore 612, 618

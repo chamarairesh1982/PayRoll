@@ -31,6 +31,7 @@ public interface IPayrollDbContext
     DbSet<EpfEtfRuleSet> EpfEtfRuleSets { get; }
     DbSet<TaxRuleSet> TaxRuleSets { get; }
     DbSet<TaxSlab> TaxSlabs { get; }
+    DbSet<TaxRelief> TaxReliefs { get; }
     DbSet<EmployeePayItem> EmployeePayItems { get; }
     DbSet<PayrollSettings> PayrollSettings { get; }
     DbSet<AuditLog> AuditLogs { get; }

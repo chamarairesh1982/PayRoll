@@ -127,6 +127,37 @@
   padding-left: 1.5rem;
 }
 
+.apit-report {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #ffffff;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.apit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.apit-header button {
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.apit-summary {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
 .overtime-review {
   display: grid;
   gap: 0.75rem;

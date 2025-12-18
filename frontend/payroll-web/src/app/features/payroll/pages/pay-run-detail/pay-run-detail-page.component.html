@@ -48,6 +48,61 @@
     </div>
   </div>
 
+  <div class="apit-report">
+    <div class="apit-header">
+      <div>
+        <h3>APIT reporting</h3>
+        <div class="muted">Generate APIT (PAYE) summary and employee certificates.</div>
+      </div>
+      <button type="button" (click)="loadApitReport()" [disabled]="isLoadingApit || !payRun">
+        {{ isLoadingApit ? 'Loading...' : 'Generate report' }}
+      </button>
+    </div>
+    <div *ngIf="apitError" class="error">{{ apitError }}</div>
+    <div *ngIf="apitReport">
+      <div class="apit-summary">
+        <span><strong>Period APIT:</strong> {{ apitReport.totalTaxForPeriod }}</span>
+        <span><strong>YTD APIT:</strong> {{ apitReport.totalTaxYearToDate }}</span>
+      </div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Taxable earnings</th>
+            <th>Pre-tax deductions</th>
+            <th>Relief</th>
+            <th>Rebate</th>
+            <th>Taxable after relief</th>
+            <th>APIT (period)</th>
+            <th>APIT (YTD)</th>
+            <th>Certificate</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of apitReport.employees">
+            <td>{{ row.employeeCode || row.employeeId }} - {{ row.employeeName || 'N/A' }}</td>
+            <td>{{ row.taxableEarnings }}</td>
+            <td>{{ row.preTaxDeductions }}</td>
+            <td>{{ row.reliefAmount }}</td>
+            <td>{{ row.rebateAmount }}</td>
+            <td>{{ row.taxableAfterRelief }}</td>
+            <td>{{ row.apitWithheld }}</td>
+            <td>{{ row.yearToDateApit }}</td>
+            <td>
+              <button
+                type="button"
+                (click)="downloadApitCertificate(row.paySlipId)"
+                [disabled]="downloadingCertificateId === row.paySlipId"
+              >
+                {{ downloadingCertificateId === row.paySlipId ? 'Preparing...' : 'Download' }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
   <div class="approval-form">
     <h3>Action comment</h3>
     <label>
