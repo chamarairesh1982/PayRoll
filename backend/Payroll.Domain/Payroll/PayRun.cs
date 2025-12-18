@@ -26,6 +26,14 @@ public class PayRun : AuditableEntity, IAggregateRoot
     public string? ExportedBank { get; set; }
     public DateTime? ExportedAt { get; set; }
     public DateTime? ExportDownloadedAt { get; set; }
+    public GeneralLedgerExportStatus GeneralLedgerStatus { get; set; } = GeneralLedgerExportStatus.Pending;
+    public DateTime? GeneralLedgerReviewedAt { get; set; }
+    public string? GeneralLedgerReviewedByUserId { get; set; }
+    public string? GeneralLedgerReviewedByUserName { get; set; }
+    public DateTime? GeneralLedgerApprovedAt { get; set; }
+    public string? GeneralLedgerApprovedByUserId { get; set; }
+    public string? GeneralLedgerApprovedByUserName { get; set; }
+    public DateTime? GeneralLedgerExportedAt { get; set; }
     public DateTime? PreparedAt { get; set; }
     public string? PreparedByUserId { get; set; }
     public string? PreparedByUserName { get; set; }

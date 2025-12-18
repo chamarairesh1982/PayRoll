@@ -93,6 +93,34 @@ public class PayRunsController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{id:guid}/general-ledger/generate")]
+    public async Task<IActionResult> GenerateGeneralLedger(Guid id, CancellationToken cancellationToken = default)
+    {
+        var export = await _payrollService.GenerateGeneralLedgerExportAsync(id, cancellationToken);
+        return Ok(export);
+    }
+
+    [HttpPost("{id:guid}/general-ledger/review")]
+    public async Task<IActionResult> ReviewGeneralLedger(Guid id, [FromBody] GeneralLedgerActionRequest request, CancellationToken cancellationToken = default)
+    {
+        await _payrollService.ReviewGeneralLedgerExportAsync(id, request, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/general-ledger/approve")]
+    public async Task<IActionResult> ApproveGeneralLedger(Guid id, [FromBody] GeneralLedgerActionRequest request, CancellationToken cancellationToken = default)
+    {
+        await _payrollService.ApproveGeneralLedgerExportAsync(id, request, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/general-ledger/export")]
+    public async Task<IActionResult> ExportGeneralLedger(Guid id, CancellationToken cancellationToken = default)
+    {
+        var file = await _payrollService.ExportGeneralLedgerAsync(id, cancellationToken);
+        return file is null ? NotFound() : Ok(file);
+    }
+
     [HttpGet("{id:guid}/apit-report")]
     public async Task<IActionResult> GetApitReport(Guid id, CancellationToken cancellationToken = default)
     {

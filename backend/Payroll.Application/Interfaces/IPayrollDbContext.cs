@@ -3,6 +3,7 @@ using Payroll.Domain.Attendance;
 using Payroll.Domain.Employees;
 using Payroll.Domain.Loans;
 using Payroll.Domain.Leave;
+using Payroll.Domain.GeneralLedger;
 using Payroll.Domain.Overtime;
 using Payroll.Domain.Payroll;
 using Payroll.Domain.PayrollConfig;
@@ -35,5 +36,6 @@ public interface IPayrollDbContext
     DbSet<EmployeePayItem> EmployeePayItems { get; }
     DbSet<PayrollSettings> PayrollSettings { get; }
     DbSet<AuditLog> AuditLogs { get; }
+    DbSet<GeneralLedgerAccountMapping> GeneralLedgerAccountMappings { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Payroll.Application.Interfaces;
 using Payroll.Domain.Attendance;
 using Payroll.Domain.Employees;
+using Payroll.Domain.GeneralLedger;
 using Payroll.Domain.Leave;
 using Payroll.Domain.Loans;
 using Payroll.Domain.Overtime;
@@ -38,6 +39,7 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public DbSet<EmployeePayItem> EmployeePayItems => Set<EmployeePayItem>();
     public DbSet<PayrollSettings> PayrollSettings => Set<PayrollSettings>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<GeneralLedgerAccountMapping> GeneralLedgerAccountMappings => Set<GeneralLedgerAccountMapping>();
     public DbSet<Company> Companies => Set<Company>();
     public DbSet<Branch> Branches => Set<Branch>();
     public DbSet<CostCenter> CostCenters => Set<CostCenter>();

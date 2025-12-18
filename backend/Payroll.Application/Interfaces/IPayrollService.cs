@@ -18,6 +18,12 @@ public interface IPayrollService
     Task<PaySlipDto?> GetPaySlipAsync(Guid payRunId, Guid paySlipId, CancellationToken cancellationToken = default);
     Task<BankExportResultDto> GenerateBankExportAsync(Guid payRunId, BankExportRequest request, CancellationToken cancellationToken = default);
     Task MarkBankExportDownloadedAsync(Guid payRunId, CancellationToken cancellationToken = default);
+    Task<GeneralLedgerExportDto> GenerateGeneralLedgerExportAsync(Guid payRunId, CancellationToken cancellationToken = default);
+    Task ReviewGeneralLedgerExportAsync(Guid payRunId, GeneralLedgerActionRequest request, CancellationToken cancellationToken = default);
+    Task ApproveGeneralLedgerExportAsync(Guid payRunId, GeneralLedgerActionRequest request, CancellationToken cancellationToken = default);
+    Task<FileExportResultDto?> ExportGeneralLedgerAsync(Guid payRunId, CancellationToken cancellationToken = default);
+    Task<List<GeneralLedgerAccountMappingDto>> GetGeneralLedgerAccountMappingsAsync(CancellationToken cancellationToken = default);
+    Task<GeneralLedgerAccountMappingDto> UpsertGeneralLedgerAccountMappingAsync(UpsertGeneralLedgerAccountMappingRequest request, CancellationToken cancellationToken = default);
     Task<ApitReportDto?> GetApitReportAsync(Guid payRunId, CancellationToken cancellationToken = default);
     Task<FileExportResultDto?> GenerateApitCertificateAsync(Guid payRunId, Guid paySlipId, CancellationToken cancellationToken = default);
     Task<FileExportResultDto?> ExportPaySlipAsync(Guid payRunId, Guid paySlipId, string format = "pdf", CancellationToken cancellationToken = default);
