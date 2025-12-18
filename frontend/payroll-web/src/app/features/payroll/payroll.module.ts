@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { SharedModule } from '../../shared/shared.module';
 import { PayRunFormComponent } from './components/pay-run-form/pay-run-form.component';
 import { PayRunCreatePageComponent } from './pages/pay-run-create/pay-run-create-page.component';
@@ -17,6 +17,6 @@ import { PayrollRoutingModule } from './payroll-routing.module';
     PayslipViewPageComponent,
     PayRunFormComponent,
   ],
-  imports: [CommonModule, ReactiveFormsModule, SharedModule, PayrollRoutingModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, SharedModule, PayrollRoutingModule],
 })
 export class PayrollModule {}

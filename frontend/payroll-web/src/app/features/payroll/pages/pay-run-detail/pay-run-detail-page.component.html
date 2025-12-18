@@ -20,6 +20,19 @@
     <div><strong>Locked:</strong> {{ payRun.isLocked ? 'Yes' : 'No' }}</div>
   </div>
 
+  <div class="approval-form">
+    <h3>Approval details</h3>
+    <label>
+      Actioned by
+      <input type="text" [(ngModel)]="actionedBy" placeholder="Approver name" />
+    </label>
+    <label>
+      Comments
+      <textarea [(ngModel)]="approvalComments" rows="2" placeholder="Add approval notes"></textarea>
+    </label>
+    <div class="helper-text">Comments are sent with approvals, locks, and unlocks for audit tracking.</div>
+  </div>
+
   <div class="actions">
     <button type="button" (click)="recalculate()" [disabled]="!canRecalculate || isRecalculating">
       {{ isRecalculating ? 'Recalculating...' : 'Recalculate' }}

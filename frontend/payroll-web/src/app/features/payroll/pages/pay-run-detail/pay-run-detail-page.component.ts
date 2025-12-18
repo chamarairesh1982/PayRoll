@@ -14,6 +14,8 @@ export class PayRunDetailPageComponent implements OnInit {
   isRecalculating = false;
   isChangingStatus = false;
   errorMessage: string | null = null;
+  actionedBy = '';
+  approvalComments = '';
 
   constructor(private route: ActivatedRoute, private payRunsApi: PayRunsApiService, private router: Router) {}
 
@@ -76,8 +78,14 @@ export class PayRunDetailPageComponent implements OnInit {
       return;
     }
 
-    const action: PayRunActionRequest = { actionedBy: 'web-user' };
+    if (!this.actionedBy || !this.approvalComments) {
+      this.errorMessage = 'Please provide your name and approval comments before changing the status.';
+      return;
+    }
 
+    const action: PayRunActionRequest = { actionedBy: this.actionedBy, comments: this.approvalComments };
+
+    this.errorMessage = null;
     this.isChangingStatus = true;
 
     let request$: ReturnType<PayRunsApiService['approvePayRun']> | ReturnType<PayRunsApiService['lockPayRun']> | ReturnType<PayRunsApiService['unlockPayRun']>;
