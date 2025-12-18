@@ -113,4 +113,11 @@ public class PayRunsController : ControllerBase
         var paySlip = await _payrollService.GetPaySlipAsync(payRunId, paySlipId, cancellationToken);
         return paySlip is null ? NotFound() : Ok(paySlip);
     }
+
+    [HttpGet("{payRunId:guid}/payslips/{paySlipId:guid}/export")]
+    public async Task<IActionResult> ExportPaySlip(Guid payRunId, Guid paySlipId, [FromQuery] string format = "pdf", CancellationToken cancellationToken = default)
+    {
+        var file = await _payrollService.ExportPaySlipAsync(payRunId, paySlipId, format, cancellationToken);
+        return file is null ? NotFound() : Ok(file);
+    }
 }
