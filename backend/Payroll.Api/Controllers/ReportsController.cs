@@ -15,9 +15,21 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("statutory")]
-    public async Task<IActionResult> GetStatutoryReport([FromQuery] DateOnly period)
+    public async Task<IActionResult> GetStatutoryReport(
+        [FromQuery] DateOnly period,
+        [FromQuery] Guid? companyId,
+        [FromQuery] Guid? branchId,
+        [FromQuery] Guid? costCenterId,
+        [FromQuery] bool? isConsolidated,
+        CancellationToken cancellationToken)
     {
-        var file = await _reportService.GenerateStatutoryReportAsync(period);
+        var file = await _reportService.GenerateStatutoryReportAsync(
+            period,
+            companyId,
+            branchId,
+            costCenterId,
+            isConsolidated,
+            cancellationToken);
         return File(file, "application/octet-stream", "statutory-report.bin");
     }
 }

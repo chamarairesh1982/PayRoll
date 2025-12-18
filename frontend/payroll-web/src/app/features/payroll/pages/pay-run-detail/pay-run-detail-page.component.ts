@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { BranchOption, CompanyOption, CostCenterOption } from '../../../../shared/models/organization.model';
+import { OrganizationApiService } from '../../../../shared/services/organization-api.service';
 import { PayRunDetail } from '../../models/pay-run.model';
 import { PayRunsApiService } from '../../services/pay-runs-api.service';
 
@@ -15,11 +17,26 @@ export class PayRunDetailPageComponent implements OnInit {
   isChangingStatus = false;
   errorMessage: string | null = null;
   actionComment = '';
+  companies: CompanyOption[] = [];
+  branches: BranchOption[] = [];
+  costCenters: CostCenterOption[] = [];
 
-  constructor(private route: ActivatedRoute, private payRunsApi: PayRunsApiService, private router: Router) {}
+  constructor(
+    private route: ActivatedRoute,
+    private payRunsApi: PayRunsApiService,
+    private organizationApi: OrganizationApiService,
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
+    this.loadScopeOptions();
     this.loadPayRun();
+  }
+
+  loadScopeOptions(): void {
+    this.organizationApi.getCompanies().subscribe(companies => (this.companies = companies));
+    this.organizationApi.getBranches().subscribe(branches => (this.branches = branches));
+    this.organizationApi.getCostCenters().subscribe(costCenters => (this.costCenters = costCenters));
   }
 
   loadPayRun(): void {
@@ -170,5 +187,29 @@ export class PayRunDetailPageComponent implements OnInit {
 
   get canLock(): boolean {
     return !!this.payRun && !this.payRun.isLocked && this.payRun.status === 'Approved';
+  }
+
+  get scopeLabel(): string {
+    if (!this.payRun) {
+      return '';
+    }
+
+    if (this.payRun.isConsolidated) {
+      return 'Consolidated';
+    }
+
+    const companyLabel =
+      this.payRun.companyId && this.companies.find(c => c.id === this.payRun?.companyId)?.name;
+    const branchLabel = this.payRun.branchId && this.branches.find(b => b.id === this.payRun?.branchId)?.name;
+    const costCenterLabel =
+      this.payRun.costCenterId && this.costCenters.find(c => c.id === this.payRun?.costCenterId)?.name;
+
+    const segments = [
+      companyLabel || (this.payRun.companyId ? `Company ${this.payRun.companyId}` : null),
+      branchLabel || (this.payRun.branchId ? `Branch ${this.payRun.branchId}` : null),
+      costCenterLabel || (this.payRun.costCenterId ? `Cost Center ${this.payRun.costCenterId}` : null),
+    ].filter(Boolean);
+
+    return segments.length ? segments.join(' / ') : 'Unscoped';
   }
 }

@@ -25,6 +25,11 @@ public class CostCenterConfiguration : IEntityTypeConfiguration<CostCenter>
         builder.HasOne(cc => cc.Branch)
             .WithMany(b => b.CostCenters)
             .HasForeignKey(cc => cc.BranchId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(cc => cc.Company)
+            .WithMany()
+            .HasForeignKey(cc => cc.CompanyId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

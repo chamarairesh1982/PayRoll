@@ -43,6 +43,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IOvertimeService, OvertimeService>();
         services.AddScoped<ILoanService, LoanService>();
         services.AddScoped<IReportService, ReportService>();
+        services.AddScoped<IOrganizationService, OrganizationService>();
         services.AddScoped<IAllowanceTypeService, AllowanceTypeService>();
         services.AddScoped<IDeductionTypeService, DeductionTypeService>();
         services.AddScoped<IEpfEtfRuleSetService, EpfEtfRuleSetService>();

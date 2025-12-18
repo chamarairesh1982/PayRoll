@@ -6,15 +6,30 @@
 <div class="filters">
   <label>
     Company
-    <input type="text" [(ngModel)]="companyFilter" (change)="onScopeChange()" placeholder="Company Id" />
+    <select [(ngModel)]="companyFilter" (change)="onCompanyChange($event.target.value)">
+      <option value="">All companies</option>
+      <option *ngFor="let company of companies" [value]="company.id">
+        {{ company.name }} ({{ company.code }})
+      </option>
+    </select>
   </label>
   <label>
     Branch
-    <input type="text" [(ngModel)]="branchFilter" (change)="onScopeChange()" placeholder="Branch Id" />
+    <select [(ngModel)]="branchFilter" (change)="onBranchChange($event.target.value)">
+      <option value="">All branches</option>
+      <option *ngFor="let branch of branches" [value]="branch.id">
+        {{ branch.name }} ({{ branch.code }})
+      </option>
+    </select>
   </label>
   <label>
     Cost Center
-    <input type="text" [(ngModel)]="costCenterFilter" (change)="onScopeChange()" placeholder="Cost Center Id" />
+    <select [(ngModel)]="costCenterFilter" (change)="onCostCenterChange($event.target.value)">
+      <option value="">All cost centers</option>
+      <option *ngFor="let costCenter of costCenters" [value]="costCenter.id">
+        {{ costCenter.name }} ({{ costCenter.code }})
+      </option>
+    </select>
   </label>
 </div>
 

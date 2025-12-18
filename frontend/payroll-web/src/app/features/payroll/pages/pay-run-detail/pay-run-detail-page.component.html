@@ -15,6 +15,7 @@
     <div><strong>Period:</strong> {{ payRun.periodStart }} - {{ payRun.periodEnd }}</div>
     <div><strong>Pay Date:</strong> {{ payRun.payDate }}</div>
     <div><strong>Period Type:</strong> {{ payRun.periodType }}</div>
+    <div><strong>Scope:</strong> {{ scopeLabel || 'Unscoped' }}</div>
     <div><strong>Employees:</strong> {{ payRun.employeeCount }}</div>
     <div><strong>Total Net Pay:</strong> {{ payRun.totalNetPay }}</div>
     <div><strong>Locked:</strong> {{ payRun.isLocked ? 'Yes' : 'No' }}</div>
