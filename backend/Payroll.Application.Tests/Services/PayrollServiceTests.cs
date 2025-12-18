@@ -2,6 +2,7 @@ using FluentAssertions;
 using Payroll.Application.DTOs;
 using Payroll.Application.PayrollConfig;
 using Payroll.Application.Services;
+using Payroll.Domain.Leave;
 using Payroll.Domain.Payroll;
 using Payroll.Domain.Overtime;
 using Payroll.Application.Tests.TestInfrastructure;
@@ -313,6 +314,53 @@ public class PayrollServiceTests
         paySlip.Deductions.Should().Contain(d => d.Code == "NOPAY" && d.Amount == expectedNoPay);
         paySlip.EmployeeEpf.Should().Be(expectedEpf);
         paySlip.TotalDeductions.Should().Be(expectedTotalDeductions);
+        paySlip.NetPay.Should().Be(expectedNet);
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Apply_HalfDay_NoPay_Leave_Deduction()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP003A", "Cathy", 26_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+        TestDataSeeder.SeedLeave(context.DbContext, employee, new DateOnly(2025, 4, 8), new DateOnly(2025, 4, 8), LeaveTypeCode.NoPay, 0.5, true);
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+
+        var result = await payrollService.CreatePayRunAsync(request);
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        var dailyRate = Math.Round(26_000m / 26m, 2, MidpointRounding.AwayFromZero);
+        var expectedNoPay = Math.Round(dailyRate * 0.5m, 2, MidpointRounding.AwayFromZero);
+
+        paySlip.Deductions.Should().Contain(d => d.Code == "LEAVE_NOPAY" && d.Amount == expectedNoPay);
+        paySlip.Deductions.Should().NotContain(d => d.Code == "NOPAY");
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Encash_Paid_Leave_When_Overlapping_Absence()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP003B", "Cris", 26_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+        TestDataSeeder.SeedAbsence(context.DbContext, employee, new DateOnly(2025, 4, 12));
+        TestDataSeeder.SeedLeave(context.DbContext, employee, new DateOnly(2025, 4, 12), new DateOnly(2025, 4, 12), LeaveTypeCode.Annual, 1);
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+
+        var result = await payrollService.CreatePayRunAsync(request);
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        var dailyRate = Math.Round(26_000m / 26m, 2, MidpointRounding.AwayFromZero);
+        var expectedEpf = Math.Round(26_000m * 0.08m, 2, MidpointRounding.AwayFromZero);
+        var expectedNet = Math.Round((26_000m + dailyRate) - (expectedEpf + dailyRate), 2, MidpointRounding.AwayFromZero);
+
+        paySlip.Earnings.Should().Contain(e => e.Code == "LEAVE_ENCASH" && e.Amount == dailyRate && !e.IsEpfApplicable && !e.IsTaxable);
+        paySlip.Deductions.Should().Contain(d => d.Code == "NOPAY" && d.Amount == dailyRate);
         paySlip.NetPay.Should().Be(expectedNet);
     }
 
