@@ -41,6 +41,13 @@ public class PayRunsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
+    [HttpPost("{id:guid}/prepare")]
+    public async Task<IActionResult> Prepare(Guid id, [FromBody] PayRunActionRequest request, CancellationToken cancellationToken = default)
+    {
+        await _payrollService.PreparePayRunAsync(id, request, cancellationToken);
+        return NoContent();
+    }
+
     [HttpPost("{id:guid}/recalculate")]
     public async Task<IActionResult> Recalculate(Guid id, [FromBody] RecalculatePayRunRequest request, CancellationToken cancellationToken = default)
     {
