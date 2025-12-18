@@ -1,7 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Payroll.Application.BankExports;
 using Payroll.Application.DTOs;
@@ -442,6 +446,43 @@ public class PayrollService : IPayrollService
             .FirstOrDefaultAsync(ps => ps.Id == paySlipId && ps.PayRunId == payRunId, cancellationToken);
 
         return paySlip is null ? null : MapToDto(paySlip);
+    }
+
+    public async Task<FileExportResultDto?> ExportPaySlipAsync(Guid payRunId, Guid paySlipId, string format = "pdf", CancellationToken cancellationToken = default)
+    {
+        var payRun = await LoadPayRunWithSlipsAsync(payRunId, cancellationToken);
+        if (payRun is null)
+        {
+            return null;
+        }
+
+        var paySlip = payRun.PaySlips.FirstOrDefault(ps => ps.Id == paySlipId);
+        if (paySlip is null)
+        {
+            return null;
+        }
+
+        var authenticityHash = BuildPayslipHash(payRun, paySlip);
+
+        if (string.Equals(format, "html", StringComparison.OrdinalIgnoreCase))
+        {
+            var html = BuildPaySlipHtml(payRun, paySlip, authenticityHash);
+            return new FileExportResultDto
+            {
+                FileName = $"Payslip-{paySlip.Employee?.EmployeeCode ?? paySlip.EmployeeId.ToString()}-{payRun.PayDate:yyyyMMdd}.html",
+                ContentType = "text/html",
+                ContentBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(html))
+            };
+        }
+
+        var pdfBytes = BuildPaySlipPdf(payRun, paySlip, authenticityHash);
+
+        return new FileExportResultDto
+        {
+            FileName = $"Payslip-{paySlip.Employee?.EmployeeCode ?? paySlip.EmployeeId.ToString()}-{payRun.PayDate:yyyyMMdd}.pdf",
+            ContentType = "application/pdf",
+            ContentBase64 = Convert.ToBase64String(pdfBytes)
+        };
     }
 
     public async Task<BankExportResultDto> GenerateBankExportAsync(Guid payRunId, BankExportRequest request, CancellationToken cancellationToken = default)
@@ -1581,6 +1622,215 @@ public class PayrollService : IPayrollService
             Earnings = paySlip.Earnings.Select(e => new EarningDto(e.Id, e.Code, e.Description, e.Amount, e.IsEpfApplicable, e.IsEtfApplicable, e.IsTaxable)).ToList(),
             Deductions = paySlip.Deductions.Select(d => new DeductionDto(d.Id, d.Code, d.Description, d.Amount, d.IsPreTax, d.IsPostTax)).ToList()
         };
+    }
+
+    private static string BuildPayslipHash(PayRun payRun, PaySlip paySlip)
+    {
+        var material = $"{payRun.Id}|{paySlip.Id}|{paySlip.EmployeeId}|{paySlip.NetPay}|{payRun.PayDate:O}";
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(material));
+        return Convert.ToHexString(hash);
+    }
+
+    private static string BuildPaySlipHtml(PayRun payRun, PaySlip paySlip, string authenticityHash)
+    {
+        var earnings = paySlip.Earnings.OrderBy(e => e.Code).ToList();
+        var deductions = paySlip.Deductions.OrderBy(d => d.Code).ToList();
+        var builder = new StringBuilder();
+
+        builder.AppendLine("<html><head><style>");
+        builder.AppendLine("body { font-family: Arial, sans-serif; color: #1f2937; }");
+        builder.AppendLine("h1 { margin-bottom: 4px; }");
+        builder.AppendLine(".meta { margin-bottom: 12px; }");
+        builder.AppendLine(".grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }");
+        builder.AppendLine("table { width: 100%; border-collapse: collapse; margin-top: 8px; }");
+        builder.AppendLine("th, td { border: 1px solid #e5e7eb; padding: 6px 8px; text-align: left; }");
+        builder.AppendLine("th { background: #f3f4f6; }");
+        builder.AppendLine(".totals { margin-top: 12px; }");
+        builder.AppendLine(".statutory { margin-top: 12px; }");
+        builder.AppendLine(".footer { margin-top: 16px; font-size: 12px; color: #4b5563; }");
+        builder.AppendLine("</style></head><body>");
+
+        builder.AppendLine($"<h1>Payslip - {payRun.Name}</h1>");
+        builder.AppendLine($"<div class='meta'>Period: {payRun.PeriodStart:yyyy-MM-dd} to {payRun.PeriodEnd:yyyy-MM-dd} | Pay Date: {payRun.PayDate:yyyy-MM-dd}</div>");
+        builder.AppendLine("<div class='grid'>");
+        builder.AppendLine($"<div><strong>Employee:</strong> {paySlip.Employee?.FullName ?? "N/A"}</div>");
+        builder.AppendLine($"<div><strong>Employee Code:</strong> {paySlip.Employee?.EmployeeCode ?? "-"}</div>");
+        builder.AppendLine($"<div><strong>Basic Salary:</strong> {paySlip.BasicSalary:N2}</div>");
+        builder.AppendLine($"<div><strong>Net Pay:</strong> {paySlip.NetPay:N2}</div>");
+        builder.AppendLine("</div>");
+
+        builder.AppendLine("<h3>Earnings</h3>");
+        builder.AppendLine("<table><tr><th>Code</th><th>Description</th><th>Amount</th></tr>");
+        foreach (var earning in earnings)
+        {
+            builder.AppendLine($"<tr><td>{earning.Code}</td><td>{earning.Description}</td><td style='text-align:right'>{earning.Amount:N2}</td></tr>");
+        }
+        builder.AppendLine($"<tr><th colspan='2'>Total Earnings</th><th style='text-align:right'>{paySlip.TotalEarnings:N2}</th></tr></table>");
+
+        builder.AppendLine("<h3>Deductions</h3>");
+        builder.AppendLine("<table><tr><th>Code</th><th>Description</th><th>Amount</th></tr>");
+        foreach (var deduction in deductions)
+        {
+            builder.AppendLine($"<tr><td>{deduction.Code}</td><td>{deduction.Description}</td><td style='text-align:right'>-{deduction.Amount:N2}</td></tr>");
+        }
+        builder.AppendLine($"<tr><th colspan='2'>Total Deductions</th><th style='text-align:right'>-{paySlip.TotalDeductions:N2}</th></tr></table>");
+
+        builder.AppendLine("<div class='totals'><strong>Net Pay:</strong> " + paySlip.NetPay.ToString("N2") + "</div>");
+
+        builder.AppendLine("<div class='statutory'><h3>Statutory Contributions</h3><ul>");
+        builder.AppendLine($"<li>Employee EPF: {paySlip.EmployeeEpf:N2}</li>");
+        builder.AppendLine($"<li>Employer EPF: {paySlip.EmployerEpf:N2}</li>");
+        builder.AppendLine($"<li>Employer ETF: {paySlip.EmployerEtf:N2}</li>");
+        builder.AppendLine($"<li>PAYE/APIT Withheld: {paySlip.PayeTax:N2}</li>");
+        builder.AppendLine("</ul></div>");
+
+        builder.AppendLine("<div class='footer'>");
+        builder.AppendLine($"Authenticity hash: {authenticityHash}<br/>");
+        builder.AppendLine($"Generated on {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC");
+        builder.AppendLine("</div>");
+
+        builder.AppendLine("</body></html>");
+
+        return builder.ToString();
+    }
+
+    private static byte[] BuildPaySlipPdf(PayRun payRun, PaySlip paySlip, string authenticityHash)
+    {
+        QuestPDF.Settings.License = LicenseType.Community;
+
+        var earnings = paySlip.Earnings.OrderBy(e => e.Code).ToList();
+        var deductions = paySlip.Deductions.OrderBy(d => d.Code).ToList();
+
+        return Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(30);
+                page.DefaultTextStyle(x => x.FontSize(10));
+
+                page.Header().Row(row =>
+                {
+                    row.RelativeItem().Column(column =>
+                    {
+                        column.Item().Text("Payslip").FontSize(18).SemiBold();
+                        column.Item().Text(payRun.Name).FontSize(12).Bold();
+                        column.Item().Text($"Period: {payRun.PeriodStart:yyyy-MM-dd} to {payRun.PeriodEnd:yyyy-MM-dd}");
+                        column.Item().Text($"Pay Date: {payRun.PayDate:yyyy-MM-dd}");
+                    });
+
+                    row.ConstantItem(220).Column(column =>
+                    {
+                        column.Item().Text("Employee Details").Bold();
+                        column.Item().Text($"Name: {paySlip.Employee?.FullName ?? "N/A"}");
+                        column.Item().Text($"Code: {paySlip.Employee?.EmployeeCode ?? "-"}");
+                        column.Item().Text($"NIC: {paySlip.Employee?.NicNumber ?? "-"}");
+                    });
+                });
+
+                page.Content().Column(column =>
+                {
+                    column.Spacing(12);
+
+                    column.Item().Row(row =>
+                    {
+                        row.RelativeItem().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Column(inner =>
+                        {
+                            inner.Item().Text("Earnings").Bold();
+                            inner.Item().Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(2);
+                                    columns.RelativeColumn(1);
+                                });
+
+                                table.Header(header =>
+                                {
+                                    header.Cell().Text("Code").SemiBold();
+                                    header.Cell().Text("Description").SemiBold();
+                                    header.Cell().Text("Amount").SemiBold().AlignRight();
+                                });
+
+                                foreach (var earning in earnings)
+                                {
+                                    table.Cell().Text(earning.Code);
+                                    table.Cell().Text(earning.Description);
+                                    table.Cell().AlignRight().Text(earning.Amount.ToString("N2"));
+                                }
+
+                                table.Cell().ColumnSpan(2).Text("Total Earnings").SemiBold();
+                                table.Cell().AlignRight().Text(paySlip.TotalEarnings.ToString("N2")).SemiBold();
+                            });
+                        });
+
+                        row.Spacing(10);
+
+                        row.RelativeItem().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Column(inner =>
+                        {
+                            inner.Item().Text("Deductions").Bold();
+                            inner.Item().Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(2);
+                                    columns.RelativeColumn(1);
+                                });
+
+                                table.Header(header =>
+                                {
+                                    header.Cell().Text("Code").SemiBold();
+                                    header.Cell().Text("Description").SemiBold();
+                                    header.Cell().Text("Amount").SemiBold().AlignRight();
+                                });
+
+                                foreach (var deduction in deductions)
+                                {
+                                    table.Cell().Text(deduction.Code);
+                                    table.Cell().Text(deduction.Description);
+                                    table.Cell().AlignRight().Text($"-{deduction.Amount:N2}");
+                                }
+
+                                table.Cell().ColumnSpan(2).Text("Total Deductions").SemiBold();
+                                table.Cell().AlignRight().Text($"-{paySlip.TotalDeductions:N2}").SemiBold();
+                            });
+                        });
+                    });
+
+                    column.Item().Row(row =>
+                    {
+                        row.RelativeItem().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Column(inner =>
+                        {
+                            inner.Item().Text("Summary").Bold();
+                            inner.Item().Text($"Basic Salary: {paySlip.BasicSalary:N2}");
+                            inner.Item().Text($"Total Earnings: {paySlip.TotalEarnings:N2}");
+                            inner.Item().Text($"Total Deductions: {paySlip.TotalDeductions:N2}");
+                            inner.Item().Text($"Net Pay: {paySlip.NetPay:N2}").FontSize(12).Bold();
+                        });
+
+                        row.Spacing(10);
+
+                        row.RelativeItem().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Column(inner =>
+                        {
+                            inner.Item().Text("Statutory Contributions").Bold();
+                            inner.Item().Text($"Employee EPF: {paySlip.EmployeeEpf:N2}");
+                            inner.Item().Text($"Employer EPF: {paySlip.EmployerEpf:N2}");
+                            inner.Item().Text($"Employer ETF: {paySlip.EmployerEtf:N2}");
+                            inner.Item().Text($"PAYE/APIT: {paySlip.PayeTax:N2}");
+                        });
+                    });
+                });
+
+                page.Footer().Column(column =>
+                {
+                    column.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                    column.Item().Text($"Authenticity hash: {authenticityHash}").FontSize(8).Color(Colors.Grey.Darken1);
+                    column.Item().Text($"Generated on {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC").FontSize(8).Color(Colors.Grey.Darken1);
+                });
+            });
+        }).GeneratePdf();
     }
 
     private static decimal RoundCurrency(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);

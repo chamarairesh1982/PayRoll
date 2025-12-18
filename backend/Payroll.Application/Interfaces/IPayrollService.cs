@@ -20,4 +20,5 @@ public interface IPayrollService
     Task MarkBankExportDownloadedAsync(Guid payRunId, CancellationToken cancellationToken = default);
     Task<ApitReportDto?> GetApitReportAsync(Guid payRunId, CancellationToken cancellationToken = default);
     Task<FileExportResultDto?> GenerateApitCertificateAsync(Guid payRunId, Guid paySlipId, CancellationToken cancellationToken = default);
+    Task<FileExportResultDto?> ExportPaySlipAsync(Guid payRunId, Guid paySlipId, string format = "pdf", CancellationToken cancellationToken = default);
 }
