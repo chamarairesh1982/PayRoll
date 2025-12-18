@@ -2,6 +2,7 @@ using Payroll.Application.Interfaces;
 using Payroll.Domain.Attendance;
 using Payroll.Domain.Employees;
 using Payroll.Domain.Loans;
+using Payroll.Domain.Leave;
 using Payroll.Domain.Overtime;
 using Payroll.Domain.Payroll;
 using Payroll.Domain.PayrollConfig;
@@ -277,6 +278,35 @@ public static class TestDataSeeder
         context.SaveChanges();
 
         return record;
+    }
+
+    public static LeaveRequest SeedLeave(
+        PayrollDbContext context,
+        Employee employee,
+        DateOnly startDate,
+        DateOnly endDate,
+        LeaveTypeCode leaveType,
+        double totalDays,
+        bool isHalfDay = false)
+    {
+        var leave = new LeaveRequest
+        {
+            EmployeeId = employee.Id,
+            StartDate = startDate,
+            EndDate = endDate,
+            LeaveType = leaveType,
+            TotalDays = totalDays,
+            Status = LeaveStatus.Approved,
+            IsHalfDay = isHalfDay,
+            CreatedBy = "seed",
+            RequestedAt = DateTimeOffset.UtcNow,
+            ApprovedAt = DateTimeOffset.UtcNow
+        };
+
+        context.LeaveRequests.Add(leave);
+        context.SaveChanges();
+
+        return leave;
     }
 
     public static OvertimeRecord SeedOvertime(PayrollDbContext context, Employee employee, DateOnly date, double hours, OvertimeType type = OvertimeType.Weekday)
