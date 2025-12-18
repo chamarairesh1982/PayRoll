@@ -21,12 +21,6 @@ namespace Payroll.Application.Services;
 
 public class PayrollService : IPayrollService
 {
-    private const int DefaultWorkingDaysPerMonth = 26;
-    private const int DefaultWorkingHoursPerDay = 8;
-    private const decimal DefaultWeekdayOvertimeMultiplier = 1.5m;
-    private const decimal DefaultWeekendOvertimeMultiplier = 2.0m;
-    private const decimal DefaultPublicHolidayOvertimeMultiplier = 2.0m;
-
     private readonly IPayrollDbContext _dbContext;
     private readonly IEpfEtfRuleSetService _epfEtfRuleSetService;
     private readonly ITaxRuleSetService _taxRuleSetService;
@@ -701,7 +695,10 @@ public class PayrollService : IPayrollService
                     WorkingHoursPerDay = payrollSettings.WorkingHoursPerDay,
                     WeekdayOvertimeMultiplier = payrollSettings.WeekdayOvertimeMultiplier,
                     WeekendOvertimeMultiplier = payrollSettings.WeekendOvertimeMultiplier,
-                    HolidayOvertimeMultiplier = payrollSettings.HolidayOvertimeMultiplier
+                    HolidayOvertimeMultiplier = payrollSettings.HolidayOvertimeMultiplier,
+                    OvertimeRoundingMinutes = payrollSettings.OvertimeRoundingMinutes,
+                    OvertimeDailyCapHours = payrollSettings.OvertimeDailyCapHours,
+                    OvertimePayRunCapHours = payrollSettings.OvertimePayRunCapHours
                 },
                 recurringKeySet,
                 ct);
@@ -719,11 +716,14 @@ public class PayrollService : IPayrollService
 
         return new PayrollSettingsSnapshot
         {
-            WorkingDaysPerMonth = settings?.WorkingDaysPerMonth ?? DefaultWorkingDaysPerMonth,
-            WorkingHoursPerDay = settings?.WorkingHoursPerDay ?? DefaultWorkingHoursPerDay,
-            WeekdayOvertimeMultiplier = settings?.WeekdayOvertimeMultiplier ?? DefaultWeekdayOvertimeMultiplier,
-            WeekendOvertimeMultiplier = settings?.WeekendOvertimeMultiplier ?? DefaultWeekendOvertimeMultiplier,
-            HolidayOvertimeMultiplier = settings?.HolidayOvertimeMultiplier ?? DefaultPublicHolidayOvertimeMultiplier
+            WorkingDaysPerMonth = settings?.WorkingDaysPerMonth ?? PayrollSettingsDefaults.WorkingDaysPerMonth,
+            WorkingHoursPerDay = settings?.WorkingHoursPerDay ?? PayrollSettingsDefaults.WorkingHoursPerDay,
+            WeekdayOvertimeMultiplier = settings?.WeekdayOvertimeMultiplier ?? PayrollSettingsDefaults.WeekdayOvertimeMultiplier,
+            WeekendOvertimeMultiplier = settings?.WeekendOvertimeMultiplier ?? PayrollSettingsDefaults.WeekendOvertimeMultiplier,
+            HolidayOvertimeMultiplier = settings?.HolidayOvertimeMultiplier ?? PayrollSettingsDefaults.HolidayOvertimeMultiplier,
+            OvertimeRoundingMinutes = settings?.OvertimeRoundingMinutes ?? PayrollSettingsDefaults.OvertimeRoundingMinutes,
+            OvertimeDailyCapHours = settings?.OvertimeDailyCapHours ?? PayrollSettingsDefaults.OvertimeDailyCapHours,
+            OvertimePayRunCapHours = settings?.OvertimePayRunCapHours ?? PayrollSettingsDefaults.OvertimePayRunCapHours
         };
     }
 
@@ -988,8 +988,11 @@ public class PayrollService : IPayrollService
     private Task ApplyOvertimeEarningsAsync(PaySlipCalculationContext ctx, PayRun payRun)
     {
         var baseHourlyRate = ctx.BasicSalary / (ctx.WorkingDaysPerMonth * ctx.WorkingHoursPerDay);
+        var remainingPayRunCap = ctx.OvertimePayRunCapHours > 0
+            ? (decimal)ctx.OvertimePayRunCapHours
+            : decimal.MaxValue;
 
-        foreach (var overtime in ctx.Overtime)
+        foreach (var overtime in ctx.Overtime.OrderBy(o => o.Date))
         {
             var multiplier = overtime.Type switch
             {
@@ -998,9 +1001,10 @@ public class PayrollService : IPayrollService
                 _ => ctx.WeekdayOvertimeMultiplier
             };
 
-            var otAmount = RoundCurrency((decimal)overtime.Hours * baseHourlyRate * multiplier);
+            var adjustedHours = CalculateRoundedOvertimeHours(overtime, ctx, ref remainingPayRunCap);
+            var otAmount = RoundCurrency(adjustedHours * baseHourlyRate * multiplier);
 
-            if (otAmount <= 0)
+            if (otAmount <= 0 || adjustedHours <= 0)
             {
                 continue;
             }
@@ -1010,7 +1014,7 @@ public class PayrollService : IPayrollService
                 Id = Guid.NewGuid(),
                 PaySlipId = ctx.PaySlipId,
                 Code = "OT",
-                Description = $"Overtime ({overtime.Type})",
+                Description = $"Overtime ({overtime.Type}, {adjustedHours:0.##}h)",
                 Amount = otAmount,
                 IsEpfApplicable = true,
                 IsEtfApplicable = true,
@@ -1423,6 +1427,52 @@ public class PayrollService : IPayrollService
 
     private static decimal RoundCurrency(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
 
+    private static decimal CalculateRoundedOvertimeHours(
+        OvertimeRecord overtime,
+        PaySlipCalculationContext ctx,
+        ref decimal remainingPayRunCap)
+    {
+        var hours = (decimal)overtime.Hours;
+
+        if (ctx.OvertimeDailyCapHours > 0)
+        {
+            hours = Math.Min(hours, (decimal)ctx.OvertimeDailyCapHours);
+        }
+
+        if (ctx.OvertimePayRunCapHours > 0)
+        {
+            hours = Math.Min(hours, remainingPayRunCap);
+        }
+
+        hours = ApplyOvertimeRounding(hours, ctx.OvertimeRoundingMinutes);
+
+        if (ctx.OvertimeDailyCapHours > 0)
+        {
+            hours = Math.Min(hours, (decimal)ctx.OvertimeDailyCapHours);
+        }
+
+        if (ctx.OvertimePayRunCapHours > 0)
+        {
+            hours = Math.Min(hours, remainingPayRunCap);
+            remainingPayRunCap = Math.Max(0, remainingPayRunCap - hours);
+        }
+
+        return hours;
+    }
+
+    private static decimal ApplyOvertimeRounding(decimal hours, int roundingMinutes)
+    {
+        if (roundingMinutes <= 0)
+        {
+            return hours;
+        }
+
+        var minutes = hours * 60m;
+        var step = (decimal)roundingMinutes;
+        var roundedMinutes = Math.Round(minutes / step, MidpointRounding.AwayFromZero) * step;
+        return roundedMinutes / 60m;
+    }
+
     private decimal ResolvePayItemAmount(EmployeePayItem payItem, decimal basicSalary)
     {
         if (payItem.Amount.HasValue)
@@ -1584,6 +1634,9 @@ public class PayrollService : IPayrollService
         public decimal WeekdayOvertimeMultiplier { get; init; }
         public decimal WeekendOvertimeMultiplier { get; init; }
         public decimal HolidayOvertimeMultiplier { get; init; }
+        public int OvertimeRoundingMinutes { get; init; }
+        public double OvertimeDailyCapHours { get; init; }
+        public double OvertimePayRunCapHours { get; init; }
     }
 
     private sealed class PayrollSettingsSnapshot
@@ -1593,6 +1646,9 @@ public class PayrollService : IPayrollService
         public decimal WeekdayOvertimeMultiplier { get; init; }
         public decimal WeekendOvertimeMultiplier { get; init; }
         public decimal HolidayOvertimeMultiplier { get; init; }
+        public int OvertimeRoundingMinutes { get; init; }
+        public double OvertimeDailyCapHours { get; init; }
+        public double OvertimePayRunCapHours { get; init; }
     }
 
     // TODO: Add integration tests to cover basic, overtime, and statutory calculation scenarios.

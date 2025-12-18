@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Payroll.Application.PayrollConfig;
+using Payroll.Application.PayrollConfig.DTOs;
 
 namespace Payroll.Api.Controllers;
 
@@ -6,6 +8,24 @@ namespace Payroll.Api.Controllers;
 [Route("api/[controller]")]
 public class OtController : ControllerBase
 {
+    private readonly IOvertimeRuleService _overtimeRuleService;
+
+    public OtController(IOvertimeRuleService overtimeRuleService)
+    {
+        _overtimeRuleService = overtimeRuleService;
+    }
+
     [HttpGet("config")]
-    public IActionResult GetConfig() => Ok(new { StandardRateMultiplier = 1.5, WeekendRateMultiplier = 2.0 });
+    public async Task<IActionResult> GetConfig(CancellationToken ct)
+    {
+        var config = await _overtimeRuleService.GetAsync(ct);
+        return Ok(config);
+    }
+
+    [HttpPut("config")]
+    public async Task<IActionResult> UpdateConfig([FromBody] UpdateOvertimeRuleConfigRequest request, CancellationToken ct)
+    {
+        var config = await _overtimeRuleService.UpdateAsync(request, ct);
+        return Ok(config);
+    }
 }

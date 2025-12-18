@@ -5,6 +5,7 @@ using Payroll.Application.Services;
 using Payroll.Domain.Leave;
 using Payroll.Domain.Payroll;
 using Payroll.Domain.Overtime;
+using Payroll.Domain.PayrollConfig;
 using Payroll.Application.Tests.TestInfrastructure;
 using Xunit;
 
@@ -73,6 +74,42 @@ public class PayrollServiceTests
         paySlip.EmployeeEpf.Should().Be(expectedEmployeeEpf);
         paySlip.EmployerEpf.Should().Be(expectedEmployerEpf);
         paySlip.EmployerEtf.Should().Be(expectedEmployerEtf);
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Round_Overtime_And_Apply_Caps()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMPOT", "Olivia", 26_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+
+        context.DbContext.PayrollSettings.Add(new PayrollSettings
+        {
+            WeekdayOvertimeMultiplier = 1.5m,
+            WeekendOvertimeMultiplier = 2.0m,
+            HolidayOvertimeMultiplier = 2.5m,
+            OvertimeRoundingMinutes = 30,
+            OvertimeDailyCapHours = 4,
+            OvertimePayRunCapHours = 5
+        });
+        await context.DbContext.SaveChangesAsync();
+
+        TestDataSeeder.SeedOvertime(context.DbContext, employee, new DateOnly(2025, 4, 10), 2.4, OvertimeType.Weekday);
+        TestDataSeeder.SeedOvertime(context.DbContext, employee, new DateOnly(2025, 4, 11), 3.2, OvertimeType.Weekend);
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+
+        var result = await payrollService.CreatePayRunAsync(request);
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        var weekdayOt = paySlip.Earnings.Single(e => e.Description.Contains("Weekday"));
+        var weekendOt = paySlip.Earnings.Single(e => e.Description.Contains("Weekend"));
+
+        weekdayOt.Amount.Should().Be(468.75m);
+        weekendOt.Amount.Should().Be(625m);
+        paySlip.Earnings.Where(e => e.Code == "OT").Sum(e => e.Amount).Should().Be(1_093.75m);
     }
 
     [Fact]

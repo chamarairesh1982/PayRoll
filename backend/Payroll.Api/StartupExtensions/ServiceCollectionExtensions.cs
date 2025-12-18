@@ -51,6 +51,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDeductionTypeService, DeductionTypeService>();
         services.AddScoped<IEpfEtfRuleSetService, EpfEtfRuleSetService>();
         services.AddScoped<ITaxRuleSetService, TaxRuleSetService>();
+        services.AddScoped<IOvertimeRuleService, OvertimeRuleService>();
         services.AddScoped<IAuditLogger, AuditLogger>();
         services.AddScoped<IAuditLogQueryService, AuditLogQueryService>();
         services.AddScoped<ICurrentUserService, SimpleCurrentUserService>();

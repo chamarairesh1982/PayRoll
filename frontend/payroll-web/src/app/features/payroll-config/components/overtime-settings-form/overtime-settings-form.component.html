@@ -1,0 +1,36 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="form">
+  <div class="form-row">
+    <label>
+      Weekday multiplier
+      <input type="number" step="0.01" formControlName="weekdayOvertimeMultiplier" />
+    </label>
+    <label>
+      Weekend multiplier
+      <input type="number" step="0.01" formControlName="weekendOvertimeMultiplier" />
+    </label>
+    <label>
+      Public holiday multiplier
+      <input type="number" step="0.01" formControlName="holidayOvertimeMultiplier" />
+    </label>
+  </div>
+
+  <div class="form-row">
+    <label>
+      Rounding (minutes)
+      <input type="number" step="1" formControlName="overtimeRoundingMinutes" />
+      <span class="helper-text">Overtime hours will be rounded to the nearest block.</span>
+    </label>
+    <label>
+      Daily cap (hours)
+      <input type="number" step="0.1" formControlName="overtimeDailyCapHours" />
+      <span class="helper-text">Limit payable overtime per day to control runaway submissions.</span>
+    </label>
+    <label>
+      Pay run cap (hours)
+      <input type="number" step="0.1" formControlName="overtimePayRunCapHours" />
+      <span class="helper-text">Maximum overtime billed across this pay run per employee.</span>
+    </label>
+  </div>
+
+  <button type="submit" [disabled]="isSaving">{{ isSaving ? 'Saving...' : 'Save overtime rules' }}</button>
+</form>
