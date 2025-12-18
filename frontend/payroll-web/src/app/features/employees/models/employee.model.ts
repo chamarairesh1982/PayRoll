@@ -13,6 +13,9 @@ export interface Employee {
   probationEndDate?: string | null;
   confirmationDate?: string | null;
   baseSalary: number;
+  companyId?: string | null;
+  branchId?: string | null;
+  costCenterId?: string | null;
   isActive: boolean;
 }
 

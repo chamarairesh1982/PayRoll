@@ -18,4 +18,7 @@ public class UpdateEmployeeRequestDto
     public DateTime? ConfirmationDate { get; set; }
     public decimal BaseSalary { get; set; }
     public bool IsActive { get; set; }
+    public Guid? CompanyId { get; set; }
+    public Guid? BranchId { get; set; }
+    public Guid? CostCenterId { get; set; }
 }

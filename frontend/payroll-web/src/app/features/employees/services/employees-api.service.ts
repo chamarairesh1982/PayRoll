@@ -10,8 +10,28 @@ export class EmployeesApiService {
 
   constructor(private http: HttpClient) {}
 
-  getEmployees(page: number, pageSize: number): Observable<PaginatedResult<Employee>> {
-    return this.http.get<PaginatedResult<Employee>>(`${this.baseUrl}?page=${page}&pageSize=${pageSize}`);
+  getEmployees(
+    page: number,
+    pageSize: number,
+    options?: { companyId?: string; branchId?: string; costCenterId?: string },
+  ): Observable<PaginatedResult<Employee>> {
+    const params = new URLSearchParams();
+    params.set('page', String(page));
+    params.set('pageSize', String(pageSize));
+
+    if (options?.companyId) {
+      params.set('companyId', options.companyId);
+    }
+
+    if (options?.branchId) {
+      params.set('branchId', options.branchId);
+    }
+
+    if (options?.costCenterId) {
+      params.set('costCenterId', options.costCenterId);
+    }
+
+    return this.http.get<PaginatedResult<Employee>>(`${this.baseUrl}?${params.toString()}`);
   }
 
   getEmployee(id: string): Observable<Employee> {

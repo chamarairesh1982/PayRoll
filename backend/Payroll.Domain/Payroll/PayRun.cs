@@ -1,5 +1,6 @@
 using Payroll.Domain.Common;
 using Payroll.Domain.Employees;
+using Payroll.Domain.Organizations;
 
 namespace Payroll.Domain.Payroll;
 
@@ -13,6 +14,13 @@ public class PayRun : AuditableEntity, IAggregateRoot
     public DateTime PeriodEnd { get; set; }
     public DateTime PayDate { get; set; }
     public bool IsLocked { get; set; }
+    public bool IsConsolidated { get; set; }
+    public Guid? CompanyId { get; set; }
+    public Company? Company { get; set; }
+    public Guid? BranchId { get; set; }
+    public Branch? Branch { get; set; }
+    public Guid? CostCenterId { get; set; }
+    public CostCenter? CostCenter { get; set; }
     public PayRunStatus Status { get; set; } = PayRunStatus.Draft;
     public ICollection<PaySlip> PaySlips { get; set; } = new List<PaySlip>();
     public ICollection<PayRunApproval> Approvals { get; set; } = new List<PayRunApproval>();

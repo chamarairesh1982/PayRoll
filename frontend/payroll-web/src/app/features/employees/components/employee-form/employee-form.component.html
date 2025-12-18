@@ -55,6 +55,18 @@
       <input type="number" formControlName="baseSalary" step="0.01" />
       <app-form-field-error [control]="form.get('baseSalary')"></app-form-field-error>
     </label>
+    <label>
+      Company
+      <input type="text" formControlName="companyId" placeholder="Company Id (optional)" />
+    </label>
+    <label>
+      Branch
+      <input type="text" formControlName="branchId" placeholder="Branch Id (optional)" />
+    </label>
+    <label>
+      Cost Center
+      <input type="text" formControlName="costCenterId" placeholder="Cost Center Id (optional)" />
+    </label>
     <label class="checkbox">
       <input type="checkbox" formControlName="isActive" /> Active
     </label>

@@ -30,6 +30,9 @@ export class EmployeeFormComponent implements OnChanges {
       probationEndDate: [''],
       confirmationDate: [''],
       baseSalary: [0, [Validators.required, Validators.min(0.01)]],
+      companyId: [''],
+      branchId: [''],
+      costCenterId: [''],
       isActive: [true],
     });
   }

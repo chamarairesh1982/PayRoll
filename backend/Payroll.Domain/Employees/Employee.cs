@@ -1,4 +1,5 @@
 using Payroll.Domain.Common;
+using Payroll.Domain.Organizations;
 using System.Linq;
 
 namespace Payroll.Domain.Employees;
@@ -19,6 +20,9 @@ public class Employee : AuditableEntity, IAggregateRoot
         MaritalStatus maritalStatus,
         DateTime employmentStartDate,
         decimal baseSalary,
+        Guid? companyId,
+        Guid? branchId,
+        Guid? costCenterId,
         string? initials,
         string? callingName,
         DateTime? probationEndDate,
@@ -36,6 +40,9 @@ public class Employee : AuditableEntity, IAggregateRoot
         MaritalStatus = maritalStatus;
         Initials = initials;
         CallingName = callingName;
+        CompanyId = companyId;
+        BranchId = branchId;
+        CostCenterId = costCenterId;
         ProbationEndDate = probationEndDate;
         ConfirmationDate = confirmationDate;
         CreatedBy = createdBy;
@@ -54,6 +61,12 @@ public class Employee : AuditableEntity, IAggregateRoot
     public DateTime? ProbationEndDate { get; private set; }
     public DateTime? ConfirmationDate { get; private set; }
     public decimal BaseSalary { get; private set; }
+    public Guid? CompanyId { get; private set; }
+    public Company? Company { get; private set; }
+    public Guid? BranchId { get; private set; }
+    public Branch? Branch { get; private set; }
+    public Guid? CostCenterId { get; private set; }
+    public CostCenter? CostCenter { get; private set; }
     public string Code => EmployeeCode;
     public string FullName => string.Join(" ", new[] { FirstName, LastName }.Where(n => !string.IsNullOrWhiteSpace(n)));
 
@@ -67,6 +80,9 @@ public class Employee : AuditableEntity, IAggregateRoot
         MaritalStatus maritalStatus,
         DateTime employmentStartDate,
         decimal baseSalary,
+        Guid? companyId,
+        Guid? branchId,
+        Guid? costCenterId,
         string? initials,
         string? callingName,
         DateTime? probationEndDate,
@@ -83,6 +99,9 @@ public class Employee : AuditableEntity, IAggregateRoot
             maritalStatus,
             employmentStartDate,
             baseSalary,
+            companyId,
+            branchId,
+            costCenterId,
             initials,
             callingName,
             probationEndDate,
@@ -100,6 +119,9 @@ public class Employee : AuditableEntity, IAggregateRoot
         MaritalStatus maritalStatus,
         DateTime employmentStartDate,
         decimal baseSalary,
+        Guid? companyId,
+        Guid? branchId,
+        Guid? costCenterId,
         string? initials,
         string? callingName,
         DateTime? probationEndDate,
@@ -117,6 +139,9 @@ public class Employee : AuditableEntity, IAggregateRoot
         BaseSalary = ValidateBaseSalary(baseSalary);
         Initials = initials;
         CallingName = callingName;
+        CompanyId = companyId;
+        BranchId = branchId;
+        CostCenterId = costCenterId;
         ProbationEndDate = probationEndDate;
         ConfirmationDate = confirmationDate;
         ModifiedAt = DateTime.UtcNow;
