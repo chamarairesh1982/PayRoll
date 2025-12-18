@@ -66,12 +66,13 @@ public class PayrollService : IPayrollService
         var beforeSnapshot = CreatePayRunSnapshot(payRun);
 
         payRun.PaySlips = await GeneratePaySlipsForPayRunAsync(payRun, employeeIds, cancellationToken);
-        payRun.Status = PayRunStatus.Calculated;
+        AddApprovalLog(payRun, PayRunStatus.Draft, PayRunStatus.Prepared, new PayRunActionRequest { ActionedBy = "system" });
+        payRun.Status = PayRunStatus.Prepared;
 
         await _auditLogger.LogAsync(
             nameof(PayRun),
             payRun.Id.ToString(),
-            "PayRunCalculated",
+            "PayRunPrepared",
             beforeSnapshot,
             CreatePayRunSnapshot(payRun),
             null,
@@ -111,12 +112,17 @@ public class PayrollService : IPayrollService
         payRun.PaySlips.Clear();
 
         payRun.PaySlips = await GeneratePaySlipsForPayRunAsync(payRun, employeeIds, cancellationToken);
-        payRun.Status = PayRunStatus.Calculated;
+        if (payRun.Status != PayRunStatus.Prepared)
+        {
+            AddApprovalLog(payRun, payRun.Status, PayRunStatus.Prepared, new PayRunActionRequest { ActionedBy = "system" });
+        }
+
+        payRun.Status = PayRunStatus.Prepared;
 
         await _auditLogger.LogAsync(
             nameof(PayRun),
             payRun.Id.ToString(),
-            "PayRunRecalculated",
+            "PayRunPrepared",
             beforeSnapshot,
             CreatePayRunSnapshot(payRun),
             null,
@@ -131,14 +137,14 @@ public class PayrollService : IPayrollService
     {
         switch (request.Status)
         {
+            case PayRunStatus.Prepared:
+                await ResetToPreparedAsync(id, cancellationToken);
+                break;
             case PayRunStatus.Approved:
                 await ApprovePayRunAsync(id, new PayRunActionRequest { ActionedBy = "system" }, cancellationToken);
                 break;
             case PayRunStatus.Locked:
                 await LockPayRunAsync(id, new PayRunActionRequest { ActionedBy = "system" }, cancellationToken);
-                break;
-            case PayRunStatus.Calculated:
-                await ResetToCalculatedAsync(id, cancellationToken);
                 break;
             default:
                 throw new InvalidOperationException("Unsupported pay run status transition.");
@@ -156,14 +162,14 @@ public class PayrollService : IPayrollService
             throw new KeyNotFoundException("Pay run not found");
         }
 
-        if (payRun.Status != PayRunStatus.Calculated)
+        if (payRun.Status != PayRunStatus.Prepared)
         {
-            throw new InvalidOperationException("Only calculated pay runs can be approved.");
+            throw new InvalidOperationException("Only prepared pay runs can be approved.");
         }
 
         var beforeSnapshot = CreatePayRunSnapshot(payRun);
 
-        AddApprovalLog(payRun, PayRunStatus.Calculated, PayRunStatus.Approved, request);
+        AddApprovalLog(payRun, PayRunStatus.Prepared, PayRunStatus.Approved, request);
         payRun.Status = PayRunStatus.Approved;
 
         await _auditLogger.LogAsync(
@@ -246,7 +252,7 @@ public class PayrollService : IPayrollService
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task ResetToCalculatedAsync(Guid id, CancellationToken cancellationToken)
+    private async Task ResetToPreparedAsync(Guid id, CancellationToken cancellationToken)
     {
         var payRun = await _dbContext.PayRuns
             .Include(pr => pr.Approvals)
@@ -262,12 +268,12 @@ public class PayrollService : IPayrollService
             throw new InvalidOperationException("Cannot reset status for a locked pay run.");
         }
 
-        if (payRun.Status != PayRunStatus.Calculated)
+        if (payRun.Status != PayRunStatus.Prepared)
         {
-            AddApprovalLog(payRun, payRun.Status, PayRunStatus.Calculated, new PayRunActionRequest { ActionedBy = "system" });
+            AddApprovalLog(payRun, payRun.Status, PayRunStatus.Prepared, new PayRunActionRequest { ActionedBy = "system" });
         }
 
-        payRun.Status = PayRunStatus.Calculated;
+        payRun.Status = PayRunStatus.Prepared;
         payRun.IsLocked = false;
 
         await _dbContext.SaveChangesAsync(cancellationToken);

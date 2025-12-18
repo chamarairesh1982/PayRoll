@@ -43,9 +43,7 @@
     <button type="button" (click)="changeStatus('Locked')" [disabled]="!canLock || isChangingStatus">
       Lock
     </button>
-    <button type="button" (click)="changeStatus('Draft')" [disabled]="!canUnlock || isChangingStatus">
-      Unlock
-    </button>
+    <button type="button" (click)="changeStatus('Approved')" [disabled]="!canUnlock || isChangingStatus">Unlock</button>
   </div>
 
   <div class="payslips">

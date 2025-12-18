@@ -19,7 +19,7 @@ export class PayRunsListPageComponent implements OnInit {
   isLoading = false;
   selectedStatus: PayRunStatus | '' = '';
 
-  statusOptions: (PayRunStatus | '')[] = ['', 'Draft', 'Calculated', 'Approved', 'Locked'];
+  statusOptions: (PayRunStatus | '')[] = ['', 'Draft', 'Prepared', 'Approved', 'Locked'];
 
   columns: { field: keyof PayRunRow; header: string }[] = [
     { field: 'code', header: 'Code' },
