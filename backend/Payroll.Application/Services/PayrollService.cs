@@ -1,8 +1,11 @@
+using System;
+using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Payroll.Application.DTOs;
 using Payroll.Application.Interfaces;
 using Payroll.Application.PayrollConfig;
 using Payroll.Application.PayrollConfig.DTOs;
+using Payroll.Application.Exceptions;
 using Payroll.Domain.Attendance;
 using Payroll.Domain.Employees;
 using Payroll.Domain.Loans;
@@ -25,17 +28,20 @@ public class PayrollService : IPayrollService
     private readonly IEpfEtfRuleSetService _epfEtfRuleSetService;
     private readonly ITaxRuleSetService _taxRuleSetService;
     private readonly IAuditLogger _auditLogger;
+    private readonly ICurrentUserService _currentUserService;
 
     public PayrollService(
         IPayrollDbContext dbContext,
         IEpfEtfRuleSetService epfEtfRuleSetService,
         ITaxRuleSetService taxRuleSetService,
-        IAuditLogger auditLogger)
+        IAuditLogger auditLogger,
+        ICurrentUserService currentUserService)
     {
         _dbContext = dbContext;
         _epfEtfRuleSetService = epfEtfRuleSetService;
         _taxRuleSetService = taxRuleSetService;
         _auditLogger = auditLogger;
+        _currentUserService = currentUserService;
     }
 
     public async Task<PayRunDetailDto> CreatePayRunAsync(CreatePayRunRequest request, CancellationToken cancellationToken = default)
@@ -158,13 +164,13 @@ public class PayrollService : IPayrollService
         switch (request.Status)
         {
             case PayRunStatus.Prepared:
-                await PreparePayRunAsync(id, new PayRunActionRequest { ActionedBy = "system" }, cancellationToken);
+                await PreparePayRunAsync(id, new PayRunActionRequest(), cancellationToken);
                 break;
             case PayRunStatus.Approved:
-                await ApprovePayRunAsync(id, new PayRunActionRequest { ActionedBy = "system" }, cancellationToken);
+                await ApprovePayRunAsync(id, new PayRunActionRequest(), cancellationToken);
                 break;
             case PayRunStatus.Locked:
-                await LockPayRunAsync(id, new PayRunActionRequest { ActionedBy = "system" }, cancellationToken);
+                await LockPayRunAsync(id, new PayRunActionRequest(), cancellationToken);
                 break;
             default:
                 throw new InvalidOperationException("Unsupported pay run status transition.");
@@ -173,6 +179,8 @@ public class PayrollService : IPayrollService
 
     public async Task PreparePayRunAsync(Guid id, PayRunActionRequest request, CancellationToken cancellationToken = default)
     {
+        EnsureRole("Maker", "prepare pay runs");
+
         var payRun = await _dbContext.PayRuns
             .Include(pr => pr.Approvals)
             .FirstOrDefaultAsync(pr => pr.Id == id, cancellationToken);
@@ -194,7 +202,11 @@ public class PayrollService : IPayrollService
 
         var beforeSnapshot = CreatePayRunSnapshot(payRun);
 
-        AddApprovalLog(payRun, PayRunStatus.Draft, PayRunStatus.Prepared, request);
+        var actor = GetActor();
+        AddStatusHistory(payRun, PayRunStatus.Draft, PayRunStatus.Prepared, actor, request.Comment);
+        payRun.PreparedAt = DateTime.UtcNow;
+        payRun.PreparedByUserId = actor.UserId;
+        payRun.PreparedByUserName = actor.UserName;
         payRun.Status = PayRunStatus.Prepared;
 
         await _auditLogger.LogAsync(
@@ -203,7 +215,7 @@ public class PayrollService : IPayrollService
             "PayRunPrepared",
             beforeSnapshot,
             CreatePayRunSnapshot(payRun),
-            request.ActionedBy,
+            actor.UserName,
             cancellationToken);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -211,6 +223,8 @@ public class PayrollService : IPayrollService
 
     public async Task ApprovePayRunAsync(Guid id, PayRunActionRequest request, CancellationToken cancellationToken = default)
     {
+        EnsureRole("Approver", "approve pay runs");
+
         var payRun = await _dbContext.PayRuns
             .Include(pr => pr.Approvals)
             .FirstOrDefaultAsync(pr => pr.Id == id, cancellationToken);
@@ -225,9 +239,18 @@ public class PayrollService : IPayrollService
             throw new InvalidOperationException("Only prepared pay runs can be approved.");
         }
 
+        if (string.IsNullOrWhiteSpace(request.Comment))
+        {
+            throw new InvalidOperationException("Approval comment is required.");
+        }
+
         var beforeSnapshot = CreatePayRunSnapshot(payRun);
 
-        AddApprovalLog(payRun, PayRunStatus.Prepared, PayRunStatus.Approved, request);
+        var actor = GetActor();
+        AddStatusHistory(payRun, PayRunStatus.Prepared, PayRunStatus.Approved, actor, request.Comment);
+        payRun.ApprovedAt = DateTime.UtcNow;
+        payRun.ApprovedByUserId = actor.UserId;
+        payRun.ApprovedByUserName = actor.UserName;
         payRun.Status = PayRunStatus.Approved;
 
         await _auditLogger.LogAsync(
@@ -236,7 +259,7 @@ public class PayrollService : IPayrollService
             "PayRunApproved",
             beforeSnapshot,
             CreatePayRunSnapshot(payRun),
-            request.ActionedBy,
+            actor.UserName,
             cancellationToken);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -244,6 +267,8 @@ public class PayrollService : IPayrollService
 
     public async Task LockPayRunAsync(Guid id, PayRunActionRequest request, CancellationToken cancellationToken = default)
     {
+        EnsureRole("Approver", "lock pay runs");
+
         var payRun = await _dbContext.PayRuns
             .Include(pr => pr.Approvals)
             .FirstOrDefaultAsync(pr => pr.Id == id, cancellationToken);
@@ -258,9 +283,18 @@ public class PayrollService : IPayrollService
             throw new InvalidOperationException("Only approved pay runs can be locked.");
         }
 
+        if (string.IsNullOrWhiteSpace(request.Comment))
+        {
+            throw new InvalidOperationException("Lock comment is required.");
+        }
+
         var beforeSnapshot = CreatePayRunSnapshot(payRun);
 
-        AddApprovalLog(payRun, PayRunStatus.Approved, PayRunStatus.Locked, request);
+        var actor = GetActor();
+        AddStatusHistory(payRun, PayRunStatus.Approved, PayRunStatus.Locked, actor, request.Comment);
+        payRun.LockedAt = DateTime.UtcNow;
+        payRun.LockedByUserId = actor.UserId;
+        payRun.LockedByUserName = actor.UserName;
         payRun.Status = PayRunStatus.Locked;
         payRun.IsLocked = true;
 
@@ -270,7 +304,7 @@ public class PayrollService : IPayrollService
             "PayRunLocked",
             beforeSnapshot,
             CreatePayRunSnapshot(payRun),
-            request.ActionedBy,
+            actor.UserName,
             cancellationToken);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -278,52 +312,38 @@ public class PayrollService : IPayrollService
 
     public async Task UnlockPayRunAsync(Guid id, PayRunActionRequest request, CancellationToken cancellationToken = default)
     {
-        var payRun = await _dbContext.PayRuns
-            .Include(pr => pr.Approvals)
-            .FirstOrDefaultAsync(pr => pr.Id == id, cancellationToken);
-
-        if (payRun is null)
-        {
-            throw new KeyNotFoundException("Pay run not found");
-        }
-
-        if (payRun.Status != PayRunStatus.Locked)
-        {
-            throw new InvalidOperationException("Only locked pay runs can be unlocked.");
-        }
-
-        var beforeSnapshot = CreatePayRunSnapshot(payRun);
-
-        AddApprovalLog(payRun, PayRunStatus.Locked, PayRunStatus.Approved, request);
-        payRun.Status = PayRunStatus.Approved;
-        payRun.IsLocked = false;
-
-        await _auditLogger.LogAsync(
-            nameof(PayRun),
-            payRun.Id.ToString(),
-            "PayRunUnlocked",
-            beforeSnapshot,
-            CreatePayRunSnapshot(payRun),
-            request.ActionedBy,
-            cancellationToken);
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        throw new InvalidOperationException("Unlocking pay runs is not permitted in the current workflow.");
     }
 
-    private void AddApprovalLog(PayRun payRun, PayRunStatus fromStatus, PayRunStatus toStatus, PayRunActionRequest request)
+    private void AddStatusHistory(PayRun payRun, PayRunStatus fromStatus, PayRunStatus toStatus, (string UserId, string UserName) actor, string? comment)
     {
-        var actionedBy = string.IsNullOrWhiteSpace(request.ActionedBy) ? "Unknown" : request.ActionedBy;
-
         payRun.Approvals.Add(new PayRunApproval
         {
             Id = Guid.NewGuid(),
             PayRunId = payRun.Id,
             FromStatus = fromStatus,
             ToStatus = toStatus,
-            ActionedBy = actionedBy,
-            Comments = request.Comments,
+            ActorUserId = string.IsNullOrWhiteSpace(actor.UserId) ? null : actor.UserId,
+            ActorUserName = actor.UserName,
+            Comment = string.IsNullOrWhiteSpace(comment) ? null : comment.Trim(),
             ActionedAt = DateTime.UtcNow
         });
+    }
+
+    private (string UserId, string UserName) GetActor()
+    {
+        var userName = string.IsNullOrWhiteSpace(_currentUserService.UserName) ? "Unknown" : _currentUserService.UserName!;
+        var userId = _currentUserService.UserId ?? string.Empty;
+        return (userId, userName);
+    }
+
+    private void EnsureRole(string role, string action)
+    {
+        var hasRole = _currentUserService.Roles?.Any(r => string.Equals(r, role, StringComparison.OrdinalIgnoreCase)) == true;
+        if (!hasRole)
+        {
+            throw new ForbiddenAccessException($"Only users with the {role} role can {action}.");
+        }
     }
 
     private static object CreatePayRunSnapshot(PayRun payRun)
@@ -337,6 +357,12 @@ public class PayrollService : IPayrollService
             payRun.CompanyId,
             payRun.BranchId,
             payRun.CostCenterId,
+            payRun.PreparedAt,
+            payRun.PreparedByUserName,
+            payRun.ApprovedAt,
+            payRun.ApprovedByUserName,
+            payRun.LockedAt,
+            payRun.LockedByUserName,
             payRun.PeriodStart,
             payRun.PeriodEnd,
             payRun.PayDate,
@@ -947,22 +973,29 @@ public class PayrollService : IPayrollService
             EmployeeCount = summary.EmployeeCount,
             TotalNetPay = summary.TotalNetPay,
             PaySlips = payRun.PaySlips.Select(MapToDto).ToList(),
-            Approvals = payRun.Approvals
+            PreparedAt = payRun.PreparedAt,
+            PreparedByUserName = payRun.PreparedByUserName,
+            ApprovedAt = payRun.ApprovedAt,
+            ApprovedByUserName = payRun.ApprovedByUserName,
+            LockedAt = payRun.LockedAt,
+            LockedByUserName = payRun.LockedByUserName,
+            StatusHistory = payRun.Approvals
                 .OrderByDescending(a => a.ActionedAt)
                 .Select(MapToDto)
                 .ToList()
         };
     }
 
-    private static PayRunApprovalDto MapToDto(PayRunApproval approval)
+    private static PayRunStatusHistoryDto MapToDto(PayRunApproval approval)
     {
-        return new PayRunApprovalDto
+        return new PayRunStatusHistoryDto
         {
             Id = approval.Id,
             FromStatus = approval.FromStatus,
             ToStatus = approval.ToStatus,
-            ActionedBy = approval.ActionedBy,
-            Comments = approval.Comments,
+            ActorUserId = approval.ActorUserId,
+            ActorUserName = approval.ActorUserName,
+            Comment = approval.Comment,
             ActionedAt = approval.ActionedAt
         };
     }

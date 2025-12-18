@@ -22,6 +22,15 @@ public class PayRun : AuditableEntity, IAggregateRoot
     public Guid? CostCenterId { get; set; }
     public CostCenter? CostCenter { get; set; }
     public PayRunStatus Status { get; set; } = PayRunStatus.Draft;
+    public DateTime? PreparedAt { get; set; }
+    public string? PreparedByUserId { get; set; }
+    public string? PreparedByUserName { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+    public string? ApprovedByUserId { get; set; }
+    public string? ApprovedByUserName { get; set; }
+    public DateTime? LockedAt { get; set; }
+    public string? LockedByUserId { get; set; }
+    public string? LockedByUserName { get; set; }
     public ICollection<PaySlip> PaySlips { get; set; } = new List<PaySlip>();
     public ICollection<PayRunApproval> Approvals { get; set; } = new List<PayRunApproval>();
 }

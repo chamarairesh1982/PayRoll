@@ -24,15 +24,22 @@ public class PayRunSummaryDto
 public class PayRunDetailDto : PayRunSummaryDto
 {
     public List<PaySlipDto> PaySlips { get; set; } = new();
-    public List<PayRunApprovalDto> Approvals { get; set; } = new();
+    public List<PayRunStatusHistoryDto> StatusHistory { get; set; } = new();
+    public DateTime? PreparedAt { get; set; }
+    public string? PreparedByUserName { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+    public string? ApprovedByUserName { get; set; }
+    public DateTime? LockedAt { get; set; }
+    public string? LockedByUserName { get; set; }
 }
 
-public class PayRunApprovalDto
+public class PayRunStatusHistoryDto
 {
     public Guid Id { get; set; }
     public PayRunStatus FromStatus { get; set; }
     public PayRunStatus ToStatus { get; set; }
-    public string ActionedBy { get; set; } = string.Empty;
-    public string? Comments { get; set; }
+    public string ActorUserName { get; set; } = string.Empty;
+    public string? Comment { get; set; }
+    public string? ActorUserId { get; set; }
     public DateTime ActionedAt { get; set; }
 }

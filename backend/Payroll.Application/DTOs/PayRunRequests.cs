@@ -32,8 +32,7 @@ public class ChangePayRunStatusRequest
 
 public class PayRunActionRequest
 {
-    public string ActionedBy { get; set; } = string.Empty;
-    public string? Comments { get; set; }
+    public string? Comment { get; set; }
 }
 
 public class PayRunQuery

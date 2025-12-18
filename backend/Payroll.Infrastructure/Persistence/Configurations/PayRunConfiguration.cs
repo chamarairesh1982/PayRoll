@@ -22,6 +22,12 @@ public class PayRunConfiguration : IEntityTypeConfiguration<PayRun>
         builder.Property(pr => pr.PeriodType).HasConversion<int>();
         builder.Property(pr => pr.IsLocked).HasDefaultValue(false);
         builder.Property(pr => pr.IsConsolidated).HasDefaultValue(false);
+        builder.Property(pr => pr.PreparedByUserId).HasMaxLength(100);
+        builder.Property(pr => pr.PreparedByUserName).HasMaxLength(200);
+        builder.Property(pr => pr.ApprovedByUserId).HasMaxLength(100);
+        builder.Property(pr => pr.ApprovedByUserName).HasMaxLength(200);
+        builder.Property(pr => pr.LockedByUserId).HasMaxLength(100);
+        builder.Property(pr => pr.LockedByUserName).HasMaxLength(200);
 
         builder.HasIndex(pr => pr.Reference).IsUnique();
         builder.HasIndex(pr => pr.Code).IsUnique();

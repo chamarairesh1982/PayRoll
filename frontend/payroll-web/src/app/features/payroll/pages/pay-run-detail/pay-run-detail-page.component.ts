@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { PayRunDetail, PayRunStatus } from '../../models/pay-run.model';
-import { PayRunActionRequest, PayRunsApiService } from '../../services/pay-runs-api.service';
+import { PayRunDetail } from '../../models/pay-run.model';
+import { PayRunsApiService } from '../../services/pay-runs-api.service';
 
 @Component({
   selector: 'app-pay-run-detail-page',
@@ -14,8 +14,7 @@ export class PayRunDetailPageComponent implements OnInit {
   isRecalculating = false;
   isChangingStatus = false;
   errorMessage: string | null = null;
-  actionedBy = '';
-  approvalComments = '';
+  actionComment = '';
 
   constructor(private route: ActivatedRoute, private payRunsApi: PayRunsApiService, private router: Router) {}
 
@@ -73,49 +72,77 @@ export class PayRunDetailPageComponent implements OnInit {
       });
   }
 
-  changeStatus(newStatus: PayRunStatus): void {
-    if (!this.payRun) {
+  prepare(): void {
+    if (!this.payRun || this.payRun.status !== 'Draft') {
       return;
     }
 
-    if (!this.actionedBy || !this.approvalComments) {
-      this.errorMessage = 'Please provide your name and approval comments before changing the status.';
-      return;
-    }
-
-    const action: PayRunActionRequest = { actionedBy: this.actionedBy, comments: this.approvalComments };
-
-    this.errorMessage = null;
     this.isChangingStatus = true;
+    this.errorMessage = null;
 
-    let request$:
-      | ReturnType<PayRunsApiService['approvePayRun']>
-      | ReturnType<PayRunsApiService['lockPayRun']>
-      | ReturnType<PayRunsApiService['unlockPayRun']>;
-
-    switch (newStatus) {
-      case 'Approved':
-        request$ =
-          this.payRun.status === 'Locked'
-            ? this.payRunsApi.unlockPayRun(this.payRun.id, action)
-            : this.payRunsApi.approvePayRun(this.payRun.id, action);
-        break;
-      case 'Locked':
-        request$ = this.payRunsApi.lockPayRun(this.payRun.id, action);
-        break;
-      default:
-        request$ = this.payRunsApi.changeStatus(this.payRun.id, newStatus);
-        break;
-    }
-
-    request$.subscribe({
+    this.payRunsApi.preparePayRun(this.payRun.id, this.actionComment ? { comment: this.actionComment } : {}).subscribe({
       next: () => {
         this.isChangingStatus = false;
+        this.actionComment = '';
         this.loadPayRun();
       },
       error: err => {
-        console.error('Failed to change pay run status', err);
-        this.errorMessage = 'Failed to update pay run status.';
+        console.error('Failed to prepare pay run', err);
+        this.errorMessage = err.error?.message || 'Failed to prepare pay run.';
+        this.isChangingStatus = false;
+      },
+    });
+  }
+
+  approve(): void {
+    if (!this.payRun || this.payRun.status !== 'Prepared') {
+      return;
+    }
+
+    if (!this.actionComment.trim()) {
+      this.errorMessage = 'Approval comment is required.';
+      return;
+    }
+
+    this.isChangingStatus = true;
+    this.errorMessage = null;
+
+    this.payRunsApi.approvePayRun(this.payRun.id, { comment: this.actionComment }).subscribe({
+      next: () => {
+        this.isChangingStatus = false;
+        this.actionComment = '';
+        this.loadPayRun();
+      },
+      error: err => {
+        console.error('Failed to approve pay run', err);
+        this.errorMessage = err.error?.message || 'Failed to approve pay run.';
+        this.isChangingStatus = false;
+      },
+    });
+  }
+
+  lock(): void {
+    if (!this.payRun || this.payRun.status !== 'Approved') {
+      return;
+    }
+
+    if (!this.actionComment.trim()) {
+      this.errorMessage = 'Lock comment is required.';
+      return;
+    }
+
+    this.isChangingStatus = true;
+    this.errorMessage = null;
+
+    this.payRunsApi.lockPayRun(this.payRun.id, { comment: this.actionComment }).subscribe({
+      next: () => {
+        this.isChangingStatus = false;
+        this.actionComment = '';
+        this.loadPayRun();
+      },
+      error: err => {
+        console.error('Failed to lock pay run', err);
+        this.errorMessage = err.error?.message || 'Failed to lock pay run.';
         this.isChangingStatus = false;
       },
     });
@@ -133,15 +160,15 @@ export class PayRunDetailPageComponent implements OnInit {
     return !!this.payRun && !this.payRun.isLocked && (this.payRun.status === 'Draft' || this.payRun.status === 'Prepared');
   }
 
+  get canPrepare(): boolean {
+    return !!this.payRun && this.payRun.status === 'Draft';
+  }
+
   get canApprove(): boolean {
     return !!this.payRun && !this.payRun.isLocked && this.payRun.status === 'Prepared';
   }
 
   get canLock(): boolean {
     return !!this.payRun && !this.payRun.isLocked && this.payRun.status === 'Approved';
-  }
-
-  get canUnlock(): boolean {
-    return !!this.payRun && this.payRun.isLocked && this.payRun.status === 'Locked';
   }
 }

@@ -401,4 +401,5 @@ public class TestCurrentUserService : ICurrentUserService
 {
     public string? UserId => "test-user";
     public string? UserName => "test-user";
+    public IReadOnlyCollection<string> Roles => new[] { "Maker", "Approver" };
 }

@@ -11,8 +11,9 @@ public class PayRunApprovalConfiguration : IEntityTypeConfiguration<PayRunApprov
         builder.ToTable("PayRunApprovals");
         builder.HasKey(pra => pra.Id);
 
-        builder.Property(pra => pra.ActionedBy).IsRequired().HasMaxLength(200);
-        builder.Property(pra => pra.Comments).HasMaxLength(1000);
+        builder.Property(pra => pra.ActorUserId).HasMaxLength(100);
+        builder.Property(pra => pra.ActorUserName).IsRequired().HasMaxLength(200);
+        builder.Property(pra => pra.Comment).HasMaxLength(1000);
         builder.Property(pra => pra.FromStatus).HasConversion<int>();
         builder.Property(pra => pra.ToStatus).HasConversion<int>();
         builder.Property(pra => pra.ActionedAt).IsRequired();
