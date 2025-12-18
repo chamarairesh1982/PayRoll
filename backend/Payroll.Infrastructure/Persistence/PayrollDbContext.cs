@@ -34,6 +34,7 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public DbSet<EpfEtfRuleSet> EpfEtfRuleSets => Set<EpfEtfRuleSet>();
     public DbSet<TaxRuleSet> TaxRuleSets => Set<TaxRuleSet>();
     public DbSet<TaxSlab> TaxSlabs => Set<TaxSlab>();
+    public DbSet<TaxRelief> TaxReliefs => Set<TaxRelief>();
     public DbSet<EmployeePayItem> EmployeePayItems => Set<EmployeePayItem>();
     public DbSet<PayrollSettings> PayrollSettings => Set<PayrollSettings>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();

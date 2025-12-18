@@ -6,6 +6,17 @@ export interface TaxSlab {
   order: number;
 }
 
+export type TaxReliefType = 'IncomeRelief' | 'TaxRebate';
+export type TaxReliefFrequency = 'Monthly' | 'Annual';
+
+export interface TaxRelief {
+  id?: string;
+  name: string;
+  amount: number;
+  reliefType: TaxReliefType;
+  frequency: TaxReliefFrequency;
+}
+
 export interface TaxRuleSet {
   id: string;
   name: string;
@@ -15,4 +26,5 @@ export interface TaxRuleSet {
   isDefault: boolean;
   isActive: boolean;
   slabs: TaxSlab[];
+  reliefs: TaxRelief[];
 }

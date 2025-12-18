@@ -18,4 +18,6 @@ public interface IPayrollService
     Task<PaySlipDto?> GetPaySlipAsync(Guid payRunId, Guid paySlipId, CancellationToken cancellationToken = default);
     Task<BankExportResultDto> GenerateBankExportAsync(Guid payRunId, BankExportRequest request, CancellationToken cancellationToken = default);
     Task MarkBankExportDownloadedAsync(Guid payRunId, CancellationToken cancellationToken = default);
+    Task<ApitReportDto?> GetApitReportAsync(Guid payRunId, CancellationToken cancellationToken = default);
+    Task<FileExportResultDto?> GenerateApitCertificateAsync(Guid payRunId, Guid paySlipId, CancellationToken cancellationToken = default);
 }

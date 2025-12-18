@@ -25,6 +25,7 @@ public class TaxRuleSetService : ITaxRuleSetService
 
         var query = _dbContext.TaxRuleSets
             .Include(r => r.Slabs)
+            .Include(r => r.Reliefs)
             .AsNoTracking()
             .AsQueryable();
 
@@ -57,6 +58,7 @@ public class TaxRuleSetService : ITaxRuleSetService
     {
         var ruleSet = await _dbContext.TaxRuleSets
             .Include(r => r.Slabs)
+            .Include(r => r.Reliefs)
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.Id == id);
 
@@ -67,6 +69,7 @@ public class TaxRuleSetService : ITaxRuleSetService
     {
         var ruleSet = await _dbContext.TaxRuleSets
             .Include(r => r.Slabs)
+            .Include(r => r.Reliefs)
             .AsNoTracking()
             .Where(r => r.IsActive
                         && r.EffectiveFrom <= payDate
@@ -82,6 +85,7 @@ public class TaxRuleSetService : ITaxRuleSetService
     {
         ValidateRuleSetDates(request.EffectiveFrom, request.EffectiveTo);
         ValidateSlabs(request.Slabs.Select(s => (s.FromAmount, s.ToAmount, s.RatePercent, s.Order)));
+        ValidateReliefs(request.Reliefs.Select(r => (r.Name, r.Amount)));
 
         if (request.IsDefault)
         {
@@ -105,6 +109,15 @@ public class TaxRuleSetService : ITaxRuleSetService
                 RatePercent = s.RatePercent,
                 Order = s.Order,
                 CreatedBy = _currentUserService.UserName ?? "system"
+            }).ToList(),
+            Reliefs = request.Reliefs.Select(r => new TaxRelief
+            {
+                Id = Guid.NewGuid(),
+                Name = r.Name.Trim(),
+                Amount = r.Amount,
+                ReliefType = r.ReliefType,
+                Frequency = r.Frequency,
+                CreatedBy = _currentUserService.UserName ?? "system"
             }).ToList()
         };
 
@@ -118,6 +131,7 @@ public class TaxRuleSetService : ITaxRuleSetService
     {
         var ruleSet = await _dbContext.TaxRuleSets
             .Include(r => r.Slabs)
+            .Include(r => r.Reliefs)
             .FirstOrDefaultAsync(r => r.Id == id);
         if (ruleSet is null)
         {
@@ -136,6 +150,11 @@ public class TaxRuleSetService : ITaxRuleSetService
         if (request.Slabs != null)
         {
             ValidateSlabs(request.Slabs.Select(s => (s.FromAmount, s.ToAmount, s.RatePercent, s.Order)));
+        }
+
+        if (request.Reliefs != null)
+        {
+            ValidateReliefs(request.Reliefs.Select(r => (r.Name, r.Amount)));
         }
 
         if (request.Name != null)
@@ -177,6 +196,21 @@ public class TaxRuleSetService : ITaxRuleSetService
                 ToAmount = s.ToAmount,
                 RatePercent = s.RatePercent,
                 Order = s.Order,
+                CreatedBy = _currentUserService.UserName ?? "system"
+            }).ToList();
+        }
+
+        if (request.Reliefs != null)
+        {
+            _dbContext.TaxReliefs.RemoveRange(ruleSet.Reliefs);
+            ruleSet.Reliefs = request.Reliefs.Select(r => new TaxRelief
+            {
+                Id = r.Id ?? Guid.NewGuid(),
+                TaxRuleSetId = ruleSet.Id,
+                Name = r.Name.Trim(),
+                Amount = r.Amount,
+                ReliefType = r.ReliefType,
+                Frequency = r.Frequency,
                 CreatedBy = _currentUserService.UserName ?? "system"
             }).ToList();
         }
@@ -249,6 +283,22 @@ public class TaxRuleSetService : ITaxRuleSetService
         }
     }
 
+    private static void ValidateReliefs(IEnumerable<(string Name, decimal Amount)> reliefs)
+    {
+        foreach (var relief in reliefs)
+        {
+            if (string.IsNullOrWhiteSpace(relief.Name))
+            {
+                throw new InvalidOperationException("Relief name is required.");
+            }
+
+            if (relief.Amount < 0)
+            {
+                throw new InvalidOperationException("Relief amounts must be non-negative.");
+            }
+        }
+    }
+
     private static TaxRuleSetDto MapToDto(TaxRuleSet ruleSet)
     {
         return new TaxRuleSetDto
@@ -270,6 +320,17 @@ public class TaxRuleSetService : ITaxRuleSetService
                     ToAmount = s.ToAmount,
                     RatePercent = s.RatePercent,
                     Order = s.Order
+                })
+                .ToList(),
+            Reliefs = ruleSet.Reliefs
+                .OrderBy(r => r.Name)
+                .Select(r => new TaxReliefDto
+                {
+                    Id = r.Id,
+                    Name = r.Name,
+                    Amount = r.Amount,
+                    ReliefType = r.ReliefType,
+                    Frequency = r.Frequency
                 })
                 .ToList()
         };

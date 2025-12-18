@@ -1,3 +1,5 @@
+using Payroll.Domain.PayrollConfig;
+
 namespace Payroll.Application.PayrollConfig.DTOs;
 
 public class TaxRuleSetDto
@@ -11,4 +13,14 @@ public class TaxRuleSetDto
     public bool IsActive { get; set; }
 
     public List<TaxSlabDto> Slabs { get; set; } = new();
+    public List<TaxReliefDto> Reliefs { get; set; } = new();
+}
+
+public class TaxReliefDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public TaxReliefType ReliefType { get; set; }
+    public TaxReliefFrequency Frequency { get; set; }
 }

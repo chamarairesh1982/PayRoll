@@ -1,3 +1,5 @@
+using Payroll.Domain.PayrollConfig;
+
 namespace Payroll.Application.PayrollConfig.DTOs;
 
 public class CreateTaxRuleSetRequest
@@ -9,6 +11,7 @@ public class CreateTaxRuleSetRequest
     public bool IsDefault { get; set; }
 
     public List<CreateTaxSlabItem> Slabs { get; set; } = new();
+    public List<CreateTaxReliefItem> Reliefs { get; set; } = new();
 }
 
 public class CreateTaxSlabItem
@@ -17,4 +20,12 @@ public class CreateTaxSlabItem
     public decimal? ToAmount { get; set; }
     public decimal RatePercent { get; set; }
     public int Order { get; set; }
+}
+
+public class CreateTaxReliefItem
+{
+    public string Name { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public TaxReliefType ReliefType { get; set; }
+    public TaxReliefFrequency Frequency { get; set; }
 }
