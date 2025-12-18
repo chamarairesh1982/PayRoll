@@ -1,5 +1,7 @@
 import { PaySlip } from './payslip.model';
 
+export type BankExportStatus = 'Pending' | 'Generated' | 'Downloaded';
+
 export type PayRunStatus = 'Draft' | 'Prepared' | 'Approved' | 'Locked';
 
 export type PayPeriodType = 'Monthly' | 'Weekly' | 'Custom';
@@ -17,6 +19,10 @@ export interface PayRunSummary {
   costCenterId?: string | null;
   isConsolidated: boolean;
   status: PayRunStatus;
+  exportStatus: BankExportStatus;
+  exportedBank?: string | null;
+  exportedAt?: string | null;
+  exportDownloadedAt?: string | null;
   isLocked: boolean;
   employeeCount: number;
   totalNetPay: number;
@@ -31,6 +37,22 @@ export interface PayRunDetail extends PayRunSummary {
   approvedByUserName?: string | null;
   lockedAt?: string | null;
   lockedByUserName?: string | null;
+}
+
+export interface BankExportFailure {
+  employeeId: string;
+  employeeCode?: string | null;
+  employeeName?: string | null;
+  reason: string;
+}
+
+export interface BankExportResult {
+  status: BankExportStatus;
+  bank: string;
+  fileName: string;
+  contentType: string;
+  contentBase64: string;
+  failures: BankExportFailure[];
 }
 
 export interface PayRunStatusHistory {

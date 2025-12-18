@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BranchOption, CompanyOption, CostCenterOption } from '../../../../shared/models/organization.model';
 import { OrganizationApiService } from '../../../../shared/services/organization-api.service';
-import { PayRunDetail } from '../../models/pay-run.model';
+import { BankExportFailure, BankExportResult, PayRunDetail } from '../../models/pay-run.model';
 import { PayRunsApiService } from '../../services/pay-runs-api.service';
 
 @Component({
@@ -15,11 +15,15 @@ export class PayRunDetailPageComponent implements OnInit {
   isLoading = true;
   isRecalculating = false;
   isChangingStatus = false;
+  isExporting = false;
   errorMessage: string | null = null;
   actionComment = '';
   companies: CompanyOption[] = [];
   branches: BranchOption[] = [];
   costCenters: CostCenterOption[] = [];
+  bankExportFailures: BankExportFailure[] = [];
+  selectedBank = 'HNB';
+  bankOptions = ['HNB', 'BOC', 'Commercial'];
 
   constructor(
     private route: ActivatedRoute,
@@ -162,6 +166,55 @@ export class PayRunDetailPageComponent implements OnInit {
         this.errorMessage = err.error?.message || 'Failed to lock pay run.';
         this.isChangingStatus = false;
       },
+    });
+  }
+
+  generateBankExport(): void {
+    if (!this.payRun) {
+      return;
+    }
+
+    this.isExporting = true;
+    this.errorMessage = null;
+    this.bankExportFailures = [];
+
+    this.payRunsApi.generateBankExport(this.payRun.id, this.selectedBank).subscribe({
+      next: result => {
+        this.isExporting = false;
+
+        if (result.failures?.length) {
+          this.bankExportFailures = result.failures;
+          return;
+        }
+
+        this.downloadExport(result);
+      },
+      error: err => {
+        console.error('Failed to generate bank export', err);
+        this.errorMessage = err.error?.message || 'Failed to generate bank export file.';
+        this.isExporting = false;
+      },
+    });
+  }
+
+  private downloadExport(result: BankExportResult): void {
+    const binary = atob(result.contentBase64);
+    const array = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      array[i] = binary.charCodeAt(i);
+    }
+
+    const blob = new Blob([array], { type: result.contentType || 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = result.fileName || 'bank-export.txt';
+    link.click();
+    window.URL.revokeObjectURL(url);
+
+    this.payRunsApi.markBankExportDownloaded(this.payRun!.id).subscribe({
+      next: () => this.loadPayRun(),
+      error: err => console.warn('Failed to mark export downloaded', err),
     });
   }
 

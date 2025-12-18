@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { PaginatedResult } from '../../employees/models/employee.model';
-import { PayPeriodType, PayRunDetail, PayRunStatus, PayRunSummary } from '../models/pay-run.model';
+import { BankExportResult, PayPeriodType, PayRunDetail, PayRunStatus, PayRunSummary } from '../models/pay-run.model';
 import { PaySlip } from '../models/payslip.model';
 
 export interface PayRunActionRequest {
@@ -108,6 +108,14 @@ export class PayRunsApiService {
 
   unlockPayRun(id: string, payload?: PayRunActionRequest): Observable<void> {
     return this.http.post<void>(`${this.baseUrl}/${id}/unlock`, payload ?? {});
+  }
+
+  generateBankExport(id: string, bank: string): Observable<BankExportResult> {
+    return this.http.post<BankExportResult>(`${this.baseUrl}/${id}/bank-export`, { bank });
+  }
+
+  markBankExportDownloaded(id: string): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${id}/bank-export/downloaded`, {});
   }
 
   getPaySlip(payRunId: string, paySlipId: string): Observable<PaySlip> {

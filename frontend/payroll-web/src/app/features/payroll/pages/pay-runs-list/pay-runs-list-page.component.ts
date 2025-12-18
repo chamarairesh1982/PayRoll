@@ -37,6 +37,7 @@ export class PayRunsListPageComponent implements OnInit {
     { field: 'period', header: 'Period' },
     { field: 'payDate', header: 'Pay Date' },
     { field: 'status', header: 'Status' },
+    { field: 'exportStatus', header: 'Bank Export' },
     { field: 'employeeCount', header: 'Employees' },
     { field: 'totalNetPay', header: 'Total Net Pay' },
   ];

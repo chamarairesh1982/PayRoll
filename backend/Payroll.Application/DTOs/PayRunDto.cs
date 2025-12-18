@@ -17,6 +17,10 @@ public class PayRunSummaryDto
     public bool IsConsolidated { get; set; }
     public PayRunStatus Status { get; set; }
     public bool IsLocked { get; set; }
+    public BankExportStatus ExportStatus { get; set; }
+    public string? ExportedBank { get; set; }
+    public DateTime? ExportedAt { get; set; }
+    public DateTime? ExportDownloadedAt { get; set; }
     public int EmployeeCount { get; set; }
     public decimal TotalNetPay { get; set; }
 }

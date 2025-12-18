@@ -90,3 +90,39 @@
 .loading {
   margin: 1rem 0;
 }
+
+.bank-export {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #ffffff;
+}
+
+.export-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.export-controls label {
+  display: grid;
+  gap: 0.25rem;
+  font-weight: 600;
+}
+
+.export-controls select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+.export-failures {
+  margin-top: 0.5rem;
+  color: #b91c1c;
+}
+
+.export-failures ul {
+  margin: 0.25rem 0 0;
+  padding-left: 1.5rem;
+}
