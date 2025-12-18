@@ -2,6 +2,8 @@ import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChange
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Employee } from '../../../employees/models/employee.model';
 import { EmployeesApiService } from '../../../employees/services/employees-api.service';
+import { BranchOption, CompanyOption, CostCenterOption } from '../../../../shared/models/organization.model';
+import { OrganizationApiService } from '../../../../shared/services/organization-api.service';
 import { PayPeriodType, PayRunSummary } from '../../models/pay-run.model';
 
 @Component({
@@ -34,8 +36,15 @@ export class PayRunFormComponent implements OnInit, OnChanges {
   loadingEmployees = true;
   employeesLoadError: string | null = null;
   employeeSearch = '';
+  companies: CompanyOption[] = [];
+  branches: BranchOption[] = [];
+  costCenters: CostCenterOption[] = [];
 
-  constructor(private fb: FormBuilder, private employeesApi: EmployeesApiService) {
+  constructor(
+    private fb: FormBuilder,
+    private employeesApi: EmployeesApiService,
+    private organizationApi: OrganizationApiService,
+  ) {
     this.form = this.fb.group(
       {
         name: ['', Validators.required],
@@ -59,10 +68,23 @@ export class PayRunFormComponent implements OnInit, OnChanges {
       this.form.patchValue(this.initialValue);
     }
 
+    this.loadCompanies();
     this.loadEmployees();
 
     this.form.get('includeActiveEmployeesOnly')?.valueChanges.subscribe(() => {
       this.applyFilters();
+    });
+
+    this.form.get('companyId')?.valueChanges.subscribe(companyId => {
+      this.form.patchValue({ branchId: '', costCenterId: '' }, { emitEvent: false });
+      this.loadBranches(companyId || undefined);
+      this.loadCostCenters(companyId || undefined, undefined);
+    });
+
+    this.form.get('branchId')?.valueChanges.subscribe(branchId => {
+      const companyId = this.form.get('companyId')?.value || undefined;
+      this.form.patchValue({ costCenterId: '' }, { emitEvent: false });
+      this.loadCostCenters(companyId, branchId || undefined);
     });
   }
 
@@ -129,6 +151,28 @@ export class PayRunFormComponent implements OnInit, OnChanges {
         this.loadingEmployees = false;
         this.filteredEmployees = [];
       },
+    });
+  }
+
+  private loadCompanies(): void {
+    this.organizationApi.getCompanies().subscribe(companies => {
+      this.companies = companies;
+      const companyId = this.form.get('companyId')?.value || undefined;
+      this.loadBranches(companyId);
+      const branchId = this.form.get('branchId')?.value || undefined;
+      this.loadCostCenters(companyId, branchId);
+    });
+  }
+
+  private loadBranches(companyId?: string): void {
+    this.organizationApi.getBranches(companyId).subscribe(branches => {
+      this.branches = branches;
+    });
+  }
+
+  private loadCostCenters(companyId?: string, branchId?: string): void {
+    this.organizationApi.getCostCenters(companyId, branchId).subscribe(costCenters => {
+      this.costCenters = costCenters;
     });
   }
 

@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { OrganizationApiService } from '../../../../shared/services/organization-api.service';
+import { BranchOption, CompanyOption, CostCenterOption } from '../../../../shared/models/organization.model';
 import { EmployeesApiService } from '../../services/employees-api.service';
 import { Employee, PaginatedResult } from '../../models/employee.model';
 
@@ -18,6 +20,9 @@ export class EmployeesListPageComponent implements OnInit {
   companyFilter = '';
   branchFilter = '';
   costCenterFilter = '';
+  companies: CompanyOption[] = [];
+  branches: BranchOption[] = [];
+  costCenters: CostCenterOption[] = [];
   columns = [
     { field: 'employeeCode' as const, header: 'Employee Code' },
     { field: 'fullName' as const, header: 'Name' },
@@ -30,10 +35,37 @@ export class EmployeesListPageComponent implements OnInit {
   showConfirm = false;
   employeeToDelete: Employee | null = null;
 
-  constructor(private employeesApi: EmployeesApiService, private router: Router) {}
+  constructor(
+    private employeesApi: EmployeesApiService,
+    private organizationApi: OrganizationApiService,
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
+    this.loadCompanies();
     this.loadEmployees();
+  }
+
+  loadCompanies(): void {
+    this.organizationApi.getCompanies().subscribe(companies => {
+      this.companies = companies;
+      this.loadBranches();
+      this.loadCostCenters();
+    });
+  }
+
+  loadBranches(): void {
+    this.organizationApi.getBranches(this.companyFilter || undefined).subscribe(branches => {
+      this.branches = branches;
+    });
+  }
+
+  loadCostCenters(): void {
+    this.organizationApi
+      .getCostCenters(this.companyFilter || undefined, this.branchFilter || undefined)
+      .subscribe(costCenters => {
+        this.costCenters = costCenters;
+      });
   }
 
   loadEmployees(): void {
@@ -47,6 +79,27 @@ export class EmployeesListPageComponent implements OnInit {
         this.employees = result.items.map(item => ({ ...item, fullName: `${item.firstName} ${item.lastName}` }));
         this.totalCount = result.totalCount;
       });
+  }
+
+  onCompanyChange(value: string): void {
+    this.companyFilter = value;
+    this.branchFilter = '';
+    this.costCenterFilter = '';
+    this.loadBranches();
+    this.loadCostCenters();
+    this.onScopeChange();
+  }
+
+  onBranchChange(value: string): void {
+    this.branchFilter = value;
+    this.costCenterFilter = '';
+    this.loadCostCenters();
+    this.onScopeChange();
+  }
+
+  onCostCenterChange(value: string): void {
+    this.costCenterFilter = value;
+    this.onScopeChange();
   }
 
   goToCreate(): void {

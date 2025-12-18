@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { PaginatedResult } from '../../../employees/models/employee.model';
+import { BranchOption, CompanyOption, CostCenterOption } from '../../../../shared/models/organization.model';
+import { OrganizationApiService } from '../../../../shared/services/organization-api.service';
 import { PayRunStatus, PayRunSummary } from '../../models/pay-run.model';
 import { PayRunsApiService } from '../../services/pay-runs-api.service';
 
@@ -22,6 +24,9 @@ export class PayRunsListPageComponent implements OnInit {
   branchFilter: string = '';
   costCenterFilter: string = '';
   consolidatedFilter: '' | 'true' | 'false' = '';
+  companies: CompanyOption[] = [];
+  branches: BranchOption[] = [];
+  costCenters: CostCenterOption[] = [];
 
   statusOptions: (PayRunStatus | '')[] = ['', 'Draft', 'Prepared', 'Approved', 'Locked'];
 
@@ -36,10 +41,37 @@ export class PayRunsListPageComponent implements OnInit {
     { field: 'totalNetPay', header: 'Total Net Pay' },
   ];
 
-  constructor(private payRunsApi: PayRunsApiService, private router: Router) {}
+  constructor(
+    private payRunsApi: PayRunsApiService,
+    private organizationApi: OrganizationApiService,
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
+    this.loadCompanies();
     this.load();
+  }
+
+  loadCompanies(): void {
+    this.organizationApi.getCompanies().subscribe(companies => {
+      this.companies = companies;
+      this.loadBranches();
+      this.loadCostCenters();
+    });
+  }
+
+  loadBranches(): void {
+    this.organizationApi.getBranches(this.companyFilter || undefined).subscribe(branches => {
+      this.branches = branches;
+    });
+  }
+
+  loadCostCenters(): void {
+    this.organizationApi
+      .getCostCenters(this.companyFilter || undefined, this.branchFilter || undefined)
+      .subscribe(costCenters => {
+        this.costCenters = costCenters;
+      });
   }
 
   load(): void {
@@ -84,6 +116,27 @@ export class PayRunsListPageComponent implements OnInit {
     this.load();
   }
 
+  onCompanyChange(value: string): void {
+    this.companyFilter = value;
+    this.branchFilter = '';
+    this.costCenterFilter = '';
+    this.loadBranches();
+    this.loadCostCenters();
+    this.onScopeChange();
+  }
+
+  onBranchChange(value: string): void {
+    this.branchFilter = value;
+    this.costCenterFilter = '';
+    this.loadCostCenters();
+    this.onScopeChange();
+  }
+
+  onCostCenterChange(value: string): void {
+    this.costCenterFilter = value;
+    this.onScopeChange();
+  }
+
   goToCreate(): void {
     this.router.navigate(['/payroll/new']);
   }
@@ -111,10 +164,16 @@ export class PayRunsListPageComponent implements OnInit {
       return 'Consolidated';
     }
 
+    const companyLabel =
+      payRun.companyId && this.companies.find(c => c.id === payRun.companyId)?.name;
+    const branchLabel = payRun.branchId && this.branches.find(b => b.id === payRun.branchId)?.name;
+    const costCenterLabel =
+      payRun.costCenterId && this.costCenters.find(c => c.id === payRun.costCenterId)?.name;
+
     const segments = [
-      payRun.companyId ? `Company ${payRun.companyId}` : null,
-      payRun.branchId ? `Branch ${payRun.branchId}` : null,
-      payRun.costCenterId ? `Cost Center ${payRun.costCenterId}` : null,
+      companyLabel || (payRun.companyId ? `Company ${payRun.companyId}` : null),
+      branchLabel || (payRun.branchId ? `Branch ${payRun.branchId}` : null),
+      costCenterLabel || (payRun.costCenterId ? `Cost Center ${payRun.costCenterId}` : null),
     ].filter(Boolean);
 
     return segments.length ? segments.join(' / ') : 'Unscoped';

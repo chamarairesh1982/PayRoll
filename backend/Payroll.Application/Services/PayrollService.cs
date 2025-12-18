@@ -46,6 +46,17 @@ public class PayrollService : IPayrollService
 
     public async Task<PayRunDetailDto> CreatePayRunAsync(CreatePayRunRequest request, CancellationToken cancellationToken = default)
     {
+        if (!request.IsConsolidated && request.CompanyId == null && request.BranchId == null && request.CostCenterId == null)
+        {
+            throw new InvalidOperationException("Non-consolidated pay runs must target a company, branch, or cost center.");
+        }
+
+        var validatedScope = await ValidateOrganizationScopeAsync(
+            request.CompanyId,
+            request.BranchId,
+            request.CostCenterId,
+            cancellationToken);
+
         var payRun = new PayRun
         {
             Reference = $"PR-{DateTime.UtcNow:yyyyMMddHHmmss}",
@@ -55,9 +66,9 @@ public class PayrollService : IPayrollService
             PeriodStart = request.PeriodStart,
             PeriodEnd = request.PeriodEnd,
             PayDate = request.PayDate == default ? request.PeriodEnd : request.PayDate,
-            CompanyId = request.CompanyId,
-            BranchId = request.BranchId,
-            CostCenterId = request.CostCenterId,
+            CompanyId = validatedScope.CompanyId,
+            BranchId = validatedScope.BranchId,
+            CostCenterId = validatedScope.CostCenterId,
             IsConsolidated = request.IsConsolidated,
             Status = PayRunStatus.Draft,
             IsLocked = false
@@ -66,22 +77,7 @@ public class PayrollService : IPayrollService
         var employeeIds = request.EmployeeIds?.Where(id => id != Guid.Empty).Distinct().ToList() ?? new List<Guid>();
         if (!employeeIds.Any())
         {
-            var employeesQuery = _dbContext.Employees.AsNoTracking();
-
-            if (request.CompanyId.HasValue)
-            {
-                employeesQuery = employeesQuery.Where(e => e.CompanyId == request.CompanyId);
-            }
-
-            if (request.BranchId.HasValue)
-            {
-                employeesQuery = employeesQuery.Where(e => e.BranchId == request.BranchId);
-            }
-
-            if (request.CostCenterId.HasValue)
-            {
-                employeesQuery = employeesQuery.Where(e => e.CostCenterId == request.CostCenterId);
-            }
+            var employeesQuery = ApplyScopeFilter(_dbContext.Employees.AsNoTracking(), payRun.CompanyId, payRun.BranchId, payRun.CostCenterId);
 
             if (request.IncludeActiveEmployeesOnly)
             {
@@ -453,7 +449,7 @@ public class PayrollService : IPayrollService
 
     private async Task<List<PaySlip>> GeneratePaySlipsForPayRunAsync(PayRun payRun, List<Guid> employeeIds, CancellationToken ct)
     {
-        var employees = await _dbContext.Employees
+        var employees = await ApplyScopeFilter(_dbContext.Employees, payRun.CompanyId, payRun.BranchId, payRun.CostCenterId)
             .Where(e => employeeIds.Contains(e.Id) && e.IsActive)
             .ToListAsync(ct);
 
@@ -1053,6 +1049,110 @@ public class PayrollService : IPayrollService
         }
 
         return 0;
+    }
+
+    private IQueryable<Employee> ApplyScopeFilter(
+        IQueryable<Employee> query,
+        Guid? companyId,
+        Guid? branchId,
+        Guid? costCenterId)
+    {
+        if (companyId.HasValue)
+        {
+            query = query.Where(e => e.CompanyId == companyId);
+        }
+
+        if (branchId.HasValue)
+        {
+            query = query.Where(e => e.BranchId == branchId);
+        }
+
+        if (costCenterId.HasValue)
+        {
+            query = query.Where(e => e.CostCenterId == costCenterId);
+        }
+
+        return query;
+    }
+
+    private async Task<(Guid? CompanyId, Guid? BranchId, Guid? CostCenterId)> ValidateOrganizationScopeAsync(
+        Guid? companyId,
+        Guid? branchId,
+        Guid? costCenterId,
+        CancellationToken cancellationToken)
+    {
+        Guid? validatedCompanyId = companyId;
+        Guid? validatedBranchId = branchId;
+
+        if (validatedCompanyId.HasValue)
+        {
+            var companyExists = await _dbContext.Companies.AsNoTracking()
+                .AnyAsync(c => c.Id == validatedCompanyId.Value, cancellationToken);
+
+            if (!companyExists)
+            {
+                throw new InvalidOperationException("Company scope was not found.");
+            }
+        }
+
+        if (validatedBranchId.HasValue)
+        {
+            var branch = await _dbContext.Branches.AsNoTracking()
+                .FirstOrDefaultAsync(b => b.Id == validatedBranchId.Value, cancellationToken);
+
+            if (branch is null)
+            {
+                throw new InvalidOperationException("Branch scope was not found.");
+            }
+
+            if (validatedCompanyId.HasValue && branch.CompanyId != validatedCompanyId.Value)
+            {
+                throw new InvalidOperationException("Branch does not belong to the specified company.");
+            }
+
+            validatedCompanyId ??= branch.CompanyId;
+        }
+
+        if (costCenterId.HasValue)
+        {
+            var costCenter = await _dbContext.CostCenters.AsNoTracking()
+                .FirstOrDefaultAsync(cc => cc.Id == costCenterId.Value, cancellationToken);
+
+            if (costCenter is null)
+            {
+                throw new InvalidOperationException("Cost center scope was not found.");
+            }
+
+            if (costCenter.BranchId.HasValue)
+            {
+                if (validatedBranchId.HasValue && costCenter.BranchId != validatedBranchId.Value)
+                {
+                    throw new InvalidOperationException("Cost center does not belong to the specified branch.");
+                }
+
+                validatedBranchId ??= costCenter.BranchId;
+            }
+
+            if (costCenter.CompanyId.HasValue)
+            {
+                if (validatedCompanyId.HasValue && costCenter.CompanyId != validatedCompanyId.Value)
+                {
+                    throw new InvalidOperationException("Cost center does not belong to the specified company.");
+                }
+
+                validatedCompanyId ??= costCenter.CompanyId;
+            }
+        }
+
+        if (validatedBranchId.HasValue && !validatedCompanyId.HasValue)
+        {
+            validatedCompanyId = await _dbContext.Branches.AsNoTracking()
+                .Where(b => b.Id == validatedBranchId.Value)
+                .Select(b => b.CompanyId)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        return (validatedCompanyId, validatedBranchId, costCenterId);
     }
 
     private sealed class PaySlipCalculationContext
