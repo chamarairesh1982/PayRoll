@@ -28,6 +28,10 @@ textarea {
   font-size: 1rem;
 }
 
+select[multiple] {
+  min-height: 180px;
+}
+
 .checkbox-field {
   align-items: center;
   grid-template-columns: auto 1fr;
@@ -54,4 +58,10 @@ button {
 .error {
   color: #dc2626;
   font-size: 0.9rem;
+}
+
+.helper-text {
+  font-weight: 500;
+  color: #6b7280;
+  font-size: 0.95rem;
 }

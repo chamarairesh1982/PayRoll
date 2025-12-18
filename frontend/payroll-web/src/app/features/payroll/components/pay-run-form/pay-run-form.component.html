@@ -39,8 +39,29 @@
     </label>
 
     <label class="full-width">
-      Employee IDs (comma or space separated)
-      <textarea rows="3" formControlName="employeeIds" placeholder="TODO: Employee picker integration"></textarea>
+      Employees
+      <input
+        type="text"
+        [value]="employeeSearch"
+        (input)="onEmployeeSearchChange($event.target.value)"
+        placeholder="Search by name, code, or initials"
+      />
+      <select
+        multiple
+        formControlName="employeeIds"
+        [disabled]="loadingEmployees || !!employeesLoadError"
+        [attr.aria-busy]="loadingEmployees"
+      >
+        <option *ngFor="let employee of filteredEmployees" [value]="employee.id">
+          {{ employee.employeeCode }} - {{ employee.firstName }} {{ employee.lastName }}
+          ({{ employee.isActive ? 'Active' : 'Inactive' }})
+        </option>
+      </select>
+      <div class="helper-text" *ngIf="loadingEmployees">Loading employees...</div>
+      <div class="helper-text error" *ngIf="employeesLoadError">{{ employeesLoadError }}</div>
+      <div class="helper-text" *ngIf="!loadingEmployees && !employeesLoadError">
+        Hold Ctrl/⌘ to select multiple employees.
+      </div>
     </label>
   </div>
 
