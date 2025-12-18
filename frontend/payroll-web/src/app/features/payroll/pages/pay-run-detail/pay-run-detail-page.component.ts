@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BranchOption, CompanyOption, CostCenterOption } from '../../../../shared/models/organization.model';
 import { OrganizationApiService } from '../../../../shared/services/organization-api.service';
+import { ApitReport, FileExportResult } from '../../models/apit-report.model';
 import { BankExportFailure, BankExportResult, PayRunDetail } from '../../models/pay-run.model';
 import { PaySlipEarningLine } from '../../models/payslip.model';
 import { PayRunsApiService } from '../../services/pay-runs-api.service';
@@ -25,6 +26,10 @@ export class PayRunDetailPageComponent implements OnInit {
   bankExportFailures: BankExportFailure[] = [];
   selectedBank = 'HNB';
   bankOptions = ['HNB', 'BOC', 'Commercial'];
+  apitReport?: ApitReport;
+  isLoadingApit = false;
+  apitError: string | null = null;
+  downloadingCertificateId: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -199,24 +204,67 @@ export class PayRunDetailPageComponent implements OnInit {
   }
 
   private downloadExport(result: BankExportResult): void {
-    const binary = atob(result.contentBase64);
-    const array = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      array[i] = binary.charCodeAt(i);
-    }
-
-    const blob = new Blob([array], { type: result.contentType || 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = result.fileName || 'bank-export.txt';
-    link.click();
-    window.URL.revokeObjectURL(url);
+    this.saveBase64File(result, 'bank-export.txt');
 
     this.payRunsApi.markBankExportDownloaded(this.payRun!.id).subscribe({
       next: () => this.loadPayRun(),
       error: err => console.warn('Failed to mark export downloaded', err),
     });
+  }
+
+  loadApitReport(): void {
+    if (!this.payRun) {
+      return;
+    }
+
+    this.isLoadingApit = true;
+    this.apitError = null;
+
+    this.payRunsApi.getApitReport(this.payRun.id).subscribe({
+      next: report => {
+        this.apitReport = report;
+        this.isLoadingApit = false;
+      },
+      error: err => {
+        console.error('Failed to load APIT report', err);
+        this.apitError = 'Unable to load APIT report for this pay run.';
+        this.isLoadingApit = false;
+      },
+    });
+  }
+
+  downloadApitCertificate(paySlipId: string): void {
+    if (!this.payRun) {
+      return;
+    }
+
+    this.downloadingCertificateId = paySlipId;
+    this.payRunsApi.downloadApitCertificate(this.payRun.id, paySlipId).subscribe({
+      next: file => {
+        this.saveBase64File(file, 'apit-certificate.txt');
+        this.downloadingCertificateId = null;
+      },
+      error: err => {
+        console.error('Failed to download APIT certificate', err);
+        this.downloadingCertificateId = null;
+      },
+    });
+  }
+
+  private saveBase64File(file: FileExportResult, fallbackName: string): void {
+    const binary = atob(file.contentBase64);
+    const array = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      array[i] = binary.charCodeAt(i);
+    }
+
+    const blob = new Blob([array], { type: file.contentType || 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = file.fileName || fallbackName;
+    link.click();
+    window.URL.revokeObjectURL(url);
   }
 
   viewPaySlip(paySlipId: string): void {

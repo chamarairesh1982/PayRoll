@@ -12,4 +12,5 @@ public class TaxRuleSet : AuditableEntity
     public bool IsDefault { get; set; }
 
     public ICollection<TaxSlab> Slabs { get; set; } = new List<TaxSlab>();
+    public ICollection<TaxRelief> Reliefs { get; set; } = new List<TaxRelief>();
 }

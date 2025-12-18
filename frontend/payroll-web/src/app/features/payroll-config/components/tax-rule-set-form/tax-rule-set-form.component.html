@@ -29,6 +29,41 @@
 
   <app-tax-slabs-editor [slabs]="slabs" (slabsChange)="updateSlabs($event)"></app-tax-slabs-editor>
 
+  <div class="reliefs">
+    <div class="reliefs__header">
+      <h3>Reliefs & Rebates</h3>
+      <button type="button" (click)="addRelief()">Add relief</button>
+    </div>
+    <div *ngIf="!reliefs.length" class="muted">No reliefs configured.</div>
+    <div class="relief-grid" *ngFor="let relief of reliefs; let i = index">
+      <label>
+        Name
+        <input type="text" [value]="relief.name" (input)="updateRelief(i, { name: $any($event.target).value })" />
+      </label>
+      <label>
+        Amount
+        <input
+          type="number"
+          [value]="relief.amount"
+          (input)="updateRelief(i, { amount: Number($any($event.target).value) })"
+        />
+      </label>
+      <label>
+        Type
+        <select [value]="relief.reliefType" (change)="updateRelief(i, { reliefType: $any($event.target).value })">
+          <option *ngFor="let type of reliefTypeOptions" [value]="type.value">{{ type.label }}</option>
+        </select>
+      </label>
+      <label>
+        Frequency
+        <select [value]="relief.frequency" (change)="updateRelief(i, { frequency: $any($event.target).value })">
+          <option *ngFor="let freq of reliefFrequencyOptions" [value]="freq.value">{{ freq.label }}</option>
+        </select>
+      </label>
+      <button type="button" class="danger" (click)="removeRelief(i)">Remove</button>
+    </div>
+  </div>
+
   <div class="actions">
     <button type="submit">{{ mode === 'create' ? 'Create Rule Set' : 'Save Changes' }}</button>
   </div>

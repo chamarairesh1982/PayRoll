@@ -93,6 +93,20 @@ public class PayRunsController : ControllerBase
         return NoContent();
     }
 
+    [HttpGet("{id:guid}/apit-report")]
+    public async Task<IActionResult> GetApitReport(Guid id, CancellationToken cancellationToken = default)
+    {
+        var report = await _payrollService.GetApitReportAsync(id, cancellationToken);
+        return report is null ? NotFound() : Ok(report);
+    }
+
+    [HttpGet("{payRunId:guid}/payslips/{paySlipId:guid}/apit-certificate")]
+    public async Task<IActionResult> GetApitCertificate(Guid payRunId, Guid paySlipId, CancellationToken cancellationToken = default)
+    {
+        var file = await _payrollService.GenerateApitCertificateAsync(payRunId, paySlipId, cancellationToken);
+        return file is null ? NotFound() : Ok(file);
+    }
+
     [HttpGet("{payRunId:guid}/payslips/{paySlipId:guid}")]
     public async Task<IActionResult> GetPaySlip(Guid payRunId, Guid paySlipId, CancellationToken cancellationToken = default)
     {

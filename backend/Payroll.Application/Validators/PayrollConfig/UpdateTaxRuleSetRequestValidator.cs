@@ -22,6 +22,11 @@ public class UpdateTaxRuleSetRequestValidator : AbstractValidator<UpdateTaxRuleS
         {
             RuleForEach(x => x.Slabs!).SetValidator(new UpdateTaxSlabItemValidator());
         });
+
+        When(x => x.Reliefs != null, () =>
+        {
+            RuleForEach(x => x.Reliefs!).SetValidator(new UpdateTaxReliefItemValidator());
+        });
     }
 }
 
@@ -35,5 +40,18 @@ public class UpdateTaxSlabItemValidator : AbstractValidator<UpdateTaxSlabItem>
         RuleFor(x => x.ToAmount)
             .GreaterThan(x => x.FromAmount)
             .When(x => x.ToAmount.HasValue);
+    }
+}
+
+public class UpdateTaxReliefItemValidator : AbstractValidator<UpdateTaxReliefItem>
+{
+    public UpdateTaxReliefItemValidator()
+    {
+        RuleFor(x => x.Name)
+            .NotEmpty()
+            .MaximumLength(150);
+
+        RuleFor(x => x.Amount)
+            .GreaterThanOrEqualTo(0);
     }
 }

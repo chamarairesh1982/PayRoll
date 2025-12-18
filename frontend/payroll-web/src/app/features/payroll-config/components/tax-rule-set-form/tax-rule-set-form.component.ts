@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { TaxRuleSet, TaxSlab } from '../../models/tax-rule-set.model';
+import { TaxRelief, TaxReliefFrequency, TaxReliefType, TaxRuleSet, TaxSlab } from '../../models/tax-rule-set.model';
 
 @Component({
   selector: 'app-tax-rule-set-form',
@@ -14,6 +14,15 @@ export class TaxRuleSetFormComponent implements OnChanges {
 
   form: FormGroup;
   slabs: TaxSlab[] = [];
+  reliefs: TaxRelief[] = [];
+  reliefTypeOptions: { label: string; value: TaxReliefType }[] = [
+    { label: 'Income relief', value: 'IncomeRelief' },
+    { label: 'Tax rebate', value: 'TaxRebate' },
+  ];
+  reliefFrequencyOptions: { label: string; value: TaxReliefFrequency }[] = [
+    { label: 'Monthly', value: 'Monthly' },
+    { label: 'Annual', value: 'Annual' },
+  ];
 
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
@@ -28,7 +37,7 @@ export class TaxRuleSetFormComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['initialValue'] && this.initialValue) {
-      const { slabs = [], ...rest } = this.initialValue;
+      const { slabs = [], reliefs = [], ...rest } = this.initialValue;
       const patch = {
         ...rest,
         effectiveFrom: this.initialValue.effectiveFrom?.split('T')[0] || this.initialValue.effectiveFrom,
@@ -36,11 +45,32 @@ export class TaxRuleSetFormComponent implements OnChanges {
       };
       this.form.patchValue(patch);
       this.slabs = [...slabs].sort((a, b) => a.order - b.order);
+      this.reliefs = [...reliefs];
     }
   }
 
   updateSlabs(slabs: TaxSlab[]): void {
     this.slabs = slabs;
+  }
+
+  addRelief(): void {
+    this.reliefs = [
+      ...this.reliefs,
+      {
+        name: '',
+        amount: 0,
+        reliefType: 'IncomeRelief',
+        frequency: 'Monthly',
+      },
+    ];
+  }
+
+  updateRelief(index: number, changes: Partial<TaxRelief>): void {
+    this.reliefs = this.reliefs.map((relief, i) => (i === index ? { ...relief, ...changes } : relief));
+  }
+
+  removeRelief(index: number): void {
+    this.reliefs = this.reliefs.filter((_, i) => i !== index);
   }
 
   submit(): void {
@@ -59,6 +89,10 @@ export class TaxRuleSetFormComponent implements OnChanges {
         toAmount: slab.toAmount === null || slab.toAmount === undefined ? null : Number(slab.toAmount),
         ratePercent: Number(slab.ratePercent),
         order: slab.order,
+      })),
+      reliefs: this.reliefs.map(relief => ({
+        ...relief,
+        amount: Number(relief.amount),
       })),
       effectiveTo: value.effectiveTo ? value.effectiveTo : null,
     });
