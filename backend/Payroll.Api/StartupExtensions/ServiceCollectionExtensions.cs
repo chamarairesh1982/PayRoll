@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Payroll.Api.Configuration;
 using Payroll.Api.Filters;
 using Payroll.Api.Mapping;
+using Payroll.Application.Auditing;
 using Payroll.Application.Interfaces;
 using Payroll.Application.Leave;
 using Payroll.Application.Overtime;
@@ -51,6 +52,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEpfEtfRuleSetService, EpfEtfRuleSetService>();
         services.AddScoped<ITaxRuleSetService, TaxRuleSetService>();
         services.AddScoped<IAuditLogger, AuditLogger>();
+        services.AddScoped<IAuditLogQueryService, AuditLogQueryService>();
         services.AddScoped<ICurrentUserService, SimpleCurrentUserService>();
 
         services.AddControllers(options => options.Filters.Add<ApiExceptionFilter>());

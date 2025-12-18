@@ -18,4 +18,17 @@
       </a>
     </nav>
   </div>
+  <div class="sidebar__section">
+    <div class="sidebar__section-title">Admin</div>
+    <nav class="sidebar__nav sidebar__nav--secondary">
+      <a
+        *ngFor="let link of adminLinks"
+        [routerLink]="link.path"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        {{ link.label }}
+      </a>
+    </nav>
+  </div>
 </aside>

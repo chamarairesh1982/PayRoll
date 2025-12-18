@@ -543,10 +543,20 @@ public class PayrollService : IPayrollService
         var content = template.Render(rows, reference);
         var fileName = $"{payRun.Code}-{template.Bank}-{DateTime.UtcNow:yyyyMMddHHmmss}.{template.FileExtension}";
 
+        var beforeSnapshot = CreatePayRunSnapshot(payRun);
         payRun.ExportStatus = BankExportStatus.Generated;
         payRun.ExportedBank = template.Bank;
         payRun.ExportedAt = DateTime.UtcNow;
         payRun.ExportDownloadedAt = null;
+
+        await _auditLogger.LogAsync(
+            nameof(PayRun),
+            payRun.Id.ToString(),
+            "BankExportGenerated",
+            beforeSnapshot,
+            CreatePayRunSnapshot(payRun),
+            _currentUserService.UserName,
+            cancellationToken);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -570,8 +580,18 @@ public class PayrollService : IPayrollService
             throw new KeyNotFoundException("Pay run not found");
         }
 
+        var beforeSnapshot = CreatePayRunSnapshot(payRun);
         payRun.ExportStatus = BankExportStatus.Downloaded;
         payRun.ExportDownloadedAt = DateTime.UtcNow;
+
+        await _auditLogger.LogAsync(
+            nameof(PayRun),
+            payRun.Id.ToString(),
+            "BankExportDownloaded",
+            beforeSnapshot,
+            CreatePayRunSnapshot(payRun),
+            _currentUserService.UserName,
+            cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 

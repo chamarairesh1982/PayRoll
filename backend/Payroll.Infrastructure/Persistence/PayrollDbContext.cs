@@ -45,6 +45,7 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     {
         ValidateEmployeePayItems();
         ValidateEmployeeRecurringPayItems();
+        EnsureAuditLogEntriesAreAppendOnly();
 
         return base.SaveChangesAsync(cancellationToken);
     }
@@ -146,6 +147,18 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
                 throw new InvalidOperationException(
                     "Recurring pay item effective to date cannot be earlier than effective from date.");
             }
+        }
+    }
+
+    private void EnsureAuditLogEntriesAreAppendOnly()
+    {
+        var tamperedAuditLogs = ChangeTracker.Entries<AuditLog>()
+            .Where(e => e.State == EntityState.Modified || e.State == EntityState.Deleted)
+            .ToList();
+
+        if (tamperedAuditLogs.Any())
+        {
+            throw new InvalidOperationException("Audit logs are append-only and cannot be modified or removed.");
         }
     }
 }
