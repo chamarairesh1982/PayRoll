@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PayRunDetail, PayRunStatus } from '../../models/pay-run.model';
-import { PayRunsApiService } from '../../services/pay-runs-api.service';
+import { PayRunActionRequest, PayRunsApiService } from '../../services/pay-runs-api.service';
 
 @Component({
   selector: 'app-pay-run-detail-page',
@@ -13,6 +13,7 @@ export class PayRunDetailPageComponent implements OnInit {
   isLoading = true;
   isRecalculating = false;
   isChangingStatus = false;
+  errorMessage: string | null = null;
 
   constructor(private route: ActivatedRoute, private payRunsApi: PayRunsApiService, private router: Router) {}
 
@@ -27,6 +28,7 @@ export class PayRunDetailPageComponent implements OnInit {
     }
 
     this.isLoading = true;
+    this.errorMessage = null;
     this.payRunsApi.getPayRun(id).subscribe({
       next: payRun => {
         this.payRun = payRun;
@@ -34,6 +36,7 @@ export class PayRunDetailPageComponent implements OnInit {
       },
       error: err => {
         console.error('Failed to load pay run', err);
+        this.errorMessage = 'Failed to load pay run. Please try again later.';
         this.isLoading = false;
       },
     });
@@ -69,22 +72,36 @@ export class PayRunDetailPageComponent implements OnInit {
   }
 
   changeStatus(newStatus: PayRunStatus): void {
-    if (!this.payRun || this.payRun.isLocked) {
+    if (!this.payRun) {
       return;
     }
 
-    if (!confirm(`Change status to ${newStatus}?`)) {
-      return;
-    }
+    const action: PayRunActionRequest = { actionedBy: 'web-user' };
 
     this.isChangingStatus = true;
-    this.payRunsApi.changeStatus(this.payRun.id, newStatus).subscribe({
+
+    let request$: ReturnType<PayRunsApiService['approvePayRun']> | ReturnType<PayRunsApiService['lockPayRun']> | ReturnType<PayRunsApiService['unlockPayRun']>;
+
+    switch (newStatus) {
+      case 'Approved':
+        request$ = this.payRunsApi.approvePayRun(this.payRun.id, action);
+        break;
+      case 'Locked':
+        request$ = this.payRunsApi.lockPayRun(this.payRun.id, action);
+        break;
+      default:
+        request$ = this.payRunsApi.unlockPayRun(this.payRun.id, action);
+        break;
+    }
+
+    request$.subscribe({
       next: () => {
         this.isChangingStatus = false;
         this.loadPayRun();
       },
       error: err => {
         console.error('Failed to change pay run status', err);
+        this.errorMessage = 'Failed to update pay run status.';
         this.isChangingStatus = false;
       },
     });
@@ -102,15 +119,15 @@ export class PayRunDetailPageComponent implements OnInit {
     return !!this.payRun && !this.payRun.isLocked && (this.payRun.status === 'Draft' || this.payRun.status === 'Calculated');
   }
 
-  get canMarkUnderReview(): boolean {
-    return !!this.payRun && !this.payRun.isLocked && (this.payRun.status === 'Draft' || this.payRun.status === 'Calculated');
-  }
-
   get canApprove(): boolean {
-    return !!this.payRun && !this.payRun.isLocked && this.payRun.status === 'UnderReview';
+    return !!this.payRun && !this.payRun.isLocked && this.payRun.status === 'Calculated';
   }
 
-  get canPost(): boolean {
+  get canLock(): boolean {
     return !!this.payRun && !this.payRun.isLocked && this.payRun.status === 'Approved';
+  }
+
+  get canUnlock(): boolean {
+    return !!this.payRun && this.payRun.isLocked && this.payRun.status === 'Locked';
   }
 }

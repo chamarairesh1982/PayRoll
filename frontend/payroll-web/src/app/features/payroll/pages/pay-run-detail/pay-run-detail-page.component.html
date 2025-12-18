@@ -1,5 +1,7 @@
 <div *ngIf="isLoading" class="loading">Loading pay run...</div>
 
+<div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+
 <section *ngIf="payRun" class="pay-run-detail">
   <div class="page-header">
     <div>
@@ -22,14 +24,14 @@
     <button type="button" (click)="recalculate()" [disabled]="!canRecalculate || isRecalculating">
       {{ isRecalculating ? 'Recalculating...' : 'Recalculate' }}
     </button>
-    <button type="button" (click)="changeStatus('UnderReview')" [disabled]="!canMarkUnderReview || isChangingStatus">
-      Mark as Under Review
-    </button>
     <button type="button" (click)="changeStatus('Approved')" [disabled]="!canApprove || isChangingStatus">
       Approve
     </button>
-    <button type="button" (click)="changeStatus('Posted')" [disabled]="!canPost || isChangingStatus">
-      Post
+    <button type="button" (click)="changeStatus('Locked')" [disabled]="!canLock || isChangingStatus">
+      Lock
+    </button>
+    <button type="button" (click)="changeStatus('Draft')" [disabled]="!canUnlock || isChangingStatus">
+      Unlock
     </button>
   </div>
 

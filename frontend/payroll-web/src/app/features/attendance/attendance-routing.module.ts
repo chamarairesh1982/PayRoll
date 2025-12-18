@@ -8,10 +8,6 @@ const routes: Routes = [
     path: '',
     component: AttendanceListPageComponent,
   },
-  {
-    path: ':id/edit',
-    component: AttendanceEditPageComponent,
-  },
 ];
 
 @NgModule({
