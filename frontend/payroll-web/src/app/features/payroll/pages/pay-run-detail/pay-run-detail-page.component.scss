@@ -23,6 +23,34 @@
   border-radius: 8px;
 }
 
+.approval-form {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.approval-form label {
+  display: grid;
+  gap: 0.25rem;
+  font-weight: 600;
+}
+
+.approval-form input,
+.approval-form textarea {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font: inherit;
+}
+
+.approval-form .helper-text {
+  color: #475569;
+  font-size: 0.9rem;
+}
+
 .actions {
   display: flex;
   gap: 0.75rem;
