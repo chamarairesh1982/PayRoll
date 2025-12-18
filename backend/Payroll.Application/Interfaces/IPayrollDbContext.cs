@@ -21,6 +21,7 @@ public interface IPayrollDbContext
     DbSet<PayRun> PayRuns { get; }
     DbSet<PaySlip> PaySlips { get; }
     DbSet<PayRunApproval> PayRunApprovals { get; }
+    DbSet<RecurringRule> RecurringRules { get; }
     DbSet<Company> Companies { get; }
     DbSet<Branch> Branches { get; }
     DbSet<CostCenter> CostCenters { get; }

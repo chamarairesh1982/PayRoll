@@ -504,11 +504,21 @@ public class PayrollService : IPayrollService
                         && (pi.EffectiveTo == null || pi.EffectiveTo >= periodStart))
             .ToListAsync(ct);
 
+        var recurringRules = await _dbContext.RecurringRules
+            .AsNoTracking()
+            .Where(r => r.IsActive
+                        && r.Frequency == payRun.PeriodType
+                        && r.StartDate <= DateOnly.FromDateTime(periodEnd)
+                        && (r.EndDate == null || r.EndDate >= DateOnly.FromDateTime(periodStart)))
+            .ToListAsync(ct);
+
         var payDateOnly = DateOnly.FromDateTime(payRun.PayDate);
         var epfEtfRule = await _epfEtfRuleSetService.GetActiveRuleForDateAsync(payDateOnly);
         var taxRuleSet = await _taxRuleSetService.GetActiveRuleForDateAsync(payDateOnly);
 
         var paySlips = new List<PaySlip>();
+
+        var recurringKeySet = new HashSet<string>();
 
         foreach (var employee in employees)
         {
@@ -526,6 +536,7 @@ public class PayrollService : IPayrollService
                     ActiveLoans = loans.Where(l => l.EmployeeId == employee.Id).ToList(),
                     PayItems = payItems.Where(pi => pi.EmployeeId == employee.Id).ToList(),
                     RecurringPayItems = recurringPayItems.Where(pi => pi.EmployeeId == employee.Id).ToList(),
+                    RecurringRules = recurringRules.Where(r => r.EmployeeId == employee.Id).ToList(),
                     AllowanceTypes = allowanceTypes,
                     DeductionTypes = deductionTypes,
                     WorkingDaysPerMonth = payrollSettings.WorkingDaysPerMonth,
@@ -534,6 +545,7 @@ public class PayrollService : IPayrollService
                     WeekendOvertimeMultiplier = payrollSettings.WeekendOvertimeMultiplier,
                     HolidayOvertimeMultiplier = payrollSettings.HolidayOvertimeMultiplier
                 },
+                recurringKeySet,
                 ct);
 
             paySlip.PayRunId = payRun.Id;
@@ -563,6 +575,7 @@ public class PayrollService : IPayrollService
         EpfEtfRuleSetDto? epfEtfRule,
         TaxRuleSetDto? taxRuleSet,
         PaySlipCalculationContext ctx,
+        HashSet<string> recurringKeys,
         CancellationToken ct)
     {
         ctx.BasicSalary = employee.BaseSalary;
@@ -580,6 +593,7 @@ public class PayrollService : IPayrollService
         await ApplyOvertimeEarningsAsync(ctx, payRun);
         await ApplyFixedAllowancesAsync(ctx, payRun);
         await ApplyFixedDeductionsAsync(ctx, payRun);
+        await ApplyRecurringRulesAsync(ctx, payRun, recurringKeys);
         await ApplyLoansAsync(ctx, payRun);
         await ApplyStatutoryContributionsAsync(ctx, payRun, epfEtfRule, taxRuleSet);
 
@@ -754,6 +768,56 @@ public class PayrollService : IPayrollService
                 IsPreTax = deduction.DeductionType.IsPreTax,
                 IsPostTax = deduction.DeductionType.IsPostTax
             });
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task ApplyRecurringRulesAsync(PaySlipCalculationContext ctx, PayRun payRun, HashSet<string> recurringKeys)
+    {
+        var periodKey = $"{DateOnly.FromDateTime(payRun.PeriodStart):yyyyMMdd}-{DateOnly.FromDateTime(payRun.PeriodEnd):yyyyMMdd}";
+
+        foreach (var rule in ctx.RecurringRules)
+        {
+            var key = $"{rule.Id}:{ctx.Employee.Id}:{periodKey}";
+            if (!recurringKeys.Add(key))
+            {
+                continue;
+            }
+
+            var amount = RoundCurrency(rule.Amount);
+            if (amount <= 0)
+            {
+                continue;
+            }
+
+            if (rule.RuleType == RecurringRuleType.Allowance)
+            {
+                ctx.Earnings.Add(new EarningLine
+                {
+                    Id = Guid.NewGuid(),
+                    PaySlipId = ctx.PaySlipId,
+                    Code = rule.Code,
+                    Description = rule.Name,
+                    Amount = amount,
+                    IsEpfApplicable = rule.IsEpfApplicable,
+                    IsEtfApplicable = rule.IsEtfApplicable,
+                    IsTaxable = rule.IsTaxable
+                });
+            }
+            else
+            {
+                ctx.Deductions.Add(new DeductionLine
+                {
+                    Id = Guid.NewGuid(),
+                    PaySlipId = ctx.PaySlipId,
+                    Code = rule.Code,
+                    Description = rule.Name,
+                    Amount = amount,
+                    IsPreTax = false,
+                    IsPostTax = true
+                });
+            }
         }
 
         return Task.CompletedTask;
@@ -1165,6 +1229,7 @@ public class PayrollService : IPayrollService
         public List<Loan> ActiveLoans { get; init; } = new();
         public List<EmployeePayItem> PayItems { get; init; } = new();
         public List<EmployeeRecurringPayItem> RecurringPayItems { get; init; } = new();
+        public List<RecurringRule> RecurringRules { get; init; } = new();
         public IReadOnlyDictionary<string, AllowanceType> AllowanceTypes { get; init; } = new Dictionary<string, AllowanceType>();
         public IReadOnlyDictionary<string, DeductionType> DeductionTypes { get; init; } = new Dictionary<string, DeductionType>();
         public List<EarningLine> Earnings { get; } = new();

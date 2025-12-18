@@ -22,6 +22,7 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public DbSet<PayRun> PayRuns => Set<PayRun>();
     public DbSet<PaySlip> PaySlips => Set<PaySlip>();
     public DbSet<PayRunApproval> PayRunApprovals => Set<PayRunApproval>();
+    public DbSet<RecurringRule> RecurringRules => Set<RecurringRule>();
     public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
     public DbSet<OvertimeRecord> OvertimeRecords => Set<OvertimeRecord>();

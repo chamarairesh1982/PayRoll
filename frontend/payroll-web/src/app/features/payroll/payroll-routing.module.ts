@@ -4,6 +4,7 @@ import { PayRunCreatePageComponent } from './pages/pay-run-create/pay-run-create
 import { PayRunDetailPageComponent } from './pages/pay-run-detail/pay-run-detail-page.component';
 import { PayRunsListPageComponent } from './pages/pay-runs-list/pay-runs-list-page.component';
 import { PayslipViewPageComponent } from './pages/payslip-view/payslip-view-page.component';
+import { RecurringRulesPageComponent } from './pages/recurring-rules/recurring-rules-page.component';
 
 const routes: Routes = [
   {
@@ -13,6 +14,10 @@ const routes: Routes = [
   {
     path: 'new',
     component: PayRunCreatePageComponent,
+  },
+  {
+    path: 'recurring-rules',
+    component: RecurringRulesPageComponent,
   },
   {
     path: ':payRunId/payslips/:paySlipId',

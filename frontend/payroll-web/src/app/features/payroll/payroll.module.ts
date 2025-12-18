@@ -7,6 +7,7 @@ import { PayRunCreatePageComponent } from './pages/pay-run-create/pay-run-create
 import { PayRunDetailPageComponent } from './pages/pay-run-detail/pay-run-detail-page.component';
 import { PayRunsListPageComponent } from './pages/pay-runs-list/pay-runs-list-page.component';
 import { PayslipViewPageComponent } from './pages/payslip-view/payslip-view-page.component';
+import { RecurringRulesPageComponent } from './pages/recurring-rules/recurring-rules-page.component';
 import { PayrollRoutingModule } from './payroll-routing.module';
 
 @NgModule({
@@ -16,6 +17,7 @@ import { PayrollRoutingModule } from './payroll-routing.module';
     PayRunDetailPageComponent,
     PayslipViewPageComponent,
     PayRunFormComponent,
+    RecurringRulesPageComponent,
   ],
   imports: [CommonModule, FormsModule, ReactiveFormsModule, SharedModule, PayrollRoutingModule],
 })

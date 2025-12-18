@@ -1,0 +1,154 @@
+<div class="page">
+  <div class="page__header">
+    <h2>Recurring Allowances &amp; Deductions</h2>
+    <div class="page__filters">
+      <label>
+        Show
+        <select [(ngModel)]="filterIsActive" (change)="handleFilterChange()">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="all">All</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <div class="page__content">
+    <section class="form-card">
+      <h3>{{ selectedRuleId ? 'Edit Rule' : 'Create Rule' }}</h3>
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <div class="form-grid">
+          <label>
+            Code
+            <input type="text" formControlName="code" />
+          </label>
+          <label>
+            Name
+            <input type="text" formControlName="name" />
+          </label>
+          <label>
+            Type
+            <select formControlName="ruleType">
+              <option value="Allowance">Allowance</option>
+              <option value="Deduction">Deduction</option>
+            </select>
+          </label>
+          <label>
+            Frequency
+            <select formControlName="frequency">
+              <option value="Monthly">Monthly</option>
+              <option value="Weekly">Weekly</option>
+              <option value="Custom">Custom</option>
+            </select>
+          </label>
+          <label>
+            Start Date
+            <input type="date" formControlName="startDate" />
+          </label>
+          <label>
+            End Date
+            <input type="date" formControlName="endDate" />
+          </label>
+          <label>
+            Amount
+            <input type="number" step="0.01" formControlName="amount" />
+          </label>
+          <label>
+            Employee
+            <select formControlName="employeeId">
+              <option value="">Select employee</option>
+              <option *ngFor="let employee of employees" [value]="employee.id">{{ employee.fullName }}</option>
+            </select>
+          </label>
+          <label>
+            Apply EPF
+            <input type="checkbox" formControlName="isEpfApplicable" />
+          </label>
+          <label>
+            Apply ETF
+            <input type="checkbox" formControlName="isEtfApplicable" />
+          </label>
+          <label>
+            Taxable
+            <input type="checkbox" formControlName="isTaxable" />
+          </label>
+          <label>
+            Active
+            <input type="checkbox" formControlName="isActive" />
+          </label>
+          <label>
+            Preview periods
+            <input type="number" min="1" formControlName="periods" />
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" [disabled]="isSaving">{{ selectedRuleId ? 'Update' : 'Create' }}</button>
+          <button type="button" (click)="simulate()">Preview</button>
+          <button type="button" (click)="resetForm()">Reset</button>
+        </div>
+      </form>
+
+      <div class="simulation" *ngIf="simulationResults.length">
+        <h4>Upcoming periods</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>Start</th>
+              <th>End</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let result of simulationResults">
+              <td>{{ result.periodStart }}</td>
+              <td>{{ result.periodEnd }}</td>
+              <td>{{ result.amount | number: '1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="list-card">
+      <div class="list-card__header">
+        <h3>Rules</h3>
+        <span *ngIf="isLoading">Loading...</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Employee</th>
+            <th>Frequency</th>
+            <th>Amount</th>
+            <th>Active</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let rule of rules">
+            <td>{{ rule.code }}</td>
+            <td>{{ rule.name }}</td>
+            <td>{{ rule.ruleType }}</td>
+            <td>{{ rule.employeeName || rule.employeeId }}</td>
+            <td>{{ rule.frequency }}</td>
+            <td>{{ rule.amount | number: '1.2-2' }}</td>
+            <td>{{ rule.isActive ? 'Yes' : 'No' }}</td>
+            <td class="actions">
+              <button type="button" (click)="edit(rule)">Edit</button>
+              <button type="button" (click)="delete(rule)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="pager">
+        <button (click)="previousPage()" [disabled]="page <= 1">Previous</button>
+        <span>Page {{ page }} / {{ totalPages }}</span>
+        <button (click)="nextPage()" [disabled]="page >= totalPages">Next</button>
+      </div>
+    </section>
+  </div>
+</div>
