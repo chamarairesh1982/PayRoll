@@ -1,0 +1,14 @@
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { AuditLogListPageComponent } from './pages/audit-log-list/audit-log-list-page.component';
+
+const routes: Routes = [
+  { path: '', redirectTo: 'audit-logs', pathMatch: 'full' },
+  { path: 'audit-logs', component: AuditLogListPageComponent },
+];
+
+@NgModule({
+  imports: [RouterModule.forChild(routes)],
+  exports: [RouterModule],
+})
+export class AdminRoutingModule {}

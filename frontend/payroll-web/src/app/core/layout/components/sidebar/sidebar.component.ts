@@ -23,4 +23,6 @@ export class SidebarComponent {
     { label: 'EPF/ETF Rules', path: '/config/epf-etf' },
     { label: 'PAYE Tax Rules', path: '/config/tax-rules' },
   ];
+
+  adminLinks = [{ label: 'Audit Logs', path: '/admin/audit-logs' }];
 }

@@ -1,0 +1,44 @@
+<div class="page-header">
+  <h1>Audit Logs</h1>
+  <div class="actions">
+    <button type="button" (click)="export()">Export CSV</button>
+  </div>
+</div>
+
+<div class="filters">
+  <label>
+    Entity
+    <input type="text" [(ngModel)]="filters.entityName" (change)="applyFilters()" placeholder="PayRun, PaySlip..." />
+  </label>
+  <label>
+    Entity ID
+    <input type="text" [(ngModel)]="filters.entityId" (change)="applyFilters()" />
+  </label>
+  <label>
+    Action
+    <input type="text" [(ngModel)]="filters.action" (change)="applyFilters()" placeholder="PayRunCreated" />
+  </label>
+  <label>
+    Actor
+    <input type="text" [(ngModel)]="filters.createdBy" (change)="applyFilters()" />
+  </label>
+  <label>
+    From
+    <input type="datetime-local" [(ngModel)]="filters.from" (change)="applyFilters()" />
+  </label>
+  <label>
+    To
+    <input type="datetime-local" [(ngModel)]="filters.to" (change)="applyFilters()" />
+  </label>
+  <button type="button" (click)="clearFilters()">Clear</button>
+</div>
+
+<div *ngIf="isLoading" class="loading">Loading audit logs...</div>
+
+<app-data-table [columns]="columns" [data]="logs"></app-data-table>
+
+<div class="pagination">
+  <button type="button" (click)="previousPage()" [disabled]="page === 1">Previous</button>
+  <span>Page {{ page }}</span>
+  <button type="button" (click)="nextPage()" [disabled]="page * pageSize >= totalCount">Next</button>
+</div>

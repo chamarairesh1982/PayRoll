@@ -37,6 +37,10 @@ const routes: Routes = [
         loadChildren: () =>
           import('./features/payroll-config/payroll-config.module').then(m => m.PayrollConfigModule),
       },
+      {
+        path: 'admin',
+        loadChildren: () => import('./features/admin/admin.module').then(m => m.AdminModule),
+      },
     ],
   },
   { path: '**', redirectTo: '' },
