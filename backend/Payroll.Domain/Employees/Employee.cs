@@ -27,7 +27,11 @@ public class Employee : AuditableEntity, IAggregateRoot
         string? callingName,
         DateTime? probationEndDate,
         DateTime? confirmationDate,
-        string createdBy)
+        string createdBy,
+        string? bankName,
+        string? bankCode,
+        string? branchCode,
+        string? bankAccountNumber)
     {
         EmployeeCode = ValidateRequired(employeeCode, nameof(EmployeeCode));
         FirstName = ValidateRequired(firstName, nameof(FirstName));
@@ -46,6 +50,10 @@ public class Employee : AuditableEntity, IAggregateRoot
         ProbationEndDate = probationEndDate;
         ConfirmationDate = confirmationDate;
         CreatedBy = createdBy;
+        BankName = NormalizeBankField(bankName);
+        BankCode = NormalizeBankField(bankCode);
+        BranchCode = NormalizeBankField(branchCode);
+        BankAccountNumber = NormalizeBankField(bankAccountNumber);
     }
 
     public string EmployeeCode { get; private set; } = string.Empty;
@@ -61,6 +69,10 @@ public class Employee : AuditableEntity, IAggregateRoot
     public DateTime? ProbationEndDate { get; private set; }
     public DateTime? ConfirmationDate { get; private set; }
     public decimal BaseSalary { get; private set; }
+    public string? BankName { get; private set; }
+    public string? BankCode { get; private set; }
+    public string? BranchCode { get; private set; }
+    public string? BankAccountNumber { get; private set; }
     public Guid? CompanyId { get; private set; }
     public Company? Company { get; private set; }
     public Guid? BranchId { get; private set; }
@@ -87,7 +99,11 @@ public class Employee : AuditableEntity, IAggregateRoot
         string? callingName,
         DateTime? probationEndDate,
         DateTime? confirmationDate,
-        string createdBy)
+        string createdBy,
+        string? bankName = null,
+        string? bankCode = null,
+        string? branchCode = null,
+        string? bankAccountNumber = null)
     {
         return new Employee(
             employeeCode,
@@ -106,7 +122,11 @@ public class Employee : AuditableEntity, IAggregateRoot
             callingName,
             probationEndDate,
             confirmationDate,
-            createdBy);
+            createdBy,
+            bankName,
+            bankCode,
+            branchCode,
+            bankAccountNumber);
     }
 
     public void Update(
@@ -126,7 +146,11 @@ public class Employee : AuditableEntity, IAggregateRoot
         string? callingName,
         DateTime? probationEndDate,
         DateTime? confirmationDate,
-        string modifiedBy)
+        string modifiedBy,
+        string? bankName = null,
+        string? bankCode = null,
+        string? branchCode = null,
+        string? bankAccountNumber = null)
     {
         EmployeeCode = ValidateRequired(employeeCode, nameof(EmployeeCode));
         FirstName = ValidateRequired(firstName, nameof(FirstName));
@@ -146,6 +170,15 @@ public class Employee : AuditableEntity, IAggregateRoot
         ConfirmationDate = confirmationDate;
         ModifiedAt = DateTime.UtcNow;
         ModifiedBy = modifiedBy;
+        UpdateBankDetails(bankName, bankCode, branchCode, bankAccountNumber);
+    }
+
+    public void UpdateBankDetails(string? bankName, string? bankCode, string? branchCode, string? bankAccountNumber)
+    {
+        BankName = NormalizeBankField(bankName);
+        BankCode = NormalizeBankField(bankCode);
+        BranchCode = NormalizeBankField(branchCode);
+        BankAccountNumber = NormalizeBankField(bankAccountNumber);
     }
 
     public void SoftDelete(string modifiedBy)
@@ -189,4 +222,6 @@ public class Employee : AuditableEntity, IAggregateRoot
 
         return baseSalary;
     }
+
+    private static string? NormalizeBankField(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

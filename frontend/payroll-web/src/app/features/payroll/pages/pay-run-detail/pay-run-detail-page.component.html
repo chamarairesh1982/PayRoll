@@ -22,6 +22,30 @@
     <div *ngIf="payRun.preparedAt"><strong>Prepared:</strong> {{ payRun.preparedAt }} by {{ payRun.preparedByUserName || 'Unknown' }}</div>
     <div *ngIf="payRun.approvedAt"><strong>Approved:</strong> {{ payRun.approvedAt }} by {{ payRun.approvedByUserName || 'Unknown' }}</div>
     <div *ngIf="payRun.lockedAt"><strong>Locked:</strong> {{ payRun.lockedAt }} by {{ payRun.lockedByUserName || 'Unknown' }}</div>
+    <div><strong>Bank Export:</strong> {{ payRun.exportStatus }} <span *ngIf="payRun.exportedBank">({{ payRun.exportedBank }})</span></div>
+    <div *ngIf="payRun.exportedAt"><strong>Generated At:</strong> {{ payRun.exportedAt }}</div>
+    <div *ngIf="payRun.exportDownloadedAt"><strong>Downloaded At:</strong> {{ payRun.exportDownloadedAt }}</div>
+  </div>
+
+  <div class="bank-export">
+    <h3>Bank export files</h3>
+    <div class="export-controls">
+      <label>
+        Bank Template
+        <select [(ngModel)]="selectedBank">
+          <option *ngFor="let bank of bankOptions" [value]="bank">{{ bank }}</option>
+        </select>
+      </label>
+      <button type="button" (click)="generateBankExport()" [disabled]="isExporting">{{ isExporting ? 'Generating...' : 'Generate & Download' }}</button>
+    </div>
+    <div *ngIf="bankExportFailures.length" class="export-failures">
+      <h4>Missing bank details</h4>
+      <ul>
+        <li *ngFor="let failure of bankExportFailures">
+          {{ failure.employeeCode || failure.employeeId }} - {{ failure.reason }}
+        </li>
+      </ul>
+    </div>
   </div>
 
   <div class="approval-form">

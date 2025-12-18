@@ -79,6 +79,20 @@ public class PayRunsController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{id:guid}/bank-export")]
+    public async Task<IActionResult> GenerateBankExport(Guid id, [FromBody] BankExportRequest request, CancellationToken cancellationToken = default)
+    {
+        var result = await _payrollService.GenerateBankExportAsync(id, request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("{id:guid}/bank-export/downloaded")]
+    public async Task<IActionResult> MarkBankExportDownloaded(Guid id, CancellationToken cancellationToken = default)
+    {
+        await _payrollService.MarkBankExportDownloadedAsync(id, cancellationToken);
+        return NoContent();
+    }
+
     [HttpGet("{payRunId:guid}/payslips/{paySlipId:guid}")]
     public async Task<IActionResult> GetPaySlip(Guid payRunId, Guid paySlipId, CancellationToken cancellationToken = default)
     {

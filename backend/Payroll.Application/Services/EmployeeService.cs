@@ -98,7 +98,11 @@ public class EmployeeService : IEmployeeService
             request.CallingName,
             request.ProbationEndDate,
             request.ConfirmationDate,
-            createdBy);
+            createdBy,
+            request.BankName,
+            request.BankCode,
+            request.BranchCode,
+            request.BankAccountNumber);
 
         await _dbContext.Employees.AddAsync(employee, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -139,7 +143,11 @@ public class EmployeeService : IEmployeeService
             request.CallingName,
             request.ProbationEndDate,
             request.ConfirmationDate,
-            modifiedBy);
+            modifiedBy,
+            request.BankName,
+            request.BankCode,
+            request.BranchCode,
+            request.BankAccountNumber);
 
         employee.IsActive = request.IsActive;
 
@@ -232,6 +240,10 @@ public class EmployeeService : IEmployeeService
             CompanyId = employee.CompanyId,
             BranchId = employee.BranchId,
             CostCenterId = employee.CostCenterId,
+            BankName = employee.BankName,
+            BankCode = employee.BankCode,
+            BranchCode = employee.BranchCode,
+            BankAccountNumber = employee.BankAccountNumber,
             IsActive = employee.IsActive,
             CreatedAt = employee.CreatedAt,
             CreatedBy = employee.CreatedBy,

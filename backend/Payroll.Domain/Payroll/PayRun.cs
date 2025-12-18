@@ -22,6 +22,10 @@ public class PayRun : AuditableEntity, IAggregateRoot
     public Guid? CostCenterId { get; set; }
     public CostCenter? CostCenter { get; set; }
     public PayRunStatus Status { get; set; } = PayRunStatus.Draft;
+    public BankExportStatus ExportStatus { get; set; } = BankExportStatus.Pending;
+    public string? ExportedBank { get; set; }
+    public DateTime? ExportedAt { get; set; }
+    public DateTime? ExportDownloadedAt { get; set; }
     public DateTime? PreparedAt { get; set; }
     public string? PreparedByUserId { get; set; }
     public string? PreparedByUserName { get; set; }

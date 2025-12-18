@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using Payroll.Application.BankExports;
 using Payroll.Application.DTOs;
 using Payroll.Application.Interfaces;
 using Payroll.Application.PayrollConfig;
@@ -31,6 +32,7 @@ public class PayrollService : IPayrollService
     private readonly ITaxRuleSetService _taxRuleSetService;
     private readonly IAuditLogger _auditLogger;
     private readonly ICurrentUserService _currentUserService;
+    private readonly BankExportTemplateResolver _bankExportResolver = new();
 
     public PayrollService(
         IPayrollDbContext dbContext,
@@ -142,6 +144,10 @@ public class PayrollService : IPayrollService
         payRun.PaySlips = await GeneratePaySlipsForPayRunAsync(payRun, employeeIds, cancellationToken);
         var recalculatedStatus = payRun.Status == PayRunStatus.Prepared ? PayRunStatus.Prepared : PayRunStatus.Draft;
         payRun.Status = recalculatedStatus;
+        payRun.ExportStatus = BankExportStatus.Pending;
+        payRun.ExportedBank = null;
+        payRun.ExportedAt = null;
+        payRun.ExportDownloadedAt = null;
 
         await _auditLogger.LogAsync(
             nameof(PayRun),
@@ -384,6 +390,8 @@ public class PayrollService : IPayrollService
                 .ThenInclude(ps => ps.Earnings)
             .Include(pr => pr.PaySlips)
                 .ThenInclude(ps => ps.Deductions)
+            .Include(pr => pr.PaySlips)
+                .ThenInclude(ps => ps.Employee)
             .Include(pr => pr.Approvals)
             .AsNoTracking()
             .FirstOrDefaultAsync(pr => pr.Id == id, cancellationToken);
@@ -443,10 +451,128 @@ public class PayrollService : IPayrollService
         var paySlip = await _dbContext.PaySlips
             .Include(ps => ps.Earnings)
             .Include(ps => ps.Deductions)
+            .Include(ps => ps.Employee)
             .AsNoTracking()
             .FirstOrDefaultAsync(ps => ps.Id == paySlipId && ps.PayRunId == payRunId, cancellationToken);
 
         return paySlip is null ? null : MapToDto(paySlip);
+    }
+
+    public async Task<BankExportResultDto> GenerateBankExportAsync(Guid payRunId, BankExportRequest request, CancellationToken cancellationToken = default)
+    {
+        var template = _bankExportResolver.Resolve(request.Bank);
+        var payRun = await _dbContext.PayRuns
+            .Include(pr => pr.PaySlips)
+                .ThenInclude(ps => ps.Employee)
+            .FirstOrDefaultAsync(pr => pr.Id == payRunId, cancellationToken);
+
+        if (payRun is null)
+        {
+            throw new KeyNotFoundException("Pay run not found");
+        }
+
+        var failures = new List<BankExportFailureDto>();
+        var rows = new List<BankExportRow>();
+
+        foreach (var paySlip in payRun.PaySlips)
+        {
+            var employee = paySlip.Employee;
+            if (employee is null)
+            {
+                failures.Add(new BankExportFailureDto
+                {
+                    EmployeeId = paySlip.EmployeeId,
+                    Reason = "Employee details unavailable"
+                });
+                continue;
+            }
+
+            var missingFields = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(employee.BankAccountNumber))
+            {
+                missingFields.Add("account number");
+            }
+
+            if (string.IsNullOrWhiteSpace(employee.BranchCode))
+            {
+                missingFields.Add("branch code");
+            }
+
+            if (string.IsNullOrWhiteSpace(employee.BankCode))
+            {
+                missingFields.Add("bank code");
+            }
+
+            if (string.IsNullOrWhiteSpace(employee.BankName))
+            {
+                missingFields.Add("bank name");
+            }
+
+            if (missingFields.Any())
+            {
+                failures.Add(new BankExportFailureDto
+                {
+                    EmployeeId = employee.Id,
+                    EmployeeCode = employee.EmployeeCode,
+                    EmployeeName = employee.FullName,
+                    Reason = $"Missing bank details: {string.Join(", ", missingFields)}"
+                });
+                continue;
+            }
+
+            rows.Add(new BankExportRow(
+                employee.EmployeeCode,
+                employee.FullName,
+                employee.BankAccountNumber!,
+                employee.BranchCode!,
+                paySlip.NetPay));
+        }
+
+        if (failures.Any())
+        {
+            return new BankExportResultDto
+            {
+                Status = payRun.ExportStatus,
+                Bank = request.Bank,
+                Failures = failures
+            };
+        }
+
+        var reference = string.IsNullOrWhiteSpace(payRun.Reference) ? payRun.Code : payRun.Reference;
+        var content = template.Render(rows, reference);
+        var fileName = $"{payRun.Code}-{template.Bank}-{DateTime.UtcNow:yyyyMMddHHmmss}.{template.FileExtension}";
+
+        payRun.ExportStatus = BankExportStatus.Generated;
+        payRun.ExportedBank = template.Bank;
+        payRun.ExportedAt = DateTime.UtcNow;
+        payRun.ExportDownloadedAt = null;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return new BankExportResultDto
+        {
+            Status = payRun.ExportStatus,
+            Bank = template.Bank,
+            FileName = fileName,
+            ContentType = template.ContentType,
+            ContentBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(content)),
+            Failures = failures
+        };
+    }
+
+    public async Task MarkBankExportDownloadedAsync(Guid payRunId, CancellationToken cancellationToken = default)
+    {
+        var payRun = await _dbContext.PayRuns.FirstOrDefaultAsync(pr => pr.Id == payRunId, cancellationToken);
+
+        if (payRun is null)
+        {
+            throw new KeyNotFoundException("Pay run not found");
+        }
+
+        payRun.ExportStatus = BankExportStatus.Downloaded;
+        payRun.ExportDownloadedAt = DateTime.UtcNow;
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<List<PaySlip>> GeneratePaySlipsForPayRunAsync(PayRun payRun, List<Guid> employeeIds, CancellationToken ct)
@@ -1190,6 +1316,10 @@ public class PayrollService : IPayrollService
             CostCenterId = payRun.CostCenterId,
             IsConsolidated = payRun.IsConsolidated,
             Status = payRun.Status,
+            ExportStatus = payRun.ExportStatus,
+            ExportedBank = payRun.ExportedBank,
+            ExportedAt = payRun.ExportedAt,
+            ExportDownloadedAt = payRun.ExportDownloadedAt,
             IsLocked = payRun.IsLocked,
             EmployeeCount = employeeCount,
             TotalNetPay = totalNet
@@ -1213,6 +1343,10 @@ public class PayrollService : IPayrollService
             CostCenterId = summary.CostCenterId,
             IsConsolidated = summary.IsConsolidated,
             Status = summary.Status,
+            ExportStatus = summary.ExportStatus,
+            ExportedBank = summary.ExportedBank,
+            ExportedAt = summary.ExportedAt,
+            ExportDownloadedAt = summary.ExportDownloadedAt,
             IsLocked = summary.IsLocked,
             EmployeeCount = summary.EmployeeCount,
             TotalNetPay = summary.TotalNetPay,
