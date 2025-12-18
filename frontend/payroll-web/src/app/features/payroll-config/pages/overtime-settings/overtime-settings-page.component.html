@@ -1,0 +1,34 @@
+<section class="overtime-settings">
+  <header>
+    <div>
+      <h1>Overtime rules</h1>
+      <p class="subtitle">Configure multipliers, rounding, and caps applied to approved overtime during payroll.</p>
+    </div>
+    <button type="button" (click)="loadConfig()" [disabled]="isLoading">Reload</button>
+  </header>
+
+  <div *ngIf="isLoading" class="info">Loading overtime configuration...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+  <div *ngIf="successMessage" class="success">{{ successMessage }}</div>
+
+  <app-overtime-settings-form
+    *ngIf="!isLoading"
+    [initialValue]="config"
+    [isSaving]="isSaving"
+    (submitted)="saveRules($event)"
+  ></app-overtime-settings-form>
+
+  <div class="helper-panels">
+    <div class="panel">
+      <h3>Rounding</h3>
+      <p>Rounding is applied to submitted hours before caps. This helps keep payouts consistent with policy.</p>
+    </div>
+    <div class="panel">
+      <h3>Caps</h3>
+      <p>
+        Daily caps limit overtime per day, while the pay run cap controls the total hours that can be paid for the period per
+        employee.
+      </p>
+    </div>
+  </div>
+</section>

@@ -1365,6 +1365,18 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<double>("OvertimeDailyCapHours")
+                        .HasColumnType("float")
+                        .HasDefaultValue(12.0);
+
+                    b.Property<double>("OvertimePayRunCapHours")
+                        .HasColumnType("float")
+                        .HasDefaultValue(80.0);
+
+                    b.Property<int>("OvertimeRoundingMinutes")
+                        .HasColumnType("int")
+                        .HasDefaultValue(15);
+
                     b.Property<decimal>("WeekdayOvertimeMultiplier")
                         .HasColumnType("decimal(18,2)");
 

@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { BranchOption, CompanyOption, CostCenterOption } from '../../../../shared/models/organization.model';
 import { OrganizationApiService } from '../../../../shared/services/organization-api.service';
 import { BankExportFailure, BankExportResult, PayRunDetail } from '../../models/pay-run.model';
+import { PaySlipEarningLine } from '../../models/payslip.model';
 import { PayRunsApiService } from '../../services/pay-runs-api.service';
 
 @Component({
@@ -224,6 +225,11 @@ export class PayRunDetailPageComponent implements OnInit {
     }
 
     this.router.navigate(['/payroll', this.payRun.id, 'payslips', paySlipId]);
+  }
+
+  getOvertimeEarningsForSlip(paySlipId: string): PaySlipEarningLine[] {
+    const slip = this.payRun?.paySlips.find(ps => ps.id === paySlipId);
+    return slip?.earnings?.filter(e => e.code === 'OT') ?? [];
   }
 
   get canRecalculate(): boolean {

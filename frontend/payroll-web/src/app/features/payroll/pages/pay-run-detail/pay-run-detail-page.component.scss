@@ -126,3 +126,27 @@
   margin: 0.25rem 0 0;
   padding-left: 1.5rem;
 }
+
+.overtime-review {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.ot-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ot-label {
+  font-weight: 600;
+}
+
+.ot-amount {
+  font-variant-numeric: tabular-nums;
+}
+
+.muted {
+  color: #64748b;
+}

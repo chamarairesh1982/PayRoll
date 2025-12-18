@@ -15,9 +15,11 @@ import { DeductionTypeEditPageComponent } from './pages/deduction-type-edit/dedu
 import { DeductionTypesListPageComponent } from './pages/deduction-types-list/deduction-types-list-page.component';
 import { EpfEtfRuleEditPageComponent } from './pages/epf-etf-rule-edit/epf-etf-rule-edit-page.component';
 import { EpfEtfRulesListPageComponent } from './pages/epf-etf-rules-list/epf-etf-rules-list-page.component';
+import { OvertimeSettingsPageComponent } from './pages/overtime-settings/overtime-settings-page.component';
 import { TaxRuleSetEditPageComponent } from './pages/tax-rule-set-edit/tax-rule-set-edit-page.component';
 import { TaxRuleSetsListPageComponent } from './pages/tax-rule-sets-list/tax-rule-sets-list-page.component';
 import { PayrollConfigRoutingModule } from './payroll-config-routing.module';
+import { OvertimeSettingsFormComponent } from './components/overtime-settings-form/overtime-settings-form.component';
 
 @NgModule({
   declarations: [
@@ -36,6 +38,8 @@ import { PayrollConfigRoutingModule } from './payroll-config-routing.module';
     TaxRuleSetEditPageComponent,
     TaxRuleSetFormComponent,
     TaxSlabsEditorComponent,
+    OvertimeSettingsPageComponent,
+    OvertimeSettingsFormComponent,
   ],
   imports: [CommonModule, ReactiveFormsModule, SharedModule, PayrollConfigRoutingModule],
 })

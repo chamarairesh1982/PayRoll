@@ -125,4 +125,33 @@
       <div>No payslips available.</div>
     </ng-template>
   </div>
+
+  <div class="overtime-review" *ngIf="payRun?.paySlips?.length">
+    <h2>Overtime earnings</h2>
+    <table class="table" *ngIf="payRun.paySlips.some(slip => getOvertimeEarningsForSlip(slip.id).length); else noOvertime">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Overtime lines</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let slip of payRun.paySlips">
+          <td>{{ slip.employeeCode || slip.employeeId }} - {{ slip.employeeName }}</td>
+          <td>
+            <ng-container *ngIf="getOvertimeEarningsForSlip(slip.id).length; else noSlipOvertime">
+              <div class="ot-line" *ngFor="let ot of getOvertimeEarningsForSlip(slip.id)">
+                <span class="ot-label">{{ ot.description }}</span>
+                <span class="ot-amount">{{ ot.amount }}</span>
+              </div>
+            </ng-container>
+            <ng-template #noSlipOvertime><span class="muted">No overtime for this payslip.</span></ng-template>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <ng-template #noOvertime>
+      <div class="info">No overtime earnings were calculated for this pay run.</div>
+    </ng-template>
+  </div>
 </section>
