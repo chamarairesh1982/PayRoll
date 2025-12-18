@@ -1,4 +1,4 @@
-PayRun lifecycle & approvals
+**1. PayRun lifecycle & approvals**
 
 Priority: P0
 
@@ -16,7 +16,7 @@ Unauthorized transitions are blocked and surfaced to users.
 
 UI supports viewing status history and performing approvals/locks.
 
-Multi-company/Branch/Cost center support
+**2. Multi-company/Branch/Cost center support**
 
 Priority: P0
 
@@ -34,7 +34,7 @@ Reports and exports can be generated per entity and consolidated.
 
 UI offers filters/selectors to view and approve by entity.
 
-Recurring allowances & deductions engine
+**3. Recurring allowances & deductions engine**
 
 Priority: P0
 
@@ -52,7 +52,7 @@ UI supports creating/updating rules and previewing impact before approval.
 
 EPF/ETF/tax applicability flags are honored in calculations.
 
-Leave integration into payroll math
+**4. Leave integration into payroll math**
 
 Priority: P0
 
@@ -70,7 +70,7 @@ Attendance reconciliation prevents duplicate deductions for the same absence.
 
 Tests/QA scenarios cover edge cases (half-days, overlapping leave/attendance).
 
-Bank export files (HNB/BOC/Commercial templates)
+**5. Bank export files (HNB/BOC/Commercial templates)**
 
 Priority: P0
 
@@ -88,7 +88,7 @@ Export status (pending/generated/downloaded) is tracked per pay-run.
 
 Generated files pass sample bank upload checks.
 
-Audit log store
+**6. Audit log store**
 
 Priority: P0
 
@@ -106,7 +106,7 @@ Search/filter/export of audit logs is available via API/UI.
 
 Logs can be correlated to pay-runs and payslip changes.
 
-Overtime rule configuration
+**7. Overtime rule configuration**
 
 Priority: P1
 
@@ -124,7 +124,7 @@ Locked OT entries cannot be modified during payroll.
 
 UI displays applied rules and computed OT amounts.
 
-Statutory EPF/ETF reporting
+**8. Statutory EPF/ETF reporting**
 
 Priority: P1
 
@@ -142,7 +142,7 @@ Validation flags contributions outside thresholds.
 
 Earnings are correctly mapped to EPF/ETF contributable amounts.
 
-PAYE/APIT reporting and certificates
+**9. PAYE/APIT reporting and certificates**
 
 Priority: P1
 
@@ -160,7 +160,7 @@ Reliefs/rebates are configurable and reflected in calculations and reports.
 
 Reports/export formats align with IRD filing requirements.
 
-Payslip PDF export
+**10. Payslip PDF export**
 
 Priority: P1
 
@@ -178,7 +178,7 @@ Employees can download or receive payslips via email securely.
 
 Generated documents match statutory format requirements.
 
-General Ledger (accounting posting)
+11. General Ledger (accounting posting)
 
 Priority: P1
 
