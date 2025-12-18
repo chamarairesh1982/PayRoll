@@ -9,6 +9,7 @@ using Payroll.Application.Leave;
 using Payroll.Application.Overtime;
 using Payroll.Application.PayrollConfig;
 using Payroll.Application.Services;
+using Payroll.Application.RecurringRules;
 using Payroll.Application.Validators.Employees;
 using Payroll.Infrastructure.Identity;
 using Payroll.Infrastructure.Logging;
@@ -44,6 +45,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ILoanService, LoanService>();
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<IOrganizationService, OrganizationService>();
+        services.AddScoped<IRecurringRuleService, RecurringRuleService>();
         services.AddScoped<IAllowanceTypeService, AllowanceTypeService>();
         services.AddScoped<IDeductionTypeService, DeductionTypeService>();
         services.AddScoped<IEpfEtfRuleSetService, EpfEtfRuleSetService>();
