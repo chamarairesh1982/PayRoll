@@ -1,5 +1,7 @@
 import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Employee } from '../../../employees/models/employee.model';
+import { EmployeesApiService } from '../../../employees/services/employees-api.service';
 import { PayPeriodType, PayRunSummary } from '../../models/pay-run.model';
 
 @Component({
@@ -23,7 +25,13 @@ export class PayRunFormComponent implements OnInit, OnChanges {
   form: FormGroup;
   periodTypes: PayPeriodType[] = ['Monthly', 'Weekly', 'Custom'];
 
-  constructor(private fb: FormBuilder) {
+  employees: Employee[] = [];
+  filteredEmployees: Employee[] = [];
+  loadingEmployees = true;
+  employeesLoadError: string | null = null;
+  employeeSearch = '';
+
+  constructor(private fb: FormBuilder, private employeesApi: EmployeesApiService) {
     this.form = this.fb.group(
       {
         name: ['', Validators.required],
@@ -32,7 +40,7 @@ export class PayRunFormComponent implements OnInit, OnChanges {
         periodEnd: ['', Validators.required],
         payDate: ['', Validators.required],
         includeActiveEmployeesOnly: [true],
-        employeeIds: [''],
+        employeeIds: [[]],
       },
       { validators: this.periodRangeValidator },
     );
@@ -42,6 +50,12 @@ export class PayRunFormComponent implements OnInit, OnChanges {
     if (this.initialValue) {
       this.form.patchValue(this.initialValue);
     }
+
+    this.loadEmployees();
+
+    this.form.get('includeActiveEmployeesOnly')?.valueChanges.subscribe(() => {
+      this.applyFilters();
+    });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -63,15 +77,10 @@ export class PayRunFormComponent implements OnInit, OnChanges {
       periodEnd: string;
       payDate: string;
       includeActiveEmployeesOnly: boolean;
-      employeeIds?: string;
+      employeeIds?: string[];
     };
 
-    const employeeIds = value.employeeIds
-      ? value.employeeIds
-          .split(/[\s,]+/)
-          .map(id => id.trim())
-          .filter(Boolean)
-      : undefined;
+    const employeeIds = value.employeeIds || [];
 
     this.submitted.emit({
       name: value.name,
@@ -82,6 +91,58 @@ export class PayRunFormComponent implements OnInit, OnChanges {
       includeActiveEmployeesOnly: value.includeActiveEmployeesOnly,
       ...(employeeIds && employeeIds.length ? { employeeIds } : {}),
     });
+  }
+
+  onEmployeeSearchChange(term: string): void {
+    this.employeeSearch = term;
+    this.applyFilters();
+  }
+
+  private loadEmployees(): void {
+    this.loadingEmployees = true;
+    this.employeesLoadError = null;
+    this.employeesApi.getEmployees(1, 1000).subscribe({
+      next: result => {
+        this.employees = result.items;
+        this.loadingEmployees = false;
+        this.applyFilters();
+      },
+      error: err => {
+        console.error('Failed to load employees', err);
+        this.employeesLoadError = 'Failed to load employees. Please try again later.';
+        this.loadingEmployees = false;
+        this.filteredEmployees = [];
+      },
+    });
+  }
+
+  private applyFilters(): void {
+    const includeActiveOnly = this.form.get('includeActiveEmployeesOnly')?.value;
+    const search = this.employeeSearch.trim().toLowerCase();
+
+    let results = this.employees;
+
+    if (includeActiveOnly) {
+      results = results.filter(emp => emp.isActive);
+    }
+
+    if (search) {
+      results = results.filter(emp => {
+        const fields = [
+          emp.firstName,
+          emp.lastName,
+          emp.employeeCode,
+          emp.callingName ?? '',
+          emp.initials ?? '',
+        ]
+          .filter(Boolean)
+          .map(val => val.toLowerCase());
+
+        return fields.some(field => field.includes(search));
+      });
+    }
+
+    this.filteredEmployees = results;
   }
 
   private periodRangeValidator = (group: FormGroup) => {
