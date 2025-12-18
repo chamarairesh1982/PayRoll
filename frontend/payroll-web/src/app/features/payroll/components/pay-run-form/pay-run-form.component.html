@@ -33,6 +33,26 @@
       <app-form-field-error [control]="form.get('payDate')"></app-form-field-error>
     </label>
 
+    <label>
+      Company
+      <input type="text" formControlName="companyId" placeholder="Company Id (optional)" />
+    </label>
+
+    <label>
+      Branch
+      <input type="text" formControlName="branchId" placeholder="Branch Id (optional)" />
+    </label>
+
+    <label>
+      Cost Center
+      <input type="text" formControlName="costCenterId" placeholder="Cost Center Id (optional)" />
+    </label>
+
+    <label class="checkbox-field">
+      <input type="checkbox" formControlName="isConsolidated" />
+      <span>Consolidated pay run across scope</span>
+    </label>
+
     <label class="checkbox-field">
       <input type="checkbox" formControlName="includeActiveEmployeesOnly" />
       <span>Include Active Employees Only</span>

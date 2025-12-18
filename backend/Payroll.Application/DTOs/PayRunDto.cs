@@ -11,6 +11,10 @@ public class PayRunSummaryDto
     public DateTime PeriodStart { get; set; }
     public DateTime PeriodEnd { get; set; }
     public DateTime PayDate { get; set; }
+    public Guid? CompanyId { get; set; }
+    public Guid? BranchId { get; set; }
+    public Guid? CostCenterId { get; set; }
+    public bool IsConsolidated { get; set; }
     public PayRunStatus Status { get; set; }
     public bool IsLocked { get; set; }
     public int EmployeeCount { get; set; }

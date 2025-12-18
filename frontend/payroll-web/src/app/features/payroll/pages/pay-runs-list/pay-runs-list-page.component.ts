@@ -4,7 +4,7 @@ import { PaginatedResult } from '../../../employees/models/employee.model';
 import { PayRunStatus, PayRunSummary } from '../../models/pay-run.model';
 import { PayRunsApiService } from '../../services/pay-runs-api.service';
 
-type PayRunRow = PayRunSummary & { period: string };
+type PayRunRow = PayRunSummary & { period: string; scope: string };
 
 @Component({
   selector: 'app-pay-runs-list-page',
@@ -18,12 +18,17 @@ export class PayRunsListPageComponent implements OnInit {
   totalCount = 0;
   isLoading = false;
   selectedStatus: PayRunStatus | '' = '';
+  companyFilter: string = '';
+  branchFilter: string = '';
+  costCenterFilter: string = '';
+  consolidatedFilter: '' | 'true' | 'false' = '';
 
   statusOptions: (PayRunStatus | '')[] = ['', 'Draft', 'Prepared', 'Approved', 'Locked'];
 
   columns: { field: keyof PayRunRow; header: string }[] = [
     { field: 'code', header: 'Code' },
     { field: 'name', header: 'Name' },
+    { field: 'scope', header: 'Scope' },
     { field: 'period', header: 'Period' },
     { field: 'payDate', header: 'Pay Date' },
     { field: 'status', header: 'Status' },
@@ -40,10 +45,23 @@ export class PayRunsListPageComponent implements OnInit {
   load(): void {
     this.isLoading = true;
     this.payRunsApi
-      .getPayRuns({ page: this.page, pageSize: this.pageSize, status: this.selectedStatus || undefined })
+      .getPayRuns({
+        page: this.page,
+        pageSize: this.pageSize,
+        status: this.selectedStatus || undefined,
+        companyId: this.companyFilter || undefined,
+        branchId: this.branchFilter || undefined,
+        costCenterId: this.costCenterFilter || undefined,
+        isConsolidated:
+          this.consolidatedFilter === '' ? undefined : this.consolidatedFilter === 'true' ? true : false,
+      })
       .subscribe({
         next: (result: PaginatedResult<PayRunSummary>) => {
-          this.payRuns = result.items.map(pr => ({ ...pr, period: `${pr.periodStart} - ${pr.periodEnd}` }));
+          this.payRuns = result.items.map(pr => ({
+            ...pr,
+            period: `${pr.periodStart} - ${pr.periodEnd}`,
+            scope: this.buildScopeLabel(pr),
+          }));
           this.totalCount = result.totalCount;
           this.page = result.page;
           this.pageSize = result.pageSize;
@@ -57,6 +75,11 @@ export class PayRunsListPageComponent implements OnInit {
   }
 
   onStatusChange(): void {
+    this.page = 1;
+    this.load();
+  }
+
+  onScopeChange(): void {
     this.page = 1;
     this.load();
   }
@@ -81,5 +104,19 @@ export class PayRunsListPageComponent implements OnInit {
       this.page--;
       this.load();
     }
+  }
+
+  private buildScopeLabel(payRun: PayRunSummary): string {
+    if (payRun.isConsolidated) {
+      return 'Consolidated';
+    }
+
+    const segments = [
+      payRun.companyId ? `Company ${payRun.companyId}` : null,
+      payRun.branchId ? `Branch ${payRun.branchId}` : null,
+      payRun.costCenterId ? `Cost Center ${payRun.costCenterId}` : null,
+    ].filter(Boolean);
+
+    return segments.length ? segments.join(' / ') : 'Unscoped';
   }
 }

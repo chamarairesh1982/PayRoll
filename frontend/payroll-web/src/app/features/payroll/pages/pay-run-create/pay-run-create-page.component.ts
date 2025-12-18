@@ -19,6 +19,10 @@ export class PayRunCreatePageComponent {
     periodStart: string;
     periodEnd: string;
     payDate: string;
+    companyId?: string;
+    branchId?: string;
+    costCenterId?: string;
+    isConsolidated?: boolean;
     includeActiveEmployeesOnly: boolean;
     employeeIds?: string[];
   }): void {

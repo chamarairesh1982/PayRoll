@@ -15,6 +15,9 @@ export class EmployeesListPageComponent implements OnInit {
   totalCount = 0;
   page = 1;
   pageSize = 25;
+  companyFilter = '';
+  branchFilter = '';
+  costCenterFilter = '';
   columns = [
     { field: 'employeeCode' as const, header: 'Employee Code' },
     { field: 'fullName' as const, header: 'Name' },
@@ -34,10 +37,16 @@ export class EmployeesListPageComponent implements OnInit {
   }
 
   loadEmployees(): void {
-    this.employeesApi.getEmployees(this.page, this.pageSize).subscribe((result: PaginatedResult<Employee>) => {
-      this.employees = result.items.map(item => ({ ...item, fullName: `${item.firstName} ${item.lastName}` }));
-      this.totalCount = result.totalCount;
-    });
+    this.employeesApi
+      .getEmployees(this.page, this.pageSize, {
+        companyId: this.companyFilter || undefined,
+        branchId: this.branchFilter || undefined,
+        costCenterId: this.costCenterFilter || undefined,
+      })
+      .subscribe((result: PaginatedResult<Employee>) => {
+        this.employees = result.items.map(item => ({ ...item, fullName: `${item.firstName} ${item.lastName}` }));
+        this.totalCount = result.totalCount;
+      });
   }
 
   goToCreate(): void {
@@ -84,5 +93,10 @@ export class EmployeesListPageComponent implements OnInit {
       this.page--;
       this.loadEmployees();
     }
+  }
+
+  onScopeChange(): void {
+    this.page = 1;
+    this.loadEmployees();
   }
 }

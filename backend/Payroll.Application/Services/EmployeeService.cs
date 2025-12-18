@@ -19,15 +19,37 @@ public class EmployeeService : IEmployeeService
         _auditLogger = auditLogger;
     }
 
-    public async Task<PaginatedResult<EmployeeDto>> GetEmployeesAsync(int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<EmployeeDto>> GetEmployeesAsync(
+        int page,
+        int pageSize,
+        Guid? companyId = null,
+        Guid? branchId = null,
+        Guid? costCenterId = null,
+        CancellationToken cancellationToken = default)
     {
         page = Math.Max(page, 1);
         pageSize = Math.Max(pageSize, 1);
 
         var query = _dbContext.Employees
             .AsNoTracking()
-            .Where(e => e.IsActive)
-            .OrderBy(e => e.EmployeeCode);
+            .Where(e => e.IsActive);
+
+        if (companyId.HasValue)
+        {
+            query = query.Where(e => e.CompanyId == companyId);
+        }
+
+        if (branchId.HasValue)
+        {
+            query = query.Where(e => e.BranchId == branchId);
+        }
+
+        if (costCenterId.HasValue)
+        {
+            query = query.Where(e => e.CostCenterId == costCenterId);
+        }
+
+        query = query.OrderBy(e => e.EmployeeCode);
 
         var totalCount = await query.CountAsync(cancellationToken);
         var employees = await query
@@ -69,6 +91,9 @@ public class EmployeeService : IEmployeeService
             request.MaritalStatus,
             request.EmploymentStartDate,
             request.BaseSalary,
+            request.CompanyId,
+            request.BranchId,
+            request.CostCenterId,
             request.Initials,
             request.CallingName,
             request.ProbationEndDate,
@@ -107,6 +132,9 @@ public class EmployeeService : IEmployeeService
             request.MaritalStatus,
             request.EmploymentStartDate,
             request.BaseSalary,
+            request.CompanyId,
+            request.BranchId,
+            request.CostCenterId,
             request.Initials,
             request.CallingName,
             request.ProbationEndDate,
@@ -201,6 +229,9 @@ public class EmployeeService : IEmployeeService
             ProbationEndDate = employee.ProbationEndDate,
             ConfirmationDate = employee.ConfirmationDate,
             BaseSalary = employee.BaseSalary,
+            CompanyId = employee.CompanyId,
+            BranchId = employee.BranchId,
+            CostCenterId = employee.CostCenterId,
             IsActive = employee.IsActive,
             CreatedAt = employee.CreatedAt,
             CreatedBy = employee.CreatedBy,

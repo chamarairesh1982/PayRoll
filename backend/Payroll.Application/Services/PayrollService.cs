@@ -49,6 +49,10 @@ public class PayrollService : IPayrollService
             PeriodStart = request.PeriodStart,
             PeriodEnd = request.PeriodEnd,
             PayDate = request.PayDate == default ? request.PeriodEnd : request.PayDate,
+            CompanyId = request.CompanyId,
+            BranchId = request.BranchId,
+            CostCenterId = request.CostCenterId,
+            IsConsolidated = request.IsConsolidated,
             Status = PayRunStatus.Draft,
             IsLocked = false
         };
@@ -56,11 +60,29 @@ public class PayrollService : IPayrollService
         var employeeIds = request.EmployeeIds?.Where(id => id != Guid.Empty).Distinct().ToList() ?? new List<Guid>();
         if (!employeeIds.Any())
         {
-            employeeIds = await _dbContext.Employees
-                .AsNoTracking()
-                .Where(e => !request.IncludeActiveEmployeesOnly || e.IsActive)
-                .Select(e => e.Id)
-                .ToListAsync(cancellationToken);
+            var employeesQuery = _dbContext.Employees.AsNoTracking();
+
+            if (request.CompanyId.HasValue)
+            {
+                employeesQuery = employeesQuery.Where(e => e.CompanyId == request.CompanyId);
+            }
+
+            if (request.BranchId.HasValue)
+            {
+                employeesQuery = employeesQuery.Where(e => e.BranchId == request.BranchId);
+            }
+
+            if (request.CostCenterId.HasValue)
+            {
+                employeesQuery = employeesQuery.Where(e => e.CostCenterId == request.CostCenterId);
+            }
+
+            if (request.IncludeActiveEmployeesOnly)
+            {
+                employeesQuery = employeesQuery.Where(e => e.IsActive);
+            }
+
+            employeeIds = await employeesQuery.Select(e => e.Id).ToListAsync(cancellationToken);
         }
 
         var beforeSnapshot = CreatePayRunSnapshot(payRun);
@@ -311,6 +333,10 @@ public class PayrollService : IPayrollService
             payRun.Id,
             payRun.Status,
             payRun.IsLocked,
+            payRun.IsConsolidated,
+            payRun.CompanyId,
+            payRun.BranchId,
+            payRun.CostCenterId,
             payRun.PeriodStart,
             payRun.PeriodEnd,
             payRun.PayDate,
@@ -341,18 +367,39 @@ public class PayrollService : IPayrollService
         return payRun is null ? null : MapToDetailDto(payRun);
     }
 
-    public async Task<PaginatedResult<PayRunSummaryDto>> GetPayRunsAsync(int page, int pageSize, PayRunStatus? status = null, CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<PayRunSummaryDto>> GetPayRunsAsync(PayRunQuery query, CancellationToken cancellationToken = default)
     {
-        page = Math.Max(1, page);
-        pageSize = Math.Max(1, pageSize);
+        var page = Math.Max(1, query.Page);
+        var pageSize = Math.Max(1, query.PageSize);
 
-        var query = _dbContext.PayRuns.AsNoTracking();
-        if (status.HasValue)
+        var payRuns = _dbContext.PayRuns.AsNoTracking();
+        if (query.Status.HasValue)
         {
-            query = query.Where(p => p.Status == status);
+            payRuns = payRuns.Where(p => p.Status == query.Status);
         }
-        var totalCount = await query.CountAsync(cancellationToken);
-        var items = await query
+
+        if (query.CompanyId.HasValue)
+        {
+            payRuns = payRuns.Where(p => p.CompanyId == query.CompanyId);
+        }
+
+        if (query.BranchId.HasValue)
+        {
+            payRuns = payRuns.Where(p => p.BranchId == query.BranchId);
+        }
+
+        if (query.CostCenterId.HasValue)
+        {
+            payRuns = payRuns.Where(p => p.CostCenterId == query.CostCenterId);
+        }
+
+        if (query.IsConsolidated.HasValue)
+        {
+            payRuns = payRuns.Where(p => p.IsConsolidated == query.IsConsolidated.Value);
+        }
+
+        var totalCount = await payRuns.CountAsync(cancellationToken);
+        var items = await payRuns
             .OrderByDescending(pr => pr.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -868,6 +915,10 @@ public class PayrollService : IPayrollService
             PeriodStart = payRun.PeriodStart,
             PeriodEnd = payRun.PeriodEnd,
             PayDate = payRun.PayDate,
+            CompanyId = payRun.CompanyId,
+            BranchId = payRun.BranchId,
+            CostCenterId = payRun.CostCenterId,
+            IsConsolidated = payRun.IsConsolidated,
             Status = payRun.Status,
             IsLocked = payRun.IsLocked,
             EmployeeCount = employeeCount,
@@ -887,6 +938,10 @@ public class PayrollService : IPayrollService
             PeriodStart = summary.PeriodStart,
             PeriodEnd = summary.PeriodEnd,
             PayDate = summary.PayDate,
+            CompanyId = summary.CompanyId,
+            BranchId = summary.BranchId,
+            CostCenterId = summary.CostCenterId,
+            IsConsolidated = summary.IsConsolidated,
             Status = summary.Status,
             IsLocked = summary.IsLocked,
             EmployeeCount = summary.EmployeeCount,

@@ -17,7 +17,15 @@ export class PayRunsApiService {
 
   constructor(private http: HttpClient) {}
 
-  getPayRuns(params: { page?: number; pageSize?: number; status?: PayRunStatus | '' }): Observable<PaginatedResult<PayRunSummary>> {
+  getPayRuns(params: {
+    page?: number;
+    pageSize?: number;
+    status?: PayRunStatus | '';
+    companyId?: string;
+    branchId?: string;
+    costCenterId?: string;
+    isConsolidated?: boolean;
+  }): Observable<PaginatedResult<PayRunSummary>> {
     let httpParams = new HttpParams();
 
     if (params.page !== undefined) {
@@ -30,6 +38,22 @@ export class PayRunsApiService {
 
     if (params.status) {
       httpParams = httpParams.set('status', params.status);
+    }
+
+    if (params.companyId) {
+      httpParams = httpParams.set('companyId', params.companyId);
+    }
+
+    if (params.branchId) {
+      httpParams = httpParams.set('branchId', params.branchId);
+    }
+
+    if (params.costCenterId) {
+      httpParams = httpParams.set('costCenterId', params.costCenterId);
+    }
+
+    if (params.isConsolidated !== undefined) {
+      httpParams = httpParams.set('isConsolidated', params.isConsolidated);
     }
 
     return this.http.get<PaginatedResult<PayRunSummary>>(this.baseUrl, { params: httpParams });
@@ -45,6 +69,10 @@ export class PayRunsApiService {
     periodStart: string;
     periodEnd: string;
     payDate: string;
+    companyId?: string;
+    branchId?: string;
+    costCenterId?: string;
+    isConsolidated?: boolean;
     includeActiveEmployeesOnly: boolean;
     employeeIds?: string[];
   }): Observable<PayRunDetail> {

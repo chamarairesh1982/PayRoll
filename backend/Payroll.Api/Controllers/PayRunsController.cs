@@ -17,13 +17,9 @@ public class PayRunsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Get(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 25,
-        [FromQuery] PayRunStatus? status = null,
-        CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Get([FromQuery] PayRunQuery query, CancellationToken cancellationToken = default)
     {
-        var result = await _payrollService.GetPayRunsAsync(page, pageSize, status, cancellationToken);
+        var result = await _payrollService.GetPayRunsAsync(query, cancellationToken);
         return Ok(result);
     }
 

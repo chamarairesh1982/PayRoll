@@ -12,6 +12,10 @@ export interface PayRunSummary {
   periodStart: string;
   periodEnd: string;
   payDate: string;
+  companyId?: string | null;
+  branchId?: string | null;
+  costCenterId?: string | null;
+  isConsolidated: boolean;
   status: PayRunStatus;
   isLocked: boolean;
   employeeCount: number;

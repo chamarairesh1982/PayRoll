@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Payroll.Domain.Employees;
+using Payroll.Domain.Organizations;
 
 namespace Payroll.Infrastructure.Persistence.Configurations;
 
@@ -52,5 +53,20 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
 
         builder.Property(e => e.ModifiedBy)
             .HasMaxLength(100);
+
+        builder.HasOne<Company>()
+            .WithMany()
+            .HasForeignKey(e => e.CompanyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<Branch>()
+            .WithMany()
+            .HasForeignKey(e => e.BranchId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<CostCenter>()
+            .WithMany()
+            .HasForeignKey(e => e.CostCenterId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

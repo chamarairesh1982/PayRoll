@@ -8,6 +8,7 @@ using Payroll.Domain.Overtime;
 using Payroll.Domain.Payroll;
 using Payroll.Domain.PayrollConfig;
 using Payroll.Domain.Auditing;
+using Payroll.Domain.Organizations;
 
 namespace Payroll.Infrastructure.Persistence;
 
@@ -35,6 +36,9 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public DbSet<EmployeePayItem> EmployeePayItems => Set<EmployeePayItem>();
     public DbSet<PayrollSettings> PayrollSettings => Set<PayrollSettings>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<Company> Companies => Set<Company>();
+    public DbSet<Branch> Branches => Set<Branch>();
+    public DbSet<CostCenter> CostCenters => Set<CostCenter>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

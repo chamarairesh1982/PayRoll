@@ -7,6 +7,7 @@ using Payroll.Domain.Overtime;
 using Payroll.Domain.Payroll;
 using Payroll.Domain.PayrollConfig;
 using Payroll.Domain.Auditing;
+using Payroll.Domain.Organizations;
 
 namespace Payroll.Application.Interfaces;
 
@@ -20,6 +21,9 @@ public interface IPayrollDbContext
     DbSet<PayRun> PayRuns { get; }
     DbSet<PaySlip> PaySlips { get; }
     DbSet<PayRunApproval> PayRunApprovals { get; }
+    DbSet<Company> Companies { get; }
+    DbSet<Branch> Branches { get; }
+    DbSet<CostCenter> CostCenters { get; }
     DbSet<AllowanceType> AllowanceTypes { get; }
     DbSet<DeductionType> DeductionTypes { get; }
     DbSet<EmployeeRecurringPayItem> EmployeeRecurringPayItems { get; }

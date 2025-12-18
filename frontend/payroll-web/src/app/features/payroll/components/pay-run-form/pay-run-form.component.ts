@@ -18,6 +18,10 @@ export class PayRunFormComponent implements OnInit, OnChanges {
     periodStart: string;
     periodEnd: string;
     payDate: string;
+    companyId?: string;
+    branchId?: string;
+    costCenterId?: string;
+    isConsolidated?: boolean;
     includeActiveEmployeesOnly: boolean;
     employeeIds?: string[];
   }>();
@@ -39,6 +43,10 @@ export class PayRunFormComponent implements OnInit, OnChanges {
         periodStart: ['', Validators.required],
         periodEnd: ['', Validators.required],
         payDate: ['', Validators.required],
+        companyId: [''],
+        branchId: [''],
+        costCenterId: [''],
+        isConsolidated: [false],
         includeActiveEmployeesOnly: [true],
         employeeIds: [[]],
       },
@@ -76,6 +84,10 @@ export class PayRunFormComponent implements OnInit, OnChanges {
       periodStart: string;
       periodEnd: string;
       payDate: string;
+      companyId?: string;
+      branchId?: string;
+      costCenterId?: string;
+      isConsolidated?: boolean;
       includeActiveEmployeesOnly: boolean;
       employeeIds?: string[];
     };
@@ -88,6 +100,10 @@ export class PayRunFormComponent implements OnInit, OnChanges {
       periodStart: value.periodStart,
       periodEnd: value.periodEnd,
       payDate: value.payDate,
+      ...(value.companyId ? { companyId: value.companyId } : {}),
+      ...(value.branchId ? { branchId: value.branchId } : {}),
+      ...(value.costCenterId ? { costCenterId: value.costCenterId } : {}),
+      ...(value.isConsolidated !== undefined ? { isConsolidated: value.isConsolidated } : {}),
       includeActiveEmployeesOnly: value.includeActiveEmployeesOnly,
       ...(employeeIds && employeeIds.length ? { employeeIds } : {}),
     });

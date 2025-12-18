@@ -11,6 +11,26 @@
       <option *ngFor="let status of statusOptions.slice(1)" [value]="status">{{ status }}</option>
     </select>
   </label>
+  <label>
+    Company
+    <input type="text" [(ngModel)]="companyFilter" (change)="onScopeChange()" placeholder="Company Id" />
+  </label>
+  <label>
+    Branch
+    <input type="text" [(ngModel)]="branchFilter" (change)="onScopeChange()" placeholder="Branch Id" />
+  </label>
+  <label>
+    Cost Center
+    <input type="text" [(ngModel)]="costCenterFilter" (change)="onScopeChange()" placeholder="Cost Center Id" />
+  </label>
+  <label>
+    Consolidated
+    <select [(ngModel)]="consolidatedFilter" (change)="onScopeChange()">
+      <option value="">All</option>
+      <option value="true">Consolidated</option>
+      <option value="false">Per entity</option>
+    </select>
+  </label>
 </div>
 
 <div *ngIf="isLoading" class="loading">Loading pay runs...</div>

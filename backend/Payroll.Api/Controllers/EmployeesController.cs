@@ -16,9 +16,14 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 25)
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25,
+        [FromQuery] Guid? companyId = null,
+        [FromQuery] Guid? branchId = null,
+        [FromQuery] Guid? costCenterId = null)
     {
-        var employees = await _employeeService.GetEmployeesAsync(page, pageSize);
+        var employees = await _employeeService.GetEmployeesAsync(page, pageSize, companyId, branchId, costCenterId);
         return Ok(employees);
     }
 
