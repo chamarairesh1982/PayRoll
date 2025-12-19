@@ -292,6 +292,8 @@ public class RecurringPayItemService : IRecurringPayItemService
         RecurringPayItemSimulationRequest request,
         CancellationToken cancellationToken = default)
     {
+        var (periodStart, periodEnd) = await ResolveSimulationPeriodAsync(request, cancellationToken);
+
         var assignments = await _dbContext.RecurringPayItemAssignments
             .AsNoTracking()
             .Include(a => a.Rule)
@@ -300,13 +302,13 @@ public class RecurringPayItemService : IRecurringPayItemService
                 .ThenInclude(r => r!.DeductionType)
             .Where(a => a.EmployeeId == request.EmployeeId
                         && a.IsActive
-                        && a.StartDate <= request.PeriodEnd
-                        && (a.EndDate == null || a.EndDate >= request.PeriodStart)
+                        && a.StartDate <= periodEnd
+                        && (a.EndDate == null || a.EndDate >= periodStart)
                         && a.Rule != null
                         && a.Rule.IsActive
                         && a.Rule.Frequency == PayPeriodType.Monthly
-                        && a.Rule.StartDate <= request.PeriodEnd
-                        && (a.Rule.EndDate == null || a.Rule.EndDate >= request.PeriodStart))
+                        && a.Rule.StartDate <= periodEnd
+                        && (a.Rule.EndDate == null || a.Rule.EndDate >= periodStart))
             .ToListAsync(cancellationToken);
 
         var items = new List<RecurringPayItemSimulationItemDto>();
@@ -316,14 +318,14 @@ public class RecurringPayItemService : IRecurringPayItemService
         foreach (var assignment in assignments)
         {
             var rule = assignment.Rule!;
-            var overlap = GetEffectiveRange(rule.StartDate, rule.EndDate, assignment.StartDate, assignment.EndDate, request.PeriodStart, request.PeriodEnd);
+            var overlap = GetEffectiveRange(rule.StartDate, rule.EndDate, assignment.StartDate, assignment.EndDate, periodStart, periodEnd);
             if (overlap is null)
             {
                 continue;
             }
 
             var (effectiveStart, effectiveEnd) = overlap.Value;
-            var amount = CalculateRecurringAmount(rule, request.PeriodStart, request.PeriodEnd, effectiveStart, effectiveEnd);
+            var amount = CalculateRecurringAmount(rule, periodStart, periodEnd, effectiveStart, effectiveEnd);
             if (amount <= 0)
             {
                 continue;
@@ -354,6 +356,37 @@ public class RecurringPayItemService : IRecurringPayItemService
         }
 
         return new RecurringPayItemSimulationResponseDto(items, totalAllowances, totalDeductions);
+    }
+
+    private async Task<(DateOnly Start, DateOnly End)> ResolveSimulationPeriodAsync(
+        RecurringPayItemSimulationRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.PayPeriodId.HasValue)
+        {
+            var payRun = await _dbContext.PayRuns
+                .AsNoTracking()
+                .FirstOrDefaultAsync(pr => pr.Id == request.PayPeriodId.Value, cancellationToken);
+
+            if (payRun is null)
+            {
+                throw new KeyNotFoundException("Pay period not found.");
+            }
+
+            return (DateOnly.FromDateTime(payRun.PeriodStart), DateOnly.FromDateTime(payRun.PeriodEnd));
+        }
+
+        if (request.PeriodStart == default || request.PeriodEnd == default)
+        {
+            throw new InvalidOperationException("Simulation requires a period start/end or a pay period id.");
+        }
+
+        if (request.PeriodEnd < request.PeriodStart)
+        {
+            throw new InvalidOperationException("Simulation period end cannot be earlier than start date.");
+        }
+
+        return (request.PeriodStart, request.PeriodEnd);
     }
 
     private async Task<(AllowanceType? Allowance, DeductionType? Deduction)> ResolveComponentAsync(
