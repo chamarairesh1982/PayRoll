@@ -199,7 +199,7 @@ public class PayrollService : IPayrollService
             throw new InvalidOperationException("Cannot prepare a locked pay run.");
         }
 
-        if (payRun.Status != PayRunStatus.Draft)
+        if (!payRun.Status.CanTransitionTo(PayRunStatus.Prepared))
         {
             throw new InvalidOperationException("Only draft pay runs can be prepared.");
         }
@@ -238,7 +238,7 @@ public class PayrollService : IPayrollService
             throw new KeyNotFoundException("Pay run not found");
         }
 
-        if (payRun.Status != PayRunStatus.Prepared)
+        if (!payRun.Status.CanTransitionTo(PayRunStatus.Approved))
         {
             throw new InvalidOperationException("Only prepared pay runs can be approved.");
         }
@@ -282,7 +282,7 @@ public class PayrollService : IPayrollService
             throw new KeyNotFoundException("Pay run not found");
         }
 
-        if (payRun.Status != PayRunStatus.Approved)
+        if (!payRun.Status.CanTransitionTo(PayRunStatus.Locked))
         {
             throw new InvalidOperationException("Only approved pay runs can be locked.");
         }
@@ -463,6 +463,11 @@ public class PayrollService : IPayrollService
             return null;
         }
 
+        if (payRun.Status != PayRunStatus.Locked && !payRun.IsLocked)
+        {
+            throw new InvalidOperationException("Payslips can only be exported after the pay run is locked.");
+        }
+
         var paySlip = payRun.PaySlips.FirstOrDefault(ps => ps.Id == paySlipId);
         if (paySlip is null)
         {
@@ -503,6 +508,11 @@ public class PayrollService : IPayrollService
         if (payRun is null)
         {
             throw new KeyNotFoundException("Pay run not found");
+        }
+
+        if (payRun.Status != PayRunStatus.Locked && !payRun.IsLocked)
+        {
+            throw new InvalidOperationException("Bank exports can only be generated for locked pay runs.");
         }
 
         var failures = new List<BankExportFailureDto>();
