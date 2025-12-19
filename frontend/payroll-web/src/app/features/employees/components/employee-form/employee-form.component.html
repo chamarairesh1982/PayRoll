@@ -57,15 +57,30 @@
     </label>
     <label>
       Company
-      <input type="text" formControlName="companyId" placeholder="Company Id (optional)" />
+      <select formControlName="companyId">
+        <option value="">Select company (optional)</option>
+        <option *ngFor="let company of companies" [value]="company.id">
+          {{ company.name }} ({{ company.code }})
+        </option>
+      </select>
     </label>
     <label>
       Branch
-      <input type="text" formControlName="branchId" placeholder="Branch Id (optional)" />
+      <select formControlName="branchId">
+        <option value="">Select branch (optional)</option>
+        <option *ngFor="let branch of branches" [value]="branch.id">
+          {{ branch.name }} ({{ branch.code }})
+        </option>
+      </select>
     </label>
     <label>
       Cost Center
-      <input type="text" formControlName="costCenterId" placeholder="Cost Center Id (optional)" />
+      <select formControlName="costCenterId">
+        <option value="">Select cost center (optional)</option>
+        <option *ngFor="let costCenter of costCenters" [value]="costCenter.id">
+          {{ costCenter.name }} ({{ costCenter.code }})
+        </option>
+      </select>
     </label>
     <label class="checkbox">
       <input type="checkbox" formControlName="isActive" /> Active
