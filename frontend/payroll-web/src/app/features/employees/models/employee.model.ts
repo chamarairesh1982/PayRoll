@@ -6,6 +6,7 @@ export interface Employee {
   initials?: string | null;
   callingName?: string | null;
   nicNumber: string;
+  epfNumber?: string | null;
   dateOfBirth: string;
   gender: 'Male' | 'Female' | 'Other';
   maritalStatus: 'Single' | 'Married' | 'Other';

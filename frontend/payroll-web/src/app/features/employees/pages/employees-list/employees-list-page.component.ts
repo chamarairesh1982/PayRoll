@@ -27,6 +27,7 @@ export class EmployeesListPageComponent implements OnInit {
     { field: 'employeeCode' as const, header: 'Employee Code' },
     { field: 'fullName' as const, header: 'Name' },
     { field: 'nicNumber' as const, header: 'NIC' },
+    { field: 'epfNumber' as const, header: 'EPF Number' },
     { field: 'employmentStartDate' as const, header: 'Employment Start' },
     { field: 'baseSalary' as const, header: 'Base Salary' },
     { field: 'isActive' as const, header: 'Active' },

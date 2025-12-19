@@ -247,6 +247,7 @@ public static class TestDataSeeder
             name,
             "Test",
             $"{code}-NIC",
+            null,
             new DateTime(1990, 1, 1),
             Gender.Male,
             MaritalStatus.Single,

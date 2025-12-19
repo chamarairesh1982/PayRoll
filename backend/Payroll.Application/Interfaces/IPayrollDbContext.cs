@@ -23,6 +23,7 @@ public interface IPayrollDbContext
     DbSet<PayRun> PayRuns { get; }
     DbSet<PaySlip> PaySlips { get; }
     DbSet<PayRunStatusHistory> PayRunStatusHistories { get; }
+    DbSet<StatutoryReport> StatutoryReports { get; }
     DbSet<RecurringRule> RecurringRules { get; }
     DbSet<RecurringPayItemRule> RecurringPayItemRules { get; }
     DbSet<RecurringPayItemAssignment> RecurringPayItemAssignments { get; }

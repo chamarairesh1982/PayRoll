@@ -16,6 +16,7 @@ using Payroll.Application.Validators.Employees;
 using Payroll.Infrastructure.Identity;
 using Payroll.Infrastructure.Logging;
 using Payroll.Infrastructure.Persistence;
+using Payroll.Infrastructure.Storage;
 using Payroll.Shared;
 
 namespace Payroll.Api.StartupExtensions;
@@ -46,6 +47,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IOvertimeService, OvertimeService>();
         services.AddScoped<ILoanService, LoanService>();
         services.AddScoped<IReportService, ReportService>();
+        services.AddScoped<IStatutoryReportService, StatutoryReportService>();
         services.AddScoped<IOrganizationService, OrganizationService>();
         services.AddScoped<IRecurringRuleService, RecurringRuleService>();
         services.AddScoped<IRecurringPayItemService, RecurringPayItemService>();
@@ -64,6 +66,7 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
+        services.Configure<ReportStorageOptions>(configuration.GetSection("ReportStorage"));
         var databaseOptions = new DatabaseOptions();
         configuration.GetSection("Database").Bind(databaseOptions);
         var connectionString = databaseOptions.ConnectionString;
@@ -74,6 +77,7 @@ public static class ServiceCollectionExtensions
 
         services.AddDbContext<PayrollDbContext>(options => options.UseSqlServer(connectionString));
         services.AddScoped<IPayrollDbContext>(provider => provider.GetRequiredService<PayrollDbContext>());
+        services.AddScoped<IStatutoryReportStorage, FileSystemStatutoryReportStorage>();
         services.AddIdentityLayer();
         services.AddStructuredLogging(configuration);
         return services;
