@@ -9,6 +9,7 @@
   <div class="card__body">
     <div class="row"><strong>Employee Code:</strong> {{ employee.employeeCode }}</div>
     <div class="row"><strong>NIC:</strong> {{ employee.nicNumber }}</div>
+    <div class="row"><strong>EPF Number:</strong> {{ employee.epfNumber || '—' }}</div>
     <div class="row"><strong>Date of Birth:</strong> {{ employee.dateOfBirth | dateFormat }}</div>
     <div class="row"><strong>Gender:</strong> {{ employee.gender }}</div>
     <div class="row"><strong>Marital Status:</strong> {{ employee.maritalStatus }}</div>

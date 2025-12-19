@@ -31,6 +31,7 @@ export class EmployeeFormComponent implements OnInit, OnChanges {
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
       nicNumber: ['', [Validators.required, Validators.minLength(10)]],
+      epfNumber: [''],
       dateOfBirth: ['', Validators.required],
       gender: ['Male', Validators.required],
       maritalStatus: ['Single', Validators.required],

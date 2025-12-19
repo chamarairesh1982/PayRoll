@@ -15,6 +15,7 @@ public class Employee : AuditableEntity, IAggregateRoot
         string firstName,
         string lastName,
         string nicNumber,
+        string? epfNumber,
         DateTime dateOfBirth,
         Gender gender,
         MaritalStatus maritalStatus,
@@ -49,6 +50,7 @@ public class Employee : AuditableEntity, IAggregateRoot
         CostCenterId = costCenterId;
         ProbationEndDate = probationEndDate;
         ConfirmationDate = confirmationDate;
+        EpfNumber = NormalizeBankField(epfNumber);
         CreatedBy = createdBy;
         BankName = NormalizeBankField(bankName);
         BankCode = NormalizeBankField(bankCode);
@@ -62,6 +64,7 @@ public class Employee : AuditableEntity, IAggregateRoot
     public string? Initials { get; private set; }
     public string? CallingName { get; private set; }
     public string NicNumber { get; private set; } = string.Empty;
+    public string? EpfNumber { get; private set; }
     public DateTime DateOfBirth { get; private set; }
     public Gender Gender { get; private set; }
     public MaritalStatus MaritalStatus { get; private set; }
@@ -87,6 +90,7 @@ public class Employee : AuditableEntity, IAggregateRoot
         string firstName,
         string lastName,
         string nicNumber,
+        string? epfNumber,
         DateTime dateOfBirth,
         Gender gender,
         MaritalStatus maritalStatus,
@@ -110,6 +114,7 @@ public class Employee : AuditableEntity, IAggregateRoot
             firstName,
             lastName,
             nicNumber,
+            epfNumber,
             dateOfBirth,
             gender,
             maritalStatus,
@@ -134,6 +139,7 @@ public class Employee : AuditableEntity, IAggregateRoot
         string firstName,
         string lastName,
         string nicNumber,
+        string? epfNumber,
         DateTime dateOfBirth,
         Gender gender,
         MaritalStatus maritalStatus,
@@ -168,6 +174,7 @@ public class Employee : AuditableEntity, IAggregateRoot
         CostCenterId = costCenterId;
         ProbationEndDate = probationEndDate;
         ConfirmationDate = confirmationDate;
+        EpfNumber = NormalizeBankField(epfNumber);
         ModifiedAt = DateTime.UtcNow;
         ModifiedBy = modifiedBy;
         UpdateBankDetails(bankName, bankCode, branchCode, bankAccountNumber);

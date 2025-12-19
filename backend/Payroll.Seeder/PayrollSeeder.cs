@@ -803,6 +803,7 @@ public sealed class PayrollSeeder
             firstName,
             lastName,
             nicNumber,
+            null,
             new DateTime(1990, 1, 1),
             Gender.Male,
             MaritalStatus.Single,

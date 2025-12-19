@@ -1,0 +1,134 @@
+<section class="statutory-reports">
+  <div class="page-header">
+    <h1>Statutory Reports</h1>
+  </div>
+
+  <div class="card">
+    <h2>EPF/ETF Report</h2>
+    <div class="form-row">
+      <label>
+        Locked Pay Run
+        <select [value]="selectedPayRunId" (change)="onPayRunChange($event.target.value)">
+          <option value="">Select a locked pay run</option>
+          <option *ngFor="let run of payRuns" [value]="run.id">
+            {{ run.code }} - {{ run.name }} ({{ run.periodStart | dateFormat }} to {{ run.periodEnd | dateFormat }})
+          </option>
+        </select>
+      </label>
+      <label>
+        Format
+        <select [(ngModel)]="format">
+          <option value="csv">CSV</option>
+          <option value="txt">TXT</option>
+        </select>
+      </label>
+      <button type="button" (click)="generateReport()" [disabled]="isGenerating || isLoadingPayRuns">
+        {{ isGenerating ? 'Generating...' : 'Generate EPF/ETF Report' }}
+      </button>
+    </div>
+    <div class="error" *ngIf="errorMessage">{{ errorMessage }}</div>
+  </div>
+
+  <div class="card" *ngIf="reportPreview">
+    <h2>Latest Report Summary</h2>
+    <div class="summary-grid">
+      <div><strong>Employee count:</strong> {{ reportPreview.employeeCount }}</div>
+      <div><strong>Contributable base:</strong> {{ reportPreview.contributableBase | number: '1.0-2' }}</div>
+      <div><strong>Employee EPF total:</strong> {{ reportPreview.employeeEpfTotal | number: '1.0-2' }}</div>
+      <div><strong>Employer EPF total:</strong> {{ reportPreview.employerEpfTotal | number: '1.0-2' }}</div>
+      <div><strong>Employer ETF total:</strong> {{ reportPreview.employerEtfTotal | number: '1.0-2' }}</div>
+    </div>
+    <div class="actions">
+      <button type="button" (click)="downloadPreview(reportPreview.file, 'epf-etf-report.csv')">Download Report</button>
+      <button
+        type="button"
+        *ngIf="reportPreview.warningFile"
+        (click)="downloadPreview(reportPreview.warningFile, 'epf-etf-warnings.csv')"
+      >
+        Download Warnings
+      </button>
+    </div>
+
+    <div class="warnings" *ngIf="reportPreview.warnings?.length">
+      <h3>Validation Warnings</h3>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Message</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let warning of reportPreview.warnings">
+            <td>{{ warning.employeeCode || warning.employeeId }} - {{ warning.employeeName || 'N/A' }}</td>
+            <td>{{ warning.message }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="employee-report" *ngIf="reportPreview.employees?.length">
+      <h3>Employee Details</h3>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>NIC</th>
+            <th>EPF No.</th>
+            <th>Contributable Base</th>
+            <th>Employee EPF</th>
+            <th>Employer EPF</th>
+            <th>Employer ETF</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of reportPreview.employees">
+            <td>{{ row.employeeCode || row.employeeId }} - {{ row.employeeName || 'N/A' }}</td>
+            <td>{{ row.nicNumber || '—' }}</td>
+            <td>{{ row.epfNumber || '—' }}</td>
+            <td>{{ row.contributableBase | number: '1.0-2' }}</td>
+            <td>{{ row.employeeEpf | number: '1.0-2' }}</td>
+            <td>{{ row.employerEpf | number: '1.0-2' }}</td>
+            <td>{{ row.employerEtf | number: '1.0-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>History</h2>
+    <table class="table" *ngIf="reportHistory?.length; else noHistory">
+      <thead>
+        <tr>
+          <th>Generated At</th>
+          <th>Pay Run</th>
+          <th>Status</th>
+          <th>Warnings</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let report of reportHistory">
+          <td>{{ report.generatedAtUtc | dateFormat }}</td>
+          <td>{{ report.payRunCode }} - {{ report.payRunName }}</td>
+          <td>{{ report.status }}</td>
+          <td>{{ report.warningCount }}</td>
+          <td>
+            <button type="button" (click)="downloadHistory(report)">Download</button>
+            <button
+              type="button"
+              *ngIf="report.warningCount > 0"
+              (click)="downloadHistory(report, true)"
+            >
+              Download Warnings
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <ng-template #noHistory>
+      <div>No EPF/ETF reports generated yet.</div>
+    </ng-template>
+  </div>
+</section>

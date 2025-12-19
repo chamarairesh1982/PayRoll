@@ -10,6 +10,7 @@ public class UpdateEmployeeRequestDto
     public string? Initials { get; set; }
     public string? CallingName { get; set; }
     public string NicNumber { get; set; } = string.Empty;
+    public string? EpfNumber { get; set; }
     public DateTime DateOfBirth { get; set; }
     public Gender Gender { get; set; }
     public MaritalStatus MaritalStatus { get; set; }

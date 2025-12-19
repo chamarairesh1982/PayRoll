@@ -25,6 +25,9 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
 
         builder.HasIndex(e => e.NicNumber).IsUnique();
 
+        builder.Property(e => e.EpfNumber)
+            .HasMaxLength(20);
+
         builder.Property(e => e.FirstName)
             .IsRequired()
             .HasMaxLength(100);
