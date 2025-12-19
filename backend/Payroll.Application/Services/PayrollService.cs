@@ -1093,6 +1093,8 @@ public class PayrollService : IPayrollService
                     DeductionTypes = deductionTypes,
                     WorkingDaysPerMonth = payrollSettings.WorkingDaysPerMonth,
                     WorkingHoursPerDay = payrollSettings.WorkingHoursPerDay,
+                    NoPayCalculationBasis = payrollSettings.NoPayCalculationBasis,
+                    AttendanceHalfDayHours = payrollSettings.AttendanceHalfDayHours,
                     WeekdayOvertimeMultiplier = overtimeRule.WeekdayOvertimeMultiplier,
                     WeekendOvertimeMultiplier = overtimeRule.WeekendOvertimeMultiplier,
                     HolidayOvertimeMultiplier = overtimeRule.HolidayOvertimeMultiplier,
@@ -1144,6 +1146,8 @@ public class PayrollService : IPayrollService
         {
             WorkingDaysPerMonth = settings?.WorkingDaysPerMonth ?? PayrollSettingsDefaults.WorkingDaysPerMonth,
             WorkingHoursPerDay = settings?.WorkingHoursPerDay ?? PayrollSettingsDefaults.WorkingHoursPerDay,
+            NoPayCalculationBasis = settings?.NoPayCalculationBasis ?? PayrollSettingsDefaults.NoPayCalculationBasis,
+            AttendanceHalfDayHours = settings?.AttendanceHalfDayHours ?? PayrollSettingsDefaults.AttendanceHalfDayHours,
             WeekdayOvertimeMultiplier = settings?.WeekdayOvertimeMultiplier ?? PayrollSettingsDefaults.WeekdayOvertimeMultiplier,
             WeekendOvertimeMultiplier = settings?.WeekendOvertimeMultiplier ?? PayrollSettingsDefaults.WeekendOvertimeMultiplier,
             HolidayOvertimeMultiplier = settings?.HolidayOvertimeMultiplier ?? PayrollSettingsDefaults.HolidayOvertimeMultiplier,
@@ -1242,7 +1246,14 @@ public class PayrollService : IPayrollService
         var periodStart = DateOnly.FromDateTime(payRun.PeriodStart);
         var periodEnd = DateOnly.FromDateTime(payRun.PeriodEnd);
 
-        var absentDayUnits = BuildAbsentDayUnits(ctx.Attendance, periodStart, periodEnd);
+        var attendanceAbsences = BuildAttendanceAbsenceSummary(
+            ctx.Attendance,
+            periodStart,
+            periodEnd,
+            ctx.WorkingHoursPerDay,
+            ctx.AttendanceHalfDayHours);
+        var absentDayUnits = attendanceAbsences.DayUnits;
+        var missingHoursByDay = attendanceAbsences.MissingHours;
         var encashableAbsences = new Dictionary<DateOnly, decimal>(absentDayUnits);
 
         var dailyRate = RoundCurrency(ctx.BasicSalary / ctx.WorkingDaysPerMonth);
@@ -1269,6 +1280,7 @@ public class PayrollService : IPayrollService
                         PaySlipId = ctx.PaySlipId,
                         Code = "LEAVE_NOPAY",
                         Description = $"No Pay Leave ({leave.LeaveType} {overlapStart:yyyy-MM-dd} to {overlapEnd:yyyy-MM-dd}, Ref: {leave.Id})",
+                        Source = "Leave",
                         Amount = noPayAmount,
                         IsPreTax = true,
                         IsPostTax = false
@@ -1279,6 +1291,7 @@ public class PayrollService : IPayrollService
                 {
                     ReduceDayUnit(absentDayUnits, unit.Key, unit.Value);
                     ReduceDayUnit(encashableAbsences, unit.Key, unit.Value);
+                    ReduceDayUnit(missingHoursByDay, unit.Key, unit.Value * ctx.WorkingHoursPerDay);
                 }
             }
             else
@@ -1315,17 +1328,23 @@ public class PayrollService : IPayrollService
             }
         }
 
-        var remainingAbsentUnits = absentDayUnits.Values.Sum();
-        var noPayAmountForAttendance = RoundCurrency(dailyRate * remainingAbsentUnits);
+        var noPayAmountForAttendance = ctx.NoPayCalculationBasis == CalculationBasis.PerHour
+            ? RoundCurrency((ctx.BasicSalary / (ctx.WorkingDaysPerMonth * ctx.WorkingHoursPerDay)) * missingHoursByDay.Values.Sum())
+            : RoundCurrency(dailyRate * absentDayUnits.Values.Sum());
 
         if (noPayAmountForAttendance > 0)
         {
+            var unitLabel = ctx.NoPayCalculationBasis == CalculationBasis.PerHour ? "hours" : "days";
+            var unitTotal = ctx.NoPayCalculationBasis == CalculationBasis.PerHour
+                ? missingHoursByDay.Values.Sum()
+                : absentDayUnits.Values.Sum();
             ctx.Deductions.Add(new DeductionLine
             {
                 Id = Guid.NewGuid(),
                 PaySlipId = ctx.PaySlipId,
                 Code = "NOPAY",
-                Description = $"No Pay for Absences ({remainingAbsentUnits:0.##} days)",
+                Description = $"No Pay for Attendance ({unitTotal:0.##} {unitLabel})",
+                Source = "Attendance",
                 Amount = noPayAmountForAttendance,
                 IsPreTax = true,
                 IsPostTax = false
@@ -1335,11 +1354,18 @@ public class PayrollService : IPayrollService
         return Task.CompletedTask;
     }
 
-    private static Dictionary<DateOnly, decimal> BuildAbsentDayUnits(IEnumerable<AttendanceRecord> attendance, DateOnly periodStart, DateOnly periodEnd)
+    private static AttendanceAbsenceSummary BuildAttendanceAbsenceSummary(
+        IEnumerable<AttendanceRecord> attendance,
+        DateOnly periodStart,
+        DateOnly periodEnd,
+        int workingHoursPerDay,
+        decimal attendanceHalfDayHours)
     {
-        var absences = new Dictionary<DateOnly, decimal>();
+        var dayUnits = new Dictionary<DateOnly, decimal>();
+        var missingHours = new Dictionary<DateOnly, decimal>();
+        var maxHalfDayHours = Math.Min(attendanceHalfDayHours, workingHoursPerDay);
 
-        foreach (var record in attendance.Where(a => a.HoursWorked <= 0))
+        foreach (var record in attendance)
         {
             var overlapStart = record.Period.Start > periodStart ? record.Period.Start : periodStart;
             var overlapEnd = record.Period.End < periodEnd ? record.Period.End : periodEnd;
@@ -1349,13 +1375,32 @@ public class PayrollService : IPayrollService
                 continue;
             }
 
+            var hoursWorked = Math.Clamp(record.HoursWorked, 0, workingHoursPerDay);
+            var missingHoursForDay = workingHoursPerDay - hoursWorked;
+
+            if (missingHoursForDay <= 0)
+            {
+                continue;
+            }
+
+            var dayUnit = hoursWorked <= 0
+                ? 1m
+                : hoursWorked >= maxHalfDayHours
+                    ? 0.5m
+                    : 1m;
+
             foreach (var day in EnumerateDays(overlapStart, overlapEnd))
             {
-                absences[day] = absences.TryGetValue(day, out var existing) ? existing + 1 : 1;
+                dayUnits[day] = dayUnits.TryGetValue(day, out var existingDayUnit)
+                    ? Math.Min(1m, Math.Max(existingDayUnit, dayUnit))
+                    : dayUnit;
+                missingHours[day] = missingHours.TryGetValue(day, out var existingMissing)
+                    ? Math.Min(workingHoursPerDay, Math.Max(existingMissing, missingHoursForDay))
+                    : missingHoursForDay;
             }
         }
 
-        return absences;
+        return new AttendanceAbsenceSummary(dayUnits, missingHours);
     }
 
     private static Dictionary<DateOnly, decimal> GetOverlappingLeaveDayUnits(LeaveRequest leave, DateOnly periodStart, DateOnly periodEnd)
@@ -1860,6 +1905,18 @@ public class PayrollService : IPayrollService
             EmployeeCount = summary.EmployeeCount,
             TotalNetPay = summary.TotalNetPay,
             PaySlips = payRun.PaySlips.Select(MapToDto).ToList(),
+            AttendanceNoPaySummaries = payRun.PaySlips
+                .Select(paySlip => new AttendanceNoPaySummaryDto
+                {
+                    EmployeeId = paySlip.EmployeeId,
+                    EmployeeCode = paySlip.Employee?.Code,
+                    EmployeeName = paySlip.Employee?.FullName,
+                    NoPayAmount = paySlip.Deductions
+                        .Where(d => d.Code == "NOPAY" && d.Source == "Attendance")
+                        .Sum(d => d.Amount)
+                })
+                .Where(summary => summary.NoPayAmount > 0)
+                .ToList(),
             PreparedAt = payRun.PreparedAt,
             PreparedByUserName = payRun.PreparedByUserName,
             ApprovedAt = payRun.ApprovedAt,
@@ -1906,7 +1963,7 @@ public class PayrollService : IPayrollService
             EmployerEtf = paySlip.EmployerEtf,
             PayeTax = paySlip.PayeTax,
             Earnings = paySlip.Earnings.Select(e => new EarningDto(e.Id, e.Code, e.Description, e.Amount, e.IsEpfApplicable, e.IsEtfApplicable, e.IsTaxable)).ToList(),
-            Deductions = paySlip.Deductions.Select(d => new DeductionDto(d.Id, d.Code, d.Description, d.Amount, d.IsPreTax, d.IsPostTax)).ToList()
+            Deductions = paySlip.Deductions.Select(d => new DeductionDto(d.Id, d.Code, d.Description, d.Source, d.Amount, d.IsPreTax, d.IsPostTax)).ToList()
         };
     }
 
@@ -2421,6 +2478,10 @@ public class PayrollService : IPayrollService
         return (validatedCompanyId, validatedBranchId, costCenterId);
     }
 
+    private sealed record AttendanceAbsenceSummary(
+        Dictionary<DateOnly, decimal> DayUnits,
+        Dictionary<DateOnly, decimal> MissingHours);
+
     private sealed class PaySlipCalculationContext
     {
         public Guid PaySlipId { get; init; }
@@ -2445,6 +2506,8 @@ public class PayrollService : IPayrollService
         public decimal TotalDeductions => Deductions.Sum(x => x.Amount);
         public int WorkingDaysPerMonth { get; init; }
         public int WorkingHoursPerDay { get; init; }
+        public CalculationBasis NoPayCalculationBasis { get; init; }
+        public decimal AttendanceHalfDayHours { get; init; }
         public decimal WeekdayOvertimeMultiplier { get; init; }
         public decimal WeekendOvertimeMultiplier { get; init; }
         public decimal HolidayOvertimeMultiplier { get; init; }
@@ -2466,6 +2529,8 @@ public class PayrollService : IPayrollService
     {
         public int WorkingDaysPerMonth { get; init; }
         public int WorkingHoursPerDay { get; init; }
+        public CalculationBasis NoPayCalculationBasis { get; init; }
+        public decimal AttendanceHalfDayHours { get; init; }
         public decimal WeekdayOvertimeMultiplier { get; init; }
         public decimal WeekendOvertimeMultiplier { get; init; }
         public decimal HolidayOvertimeMultiplier { get; init; }

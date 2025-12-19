@@ -14,6 +14,13 @@ public class PayrollSettingsConfiguration : IEntityTypeConfiguration<PayrollSett
 
         builder.Property(p => p.WorkingDaysPerMonth).IsRequired();
         builder.Property(p => p.WorkingHoursPerDay).IsRequired();
+        builder.Property(p => p.NoPayCalculationBasis)
+            .IsRequired()
+            .HasDefaultValue(PayrollSettingsDefaults.NoPayCalculationBasis);
+        builder.Property(p => p.AttendanceHalfDayHours)
+            .IsRequired()
+            .HasColumnType("decimal(5,2)")
+            .HasDefaultValue(PayrollSettingsDefaults.AttendanceHalfDayHours);
         builder.Property(p => p.WeekdayOvertimeMultiplier)
             .IsRequired()
             .HasColumnType("decimal(18,2)")

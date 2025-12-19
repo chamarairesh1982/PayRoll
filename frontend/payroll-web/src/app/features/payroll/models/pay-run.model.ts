@@ -30,6 +30,7 @@ export interface PayRunSummary {
 
 export interface PayRunDetail extends PayRunSummary {
   paySlips: PaySlip[];
+  attendanceNoPaySummaries: AttendanceNoPaySummary[];
   statusHistory?: PayRunStatusHistory[];
   preparedAt?: string | null;
   preparedByUserName?: string | null;
@@ -37,6 +38,13 @@ export interface PayRunDetail extends PayRunSummary {
   approvedByUserName?: string | null;
   lockedAt?: string | null;
   lockedByUserName?: string | null;
+}
+
+export interface AttendanceNoPaySummary {
+  employeeId: string;
+  employeeCode?: string | null;
+  employeeName?: string | null;
+  noPayAmount: number;
 }
 
 export interface BankExportFailure {

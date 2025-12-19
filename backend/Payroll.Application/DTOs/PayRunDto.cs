@@ -34,6 +34,7 @@ public class PayRunSummaryDto
 public class PayRunDetailDto : PayRunSummaryDto
 {
     public List<PaySlipDto> PaySlips { get; set; } = new();
+    public List<AttendanceNoPaySummaryDto> AttendanceNoPaySummaries { get; set; } = new();
     public List<PayRunStatusHistoryDto> StatusHistory { get; set; } = new();
     public DateTime? PreparedAt { get; set; }
     public string? PreparedByUserName { get; set; }
@@ -41,6 +42,14 @@ public class PayRunDetailDto : PayRunSummaryDto
     public string? ApprovedByUserName { get; set; }
     public DateTime? LockedAt { get; set; }
     public string? LockedByUserName { get; set; }
+}
+
+public class AttendanceNoPaySummaryDto
+{
+    public Guid EmployeeId { get; set; }
+    public string? EmployeeCode { get; set; }
+    public string? EmployeeName { get; set; }
+    public decimal NoPayAmount { get; set; }
 }
 
 public class PayRunStatusHistoryDto

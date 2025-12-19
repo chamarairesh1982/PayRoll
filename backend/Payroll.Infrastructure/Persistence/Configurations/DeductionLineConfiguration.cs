@@ -13,6 +13,10 @@ public class DeductionLineConfiguration : IEntityTypeConfiguration<DeductionLine
 
         builder.Property(d => d.Code).IsRequired().HasMaxLength(50);
         builder.Property(d => d.Description).IsRequired().HasMaxLength(200);
+        builder.Property(d => d.Source)
+            .IsRequired()
+            .HasMaxLength(50)
+            .HasDefaultValue(string.Empty);
         builder.Property(d => d.Amount).HasColumnType("decimal(18,2)");
 
         builder.HasOne<PaySlip>()

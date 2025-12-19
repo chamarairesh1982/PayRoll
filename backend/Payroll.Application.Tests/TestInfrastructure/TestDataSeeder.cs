@@ -280,6 +280,22 @@ public static class TestDataSeeder
         return record;
     }
 
+    public static AttendanceRecord SeedAttendance(PayrollDbContext context, Employee employee, DateOnly date, decimal hoursWorked)
+    {
+        var record = new AttendanceRecord
+        {
+            EmployeeId = employee.Id,
+            Period = new DateRange(date, date),
+            HoursWorked = hoursWorked,
+            CreatedBy = "seed"
+        };
+
+        context.AttendanceRecords.Add(record);
+        context.SaveChanges();
+
+        return record;
+    }
+
     public static LeaveRequest SeedLeave(
         PayrollDbContext context,
         Employee employee,
