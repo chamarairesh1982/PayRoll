@@ -24,6 +24,9 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public DbSet<PaySlip> PaySlips => Set<PaySlip>();
     public DbSet<PayRunStatusHistory> PayRunStatusHistories => Set<PayRunStatusHistory>();
     public DbSet<RecurringRule> RecurringRules => Set<RecurringRule>();
+    public DbSet<RecurringPayItemRule> RecurringPayItemRules => Set<RecurringPayItemRule>();
+    public DbSet<RecurringPayItemAssignment> RecurringPayItemAssignments => Set<RecurringPayItemAssignment>();
+    public DbSet<PayRunRecurringLine> PayRunRecurringLines => Set<PayRunRecurringLine>();
     public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
     public DbSet<OTEntry> OTEntries => Set<OTEntry>();
@@ -49,6 +52,8 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     {
         ValidateEmployeePayItems();
         ValidateEmployeeRecurringPayItems();
+        ValidateRecurringPayItemRules();
+        ValidateRecurringPayItemAssignments();
         EnsureAuditEventEntriesAreAppendOnly();
         EnsurePayRunStatusHistoryIsAppendOnly();
 
@@ -151,6 +156,82 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
             {
                 throw new InvalidOperationException(
                     "Recurring pay item effective to date cannot be earlier than effective from date.");
+            }
+        }
+    }
+
+    private void ValidateRecurringPayItemRules()
+    {
+        var pendingRules = ChangeTracker.Entries<RecurringPayItemRule>()
+            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
+            .Select(e => e.Entity)
+            .ToList();
+
+        foreach (var rule in pendingRules)
+        {
+            if (rule.Amount <= 0)
+            {
+                throw new InvalidOperationException("Recurring pay item rule amount must be greater than zero.");
+            }
+
+            if (rule.EndDate.HasValue && rule.EndDate.Value < rule.StartDate)
+            {
+                throw new InvalidOperationException("Recurring pay item rule end date cannot be earlier than start date.");
+            }
+
+            if (rule.RuleType == RecurringRuleType.Allowance)
+            {
+                if (rule.AllowanceTypeId == null || rule.DeductionTypeId != null)
+                {
+                    throw new InvalidOperationException(
+                        "Allowance recurring rule must reference an allowance type and not a deduction type.");
+                }
+            }
+            else if (rule.RuleType == RecurringRuleType.Deduction)
+            {
+                if (rule.DeductionTypeId == null || rule.AllowanceTypeId != null)
+                {
+                    throw new InvalidOperationException(
+                        "Deduction recurring rule must reference a deduction type and not an allowance type.");
+                }
+            }
+            else
+            {
+                throw new InvalidOperationException("Invalid recurring rule type.");
+            }
+        }
+    }
+
+    private void ValidateRecurringPayItemAssignments()
+    {
+        var pendingAssignments = ChangeTracker.Entries<RecurringPayItemAssignment>()
+            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
+            .Select(e => e.Entity)
+            .ToList();
+
+        foreach (var assignment in pendingAssignments)
+        {
+            if (assignment.EndDate.HasValue && assignment.EndDate.Value < assignment.StartDate)
+            {
+                throw new InvalidOperationException(
+                    "Recurring pay item assignment end date cannot be earlier than start date.");
+            }
+
+            var start = assignment.StartDate;
+            var end = assignment.EndDate ?? DateOnly.MaxValue;
+
+            var overlaps = RecurringPayItemAssignments
+                .AsNoTracking()
+                .Any(existing => existing.Id != assignment.Id
+                    && existing.EmployeeId == assignment.EmployeeId
+                    && existing.RuleId == assignment.RuleId
+                    && existing.IsActive
+                    && existing.StartDate <= end
+                    && (existing.EndDate == null || existing.EndDate >= start));
+
+            if (overlaps)
+            {
+                throw new InvalidOperationException("Overlapping recurring pay item assignments are not allowed.");
             }
         }
     }

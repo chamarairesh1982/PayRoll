@@ -31,10 +31,27 @@
   gap: 12px;
 }
 
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .form-actions {
   margin-top: 12px;
   display: flex;
   gap: 8px;
+}
+
+.error {
+  color: #b42318;
+  margin-top: 8px;
+}
+
+.totals {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 8px;
 }
 
 .simulation {

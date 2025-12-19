@@ -441,6 +441,82 @@ public static class TestDataSeeder
 
         return payItem;
     }
+
+    public static RecurringPayItemRule SeedRecurringPayItemRule(
+        PayrollDbContext context,
+        string name,
+        RecurringRuleType ruleType,
+        Guid payComponentId,
+        decimal amount,
+        DateOnly startDate,
+        DateOnly? endDate,
+        bool taxable,
+        bool epfEtfContributable,
+        bool prorate,
+        bool isActive = true)
+    {
+        var existing = context.RecurringPayItemRules.FirstOrDefault(r => r.Name == name);
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        var rule = new RecurringPayItemRule
+        {
+            Name = name,
+            RuleType = ruleType,
+            AllowanceTypeId = ruleType == RecurringRuleType.Allowance ? payComponentId : null,
+            DeductionTypeId = ruleType == RecurringRuleType.Deduction ? payComponentId : null,
+            Amount = amount,
+            Frequency = PayPeriodType.Monthly,
+            StartDate = startDate,
+            EndDate = endDate,
+            Taxable = taxable,
+            EpfEtfContributable = epfEtfContributable,
+            Prorate = prorate,
+            IsActive = isActive,
+            CreatedBy = "seed"
+        };
+
+        context.RecurringPayItemRules.Add(rule);
+        context.SaveChanges();
+
+        return rule;
+    }
+
+    public static RecurringPayItemAssignment SeedRecurringPayItemAssignment(
+        PayrollDbContext context,
+        Guid ruleId,
+        Guid employeeId,
+        DateOnly startDate,
+        DateOnly? endDate,
+        bool isActive = true)
+    {
+        var existing = context.RecurringPayItemAssignments.FirstOrDefault(a =>
+            a.RuleId == ruleId
+            && a.EmployeeId == employeeId
+            && a.StartDate == startDate);
+
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        var assignment = new RecurringPayItemAssignment
+        {
+            RuleId = ruleId,
+            EmployeeId = employeeId,
+            StartDate = startDate,
+            EndDate = endDate,
+            IsActive = isActive,
+            CreatedBy = "seed"
+        };
+
+        context.RecurringPayItemAssignments.Add(assignment);
+        context.SaveChanges();
+
+        return assignment;
+    }
 }
 
 public class TestCurrentUserService : ICurrentUserService

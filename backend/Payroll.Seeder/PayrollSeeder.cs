@@ -138,24 +138,22 @@ public sealed class PayrollSeeder
             branchCode: "032",
             bankAccountNumber: "2233445566");
 
-        EnsureRecurringRule(
-            $"{DemoPrefix}RR_ALLOW",
+        var monthlyAllowanceRule = EnsureRecurringPayItemRule(
             "Demo Monthly Allowance",
             RecurringRuleType.Allowance,
-            salariedEmployee.Id,
+            transportAllowance.Id,
             new DateOnly(2025, 4, 1),
             null,
             5_000m,
             true,
             true,
-            true,
+            false,
             true);
 
-        EnsureRecurringRule(
-            $"{DemoPrefix}RR_DED_TEMP",
+        var temporaryDeductionRule = EnsureRecurringPayItemRule(
             "Demo Temporary Deduction",
             RecurringRuleType.Deduction,
-            salariedEmployee.Id,
+            tempDeduction.Id,
             new DateOnly(2025, 4, 1),
             new DateOnly(2025, 6, 30),
             1_500m,
@@ -164,46 +162,55 @@ public sealed class PayrollSeeder
             false,
             true);
 
-        EnsureRecurringRule(
-            $"{DemoPrefix}RR_INACTIVE",
+        var inactiveRule = EnsureRecurringPayItemRule(
             "Demo Inactive Test Rule",
             RecurringRuleType.Allowance,
-            lowerSalaryEmployee.Id,
+            nonContribAllowance.Id,
             new DateOnly(2025, 4, 1),
             null,
             2_000m,
             true,
-            true,
-            true,
+            false,
+            false,
             false);
 
-        EnsureEmployeeRecurringPayItem(
-            salariedEmployee.Id,
-            PayItemKind.Allowance,
+        var midMonthRule = EnsureRecurringPayItemRule(
+            "Demo Mid-month Allowance",
+            RecurringRuleType.Allowance,
             transportAllowance.Id,
+            new DateOnly(2025, 4, 1),
             null,
             4_000m,
-            new DateOnly(2025, 4, 15),
+            true,
+            true,
+            true,
+            true);
+
+        EnsureRecurringPayItemAssignment(
+            monthlyAllowanceRule.Id,
+            salariedEmployee.Id,
+            new DateOnly(2025, 4, 1),
             null,
             true);
 
-        EnsureEmployeeRecurringPayItem(
+        EnsureRecurringPayItemAssignment(
+            temporaryDeductionRule.Id,
             salariedEmployee.Id,
-            PayItemKind.Deduction,
-            null,
-            tempDeduction.Id,
-            1_200m,
             new DateOnly(2025, 4, 1),
             new DateOnly(2025, 6, 30),
             true);
 
-        EnsureEmployeeRecurringPayItem(
-            branchEmployee.Id,
-            PayItemKind.Allowance,
-            nonContribAllowance.Id,
-            null,
-            3_500m,
+        EnsureRecurringPayItemAssignment(
+            inactiveRule.Id,
+            lowerSalaryEmployee.Id,
             new DateOnly(2025, 4, 1),
+            null,
+            false);
+
+        EnsureRecurringPayItemAssignment(
+            midMonthRule.Id,
+            salariedEmployee.Id,
+            new DateOnly(2025, 4, 15),
             null,
             true);
 
@@ -516,8 +523,10 @@ public sealed class PayrollSeeder
         _context.AttendanceRecords.RemoveRange(_context.AttendanceRecords.Where(a => scenarioEmployeeIds.Contains(a.EmployeeId)));
         _context.LeaveRequests.RemoveRange(_context.LeaveRequests.Where(l => scenarioEmployeeIds.Contains(l.EmployeeId)));
         _context.EmployeeRecurringPayItems.RemoveRange(_context.EmployeeRecurringPayItems.Where(pi => scenarioEmployeeIds.Contains(pi.EmployeeId)));
+        _context.RecurringPayItemAssignments.RemoveRange(_context.RecurringPayItemAssignments.Where(a => scenarioEmployeeIds.Contains(a.EmployeeId)));
+        _context.RecurringPayItemRules.RemoveRange(_context.RecurringPayItemRules.Where(r => r.Name.StartsWith("Demo")));
+        _context.PayRunRecurringLines.RemoveRange(_context.PayRunRecurringLines.Where(l => scenarioPayRunIds.Contains(l.PayRunId)));
         _context.EmployeePayItems.RemoveRange(_context.EmployeePayItems.Where(pi => scenarioEmployeeIds.Contains(pi.EmployeeId)));
-        _context.RecurringRules.RemoveRange(_context.RecurringRules.Where(r => r.Code.StartsWith(DemoPrefix)));
         _context.LoanRepayments.RemoveRange(_context.LoanRepayments.Where(lr => scenarioLoanIds.Contains(lr.LoanId)));
         _context.Loans.RemoveRange(scenarioLoans);
         _context.Employees.RemoveRange(scenarioEmployees);
@@ -856,76 +865,70 @@ public sealed class PayrollSeeder
         _context.SaveChanges();
     }
 
-    private void EnsureRecurringRule(
-        string code,
-        string name,
+    private RecurringPayItemRule EnsureRecurringPayItemRule(
+        string displayName,
         RecurringRuleType type,
-        Guid employeeId,
+        Guid payComponentId,
         DateOnly startDate,
         DateOnly? endDate,
         decimal amount,
         bool isTaxable,
-        bool isEpfApplicable,
-        bool isEtfApplicable,
+        bool isEpfEtfContributable,
+        bool prorate,
         bool isActive)
     {
-        if (_context.RecurringRules.Any(r => r.Code == code))
+        var existing = _context.RecurringPayItemRules.FirstOrDefault(r => r.Name == displayName);
+        if (existing is not null)
         {
-            return;
+            return existing;
         }
 
-        _context.RecurringRules.Add(new RecurringRule
+        var rule = new RecurringPayItemRule
         {
-            Code = code,
-            Name = name,
+            Name = displayName,
             RuleType = type,
+            AllowanceTypeId = type == RecurringRuleType.Allowance ? payComponentId : null,
+            DeductionTypeId = type == RecurringRuleType.Deduction ? payComponentId : null,
+            Amount = amount,
             Frequency = PayPeriodType.Monthly,
             StartDate = startDate,
             EndDate = endDate,
-            Amount = amount,
-            EmployeeId = employeeId,
-            IsTaxable = isTaxable,
-            IsEpfApplicable = isEpfApplicable,
-            IsEtfApplicable = isEtfApplicable,
+            Taxable = isTaxable,
+            EpfEtfContributable = isEpfEtfContributable,
+            Prorate = prorate,
             IsActive = isActive,
             CreatedBy = SeedUser
-        });
+        };
 
+        _context.RecurringPayItemRules.Add(rule);
         _context.SaveChanges();
+
+        return rule;
     }
 
-    private void EnsureEmployeeRecurringPayItem(
+    private void EnsureRecurringPayItemAssignment(
+        Guid ruleId,
         Guid employeeId,
-        PayItemKind payItemKind,
-        Guid? allowanceTypeId,
-        Guid? deductionTypeId,
-        decimal amount,
-        DateOnly effectiveFrom,
-        DateOnly? effectiveTo,
+        DateOnly startDate,
+        DateOnly? endDate,
         bool isActive)
     {
-        var exists = _context.EmployeeRecurringPayItems.Any(pi =>
-            pi.EmployeeId == employeeId
-            && pi.PayItemKind == payItemKind
-            && pi.AllowanceTypeId == allowanceTypeId
-            && pi.DeductionTypeId == deductionTypeId
-            && pi.EffectiveFrom == effectiveFrom);
+        var exists = _context.RecurringPayItemAssignments.Any(a =>
+            a.RuleId == ruleId
+            && a.EmployeeId == employeeId
+            && a.StartDate == startDate);
 
         if (exists)
         {
             return;
         }
 
-        _context.EmployeeRecurringPayItems.Add(new EmployeeRecurringPayItem
+        _context.RecurringPayItemAssignments.Add(new RecurringPayItemAssignment
         {
+            RuleId = ruleId,
             EmployeeId = employeeId,
-            PayItemKind = payItemKind,
-            AllowanceTypeId = allowanceTypeId,
-            DeductionTypeId = deductionTypeId,
-            Amount = amount,
-            Percentage = null,
-            EffectiveFrom = effectiveFrom,
-            EffectiveTo = effectiveTo,
+            StartDate = startDate,
+            EndDate = endDate,
             IsActive = isActive,
             CreatedBy = SeedUser
         });
