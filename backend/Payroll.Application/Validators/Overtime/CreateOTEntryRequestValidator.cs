@@ -3,9 +3,9 @@ using Payroll.Application.Overtime.DTOs;
 
 namespace Payroll.Application.Validators.Overtime;
 
-public class CreateOvertimeRecordRequestValidator : AbstractValidator<CreateOvertimeRecordRequest>
+public class CreateOTEntryRequestValidator : AbstractValidator<CreateOTEntryRequest>
 {
-    public CreateOvertimeRecordRequestValidator()
+    public CreateOTEntryRequestValidator()
     {
         RuleFor(x => x.EmployeeId).NotEmpty();
         RuleFor(x => x.Date).NotEqual(default(DateTime));

@@ -2,7 +2,7 @@ using Payroll.Domain.Overtime;
 
 namespace Payroll.Application.Overtime.DTOs;
 
-public class UpdateOvertimeRecordRequest
+public class UpdateOTEntryRequest
 {
     public DateTime? Date { get; set; }
     public double? Hours { get; set; }

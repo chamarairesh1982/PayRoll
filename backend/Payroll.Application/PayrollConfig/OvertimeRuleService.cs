@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Payroll.Application.Interfaces;
 using Payroll.Application.PayrollConfig.DTOs;
-using Payroll.Domain.PayrollConfig;
+using Payroll.Domain.Overtime;
 
 namespace Payroll.Application.PayrollConfig;
 
@@ -16,57 +16,104 @@ public class OvertimeRuleService : IOvertimeRuleService
         _currentUserService = currentUserService;
     }
 
-    public async Task<OvertimeRuleConfigDto> GetAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<OTRuleDto>> GetAllAsync(CancellationToken ct = default)
     {
-        var settings = await _dbContext.PayrollSettings.AsNoTracking().FirstOrDefaultAsync(ct);
-        return MapToDto(settings);
+        var rules = await _dbContext.OTRules
+            .AsNoTracking()
+            .Where(r => r.IsActive)
+            .OrderBy(r => r.Name)
+            .ToListAsync(ct);
+
+        return rules.Select(MapToDto).ToList();
     }
 
-    public async Task<OvertimeRuleConfigDto> UpdateAsync(UpdateOvertimeRuleConfigRequest request, CancellationToken ct = default)
+    public async Task<OTRuleDto?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        var settings = await _dbContext.PayrollSettings.FirstOrDefaultAsync(ct);
+        var rule = await _dbContext.OTRules
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Id == id && r.IsActive, ct);
 
-        if (settings is null)
+        return rule is null ? null : MapToDto(rule);
+    }
+
+    public async Task<OTRuleDto> CreateAsync(CreateOTRuleRequest request, CancellationToken ct = default)
+    {
+        var rule = new OTRule
         {
-            settings = new PayrollSettings
-            {
-                WorkingDaysPerMonth = PayrollSettingsDefaults.WorkingDaysPerMonth,
-                WorkingHoursPerDay = PayrollSettingsDefaults.WorkingHoursPerDay,
-                WeekdayOvertimeMultiplier = PayrollSettingsDefaults.WeekdayOvertimeMultiplier,
-                WeekendOvertimeMultiplier = PayrollSettingsDefaults.WeekendOvertimeMultiplier,
-                HolidayOvertimeMultiplier = PayrollSettingsDefaults.HolidayOvertimeMultiplier,
-                OvertimeRoundingMinutes = PayrollSettingsDefaults.OvertimeRoundingMinutes,
-                OvertimeDailyCapHours = PayrollSettingsDefaults.OvertimeDailyCapHours,
-                OvertimePayRunCapHours = PayrollSettingsDefaults.OvertimePayRunCapHours,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = _currentUserService.UserId ?? "system"
-            };
+            Name = request.Name.Trim(),
+            WeekdayMultiplier = Math.Max(0, request.WeekdayMultiplier),
+            WeekendMultiplier = Math.Max(0, request.WeekendMultiplier),
+            HolidayMultiplier = Math.Max(0, request.HolidayMultiplier),
+            RoundingMinutes = Math.Max(0, request.RoundingMinutes),
+            DailyCapHours = Math.Max(0, request.DailyCapHours),
+            PayRunCapHours = Math.Max(0, request.PayRunCapHours),
+            AppliesOnWeekend = request.AppliesOnWeekend,
+            AppliesOnHoliday = request.AppliesOnHoliday,
+            CreatedBy = _currentUserService.UserName ?? "system"
+        };
 
-            await _dbContext.PayrollSettings.AddAsync(settings, ct);
+        await _dbContext.OTRules.AddAsync(rule, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        return MapToDto(rule);
+    }
+
+    public async Task<OTRuleDto> UpdateAsync(Guid id, UpdateOTRuleRequest request, CancellationToken ct = default)
+    {
+        var rule = await _dbContext.OTRules.FirstOrDefaultAsync(r => r.Id == id && r.IsActive, ct);
+
+        if (rule is null)
+        {
+            throw new KeyNotFoundException("Overtime rule not found");
         }
 
-        settings.WeekdayOvertimeMultiplier = request.WeekdayOvertimeMultiplier;
-        settings.WeekendOvertimeMultiplier = request.WeekendOvertimeMultiplier;
-        settings.HolidayOvertimeMultiplier = request.HolidayOvertimeMultiplier;
-        settings.OvertimeRoundingMinutes = Math.Max(0, request.OvertimeRoundingMinutes);
-        settings.OvertimeDailyCapHours = Math.Max(0, request.OvertimeDailyCapHours);
-        settings.OvertimePayRunCapHours = Math.Max(0, request.OvertimePayRunCapHours);
-        settings.ModifiedAt = DateTime.UtcNow;
-        settings.ModifiedBy = _currentUserService.UserId ?? "system";
+        rule.Name = request.Name.Trim();
+        rule.WeekdayMultiplier = Math.Max(0, request.WeekdayMultiplier);
+        rule.WeekendMultiplier = Math.Max(0, request.WeekendMultiplier);
+        rule.HolidayMultiplier = Math.Max(0, request.HolidayMultiplier);
+        rule.RoundingMinutes = Math.Max(0, request.RoundingMinutes);
+        rule.DailyCapHours = Math.Max(0, request.DailyCapHours);
+        rule.PayRunCapHours = Math.Max(0, request.PayRunCapHours);
+        rule.AppliesOnWeekend = request.AppliesOnWeekend;
+        rule.AppliesOnHoliday = request.AppliesOnHoliday;
+        rule.IsActive = request.IsActive;
+        rule.ModifiedAt = DateTime.UtcNow;
+        rule.ModifiedBy = _currentUserService.UserName ?? "system";
 
         await _dbContext.SaveChangesAsync(ct);
 
-        return MapToDto(settings);
+        return MapToDto(rule);
     }
 
-    private static OvertimeRuleConfigDto MapToDto(PayrollSettings? settings)
+    public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        return new OvertimeRuleConfigDto(
-            settings?.WeekdayOvertimeMultiplier ?? PayrollSettingsDefaults.WeekdayOvertimeMultiplier,
-            settings?.WeekendOvertimeMultiplier ?? PayrollSettingsDefaults.WeekendOvertimeMultiplier,
-            settings?.HolidayOvertimeMultiplier ?? PayrollSettingsDefaults.HolidayOvertimeMultiplier,
-            settings?.OvertimeRoundingMinutes ?? PayrollSettingsDefaults.OvertimeRoundingMinutes,
-            settings?.OvertimeDailyCapHours ?? PayrollSettingsDefaults.OvertimeDailyCapHours,
-            settings?.OvertimePayRunCapHours ?? PayrollSettingsDefaults.OvertimePayRunCapHours);
+        var rule = await _dbContext.OTRules.FirstOrDefaultAsync(r => r.Id == id && r.IsActive, ct);
+
+        if (rule is null)
+        {
+            throw new KeyNotFoundException("Overtime rule not found");
+        }
+
+        rule.IsActive = false;
+        rule.ModifiedAt = DateTime.UtcNow;
+        rule.ModifiedBy = _currentUserService.UserName ?? "system";
+
+        await _dbContext.SaveChangesAsync(ct);
+    }
+
+    private static OTRuleDto MapToDto(OTRule rule)
+    {
+        return new OTRuleDto(
+            rule.Id,
+            rule.Name,
+            rule.WeekdayMultiplier,
+            rule.WeekendMultiplier,
+            rule.HolidayMultiplier,
+            rule.RoundingMinutes,
+            rule.DailyCapHours,
+            rule.PayRunCapHours,
+            rule.AppliesOnWeekend,
+            rule.AppliesOnHoliday,
+            rule.IsActive);
     }
 }

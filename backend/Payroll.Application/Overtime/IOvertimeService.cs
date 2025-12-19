@@ -6,18 +6,18 @@ namespace Payroll.Application.Overtime;
 
 public interface IOvertimeService
 {
-    Task<PaginatedResult<OvertimeRecordDto>> GetAsync(
+    Task<PaginatedResult<OTEntryDto>> GetAsync(
         int page,
         int pageSize,
         Guid? employeeId,
         DateOnly? date,
         OvertimeStatus? status);
 
-    Task<OvertimeRecordDto?> GetByIdAsync(Guid id);
+    Task<OTEntryDto?> GetByIdAsync(Guid id);
 
-    Task<OvertimeRecordDto> CreateAsync(CreateOvertimeRecordRequest request);
+    Task<OTEntryDto> CreateAsync(CreateOTEntryRequest request);
 
-    Task UpdateAsync(Guid id, UpdateOvertimeRecordRequest request);
+    Task UpdateAsync(Guid id, UpdateOTEntryRequest request);
 
     Task DeleteAsync(Guid id);
 }

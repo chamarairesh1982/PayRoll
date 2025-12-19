@@ -4,7 +4,9 @@ namespace Payroll.Application.PayrollConfig;
 
 public interface IOvertimeRuleService
 {
-    Task<OvertimeRuleConfigDto> GetAsync(CancellationToken ct = default);
-
-    Task<OvertimeRuleConfigDto> UpdateAsync(UpdateOvertimeRuleConfigRequest request, CancellationToken ct = default);
+    Task<IReadOnlyList<OTRuleDto>> GetAllAsync(CancellationToken ct = default);
+    Task<OTRuleDto?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<OTRuleDto> CreateAsync(CreateOTRuleRequest request, CancellationToken ct = default);
+    Task<OTRuleDto> UpdateAsync(Guid id, UpdateOTRuleRequest request, CancellationToken ct = default);
+    Task DeleteAsync(Guid id, CancellationToken ct = default);
 }

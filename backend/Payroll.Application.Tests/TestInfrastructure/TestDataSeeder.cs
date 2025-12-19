@@ -309,9 +309,9 @@ public static class TestDataSeeder
         return leave;
     }
 
-    public static OvertimeRecord SeedOvertime(PayrollDbContext context, Employee employee, DateOnly date, double hours, OvertimeType type = OvertimeType.Weekday)
+    public static OTEntry SeedOvertime(PayrollDbContext context, Employee employee, DateOnly date, double hours, OvertimeType type = OvertimeType.Weekday)
     {
-        var overtime = new OvertimeRecord
+        var overtime = new OTEntry
         {
             EmployeeId = employee.Id,
             Date = date,
@@ -323,7 +323,7 @@ public static class TestDataSeeder
             CreatedBy = "seed"
         };
 
-        context.OvertimeRecords.Add(overtime);
+        context.OTEntries.Add(overtime);
         context.SaveChanges();
 
         return overtime;

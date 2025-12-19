@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { OvertimeRecord, OvertimeStatus, OvertimeType } from '../../models/overtime-record.model';
+import { OTEntry, OvertimeStatus, OvertimeType } from '../../models/ot-entry.model';
 
 @Component({
   selector: 'app-overtime-form',
@@ -8,9 +8,9 @@ import { OvertimeRecord, OvertimeStatus, OvertimeType } from '../../models/overt
   styleUrls: ['./overtime-form.component.scss'],
 })
 export class OvertimeFormComponent implements OnInit, OnChanges {
-  @Input() initialValue?: Partial<OvertimeRecord> | null;
+  @Input() initialValue?: Partial<OTEntry> | null;
   @Input() mode: 'create' | 'edit' = 'create';
-  @Output() submitted = new EventEmitter<Partial<OvertimeRecord>>();
+  @Output() submitted = new EventEmitter<Partial<OTEntry>>();
 
   form: FormGroup;
   overtimeTypes: OvertimeType[] = ['Weekday', 'Weekend', 'PublicHoliday'];

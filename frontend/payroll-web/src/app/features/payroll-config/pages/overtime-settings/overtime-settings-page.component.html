@@ -1,34 +1,54 @@
-<section class="overtime-settings">
-  <header>
+<section class="page">
+  <header class="page-header">
     <div>
       <h1>Overtime rules</h1>
-      <p class="subtitle">Configure multipliers, rounding, and caps applied to approved overtime during payroll.</p>
+      <p class="muted">Create and manage overtime rules used in payroll calculations.</p>
     </div>
-    <button type="button" (click)="loadConfig()" [disabled]="isLoading">Reload</button>
+    <button type="button" class="btn" (click)="createRule()">New rule</button>
   </header>
 
-  <div *ngIf="isLoading" class="info">Loading overtime configuration...</div>
-  <div *ngIf="error" class="error">{{ error }}</div>
-  <div *ngIf="successMessage" class="success">{{ successMessage }}</div>
+  <div *ngIf="isLoading" class="loading">Loading overtime rules...</div>
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
 
-  <app-overtime-settings-form
-    *ngIf="!isLoading"
-    [initialValue]="config"
-    [isSaving]="isSaving"
-    (submitted)="saveRules($event)"
-  ></app-overtime-settings-form>
+  <div class="rules-layout" *ngIf="!isLoading">
+    <aside class="rules-list">
+      <div *ngIf="!rules.length" class="empty">No rules yet. Create one to get started.</div>
+      <ul>
+        <li
+          *ngFor="let rule of rules"
+          [class.active]="selectedRule?.id === rule.id"
+          (click)="selectRule(rule)"
+        >
+          <div class="rule-name">{{ rule.name || 'Untitled rule' }}</div>
+          <div class="rule-meta">
+            <span>Weekday {{ rule.weekdayMultiplier }}x</span>
+            <span *ngIf="rule.appliesOnWeekend">Weekend {{ rule.weekendMultiplier }}x</span>
+            <span *ngIf="rule.appliesOnHoliday">Holiday {{ rule.holidayMultiplier }}x</span>
+          </div>
+        </li>
+      </ul>
+    </aside>
 
-  <div class="helper-panels">
-    <div class="panel">
-      <h3>Rounding</h3>
-      <p>Rounding is applied to submitted hours before caps. This helps keep payouts consistent with policy.</p>
-    </div>
-    <div class="panel">
-      <h3>Caps</h3>
-      <p>
-        Daily caps limit overtime per day, while the pay run cap controls the total hours that can be paid for the period per
-        employee.
-      </p>
-    </div>
+    <section class="rule-form" *ngIf="selectedRule; else selectPrompt">
+      <app-overtime-settings-form
+        [initialValue]="selectedRule"
+        [isSaving]="isSaving"
+        (submitted)="saveRule($event)"
+      ></app-overtime-settings-form>
+
+      <button
+        type="button"
+        class="btn btn-danger"
+        *ngIf="selectedRule?.id"
+        (click)="deleteRule(selectedRule)"
+      >
+        Delete rule
+      </button>
+    </section>
   </div>
+
+  <ng-template #selectPrompt>
+    <div class="empty">Select a rule to edit or create a new one.</div>
+  </ng-template>
 </section>

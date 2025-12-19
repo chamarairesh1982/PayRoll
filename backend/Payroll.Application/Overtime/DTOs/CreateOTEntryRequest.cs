@@ -2,7 +2,7 @@ using Payroll.Domain.Overtime;
 
 namespace Payroll.Application.Overtime.DTOs;
 
-public class CreateOvertimeRecordRequest
+public class CreateOTEntryRequest
 {
     public Guid EmployeeId { get; set; }
     public DateTime Date { get; set; }

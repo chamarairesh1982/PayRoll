@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { OvertimeRuleConfig } from '../../models/overtime-rule-config.model';
+import { OTRule, OTRulePayload } from '../../models/ot-rule.model';
 
 @Component({
   selector: 'app-overtime-settings-form',
@@ -8,20 +8,24 @@ import { OvertimeRuleConfig } from '../../models/overtime-rule-config.model';
   styleUrls: ['./overtime-settings-form.component.scss'],
 })
 export class OvertimeSettingsFormComponent implements OnChanges {
-  @Input() initialValue: OvertimeRuleConfig | null = null;
+  @Input() initialValue: OTRule | null = null;
   @Input() isSaving = false;
-  @Output() submitted = new EventEmitter<OvertimeRuleConfig>();
+  @Output() submitted = new EventEmitter<OTRulePayload>();
 
   form: FormGroup;
 
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
-      weekdayOvertimeMultiplier: [1.5, [Validators.required, Validators.min(0)]],
-      weekendOvertimeMultiplier: [2, [Validators.required, Validators.min(0)]],
-      holidayOvertimeMultiplier: [2, [Validators.required, Validators.min(0)]],
-      overtimeRoundingMinutes: [15, [Validators.required, Validators.min(0)]],
-      overtimeDailyCapHours: [12, [Validators.required, Validators.min(0)]],
-      overtimePayRunCapHours: [80, [Validators.required, Validators.min(0)]],
+      name: ['', [Validators.required, Validators.maxLength(150)]],
+      weekdayMultiplier: [1.5, [Validators.required, Validators.min(0)]],
+      weekendMultiplier: [2, [Validators.required, Validators.min(0)]],
+      holidayMultiplier: [2, [Validators.required, Validators.min(0)]],
+      roundingMinutes: [15, [Validators.required, Validators.min(0)]],
+      dailyCapHours: [12, [Validators.required, Validators.min(0)]],
+      payRunCapHours: [80, [Validators.required, Validators.min(0)]],
+      appliesOnWeekend: [true],
+      appliesOnHoliday: [true],
+      isActive: [true],
     });
   }
 
@@ -37,6 +41,6 @@ export class OvertimeSettingsFormComponent implements OnChanges {
       return;
     }
 
-    this.submitted.emit(this.form.value as OvertimeRuleConfig);
+    this.submitted.emit(this.form.value as OTRulePayload);
   }
 }

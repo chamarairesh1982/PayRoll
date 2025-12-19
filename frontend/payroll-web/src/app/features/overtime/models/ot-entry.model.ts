@@ -2,7 +2,7 @@ export type OvertimeType = 'Weekday' | 'Weekend' | 'PublicHoliday';
 
 export type OvertimeStatus = 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
 
-export interface OvertimeRecord {
+export interface OTEntry {
   id: string;
 
   employeeId: string;

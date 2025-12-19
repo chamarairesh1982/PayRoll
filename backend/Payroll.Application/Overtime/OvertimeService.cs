@@ -17,7 +17,7 @@ public class OvertimeService : IOvertimeService
         _currentUserService = currentUserService;
     }
 
-    public async Task<PaginatedResult<OvertimeRecordDto>> GetAsync(
+    public async Task<PaginatedResult<OTEntryDto>> GetAsync(
         int page,
         int pageSize,
         Guid? employeeId,
@@ -27,7 +27,7 @@ public class OvertimeService : IOvertimeService
         page = Math.Max(page, 1);
         pageSize = Math.Max(pageSize, 1);
 
-        var query = _dbContext.OvertimeRecords
+        var query = _dbContext.OTEntries
             .AsNoTracking()
             .Where(o => o.IsActive)
             .AsQueryable();
@@ -69,7 +69,7 @@ public class OvertimeService : IOvertimeService
 
         var items = records.Select(o => MapToDto(o, employees)).ToList();
 
-        return new PaginatedResult<OvertimeRecordDto>
+        return new PaginatedResult<OTEntryDto>
         {
             Items = items,
             Page = page,
@@ -78,9 +78,9 @@ public class OvertimeService : IOvertimeService
         };
     }
 
-    public async Task<OvertimeRecordDto?> GetByIdAsync(Guid id)
+    public async Task<OTEntryDto?> GetByIdAsync(Guid id)
     {
-        var overtime = await _dbContext.OvertimeRecords
+        var overtime = await _dbContext.OTEntries
             .AsNoTracking()
             .FirstOrDefaultAsync(o => o.Id == id && o.IsActive);
 
@@ -103,7 +103,7 @@ public class OvertimeService : IOvertimeService
         return MapToDto(overtime, employees);
     }
 
-    public async Task<OvertimeRecordDto> CreateAsync(CreateOvertimeRecordRequest request)
+    public async Task<OTEntryDto> CreateAsync(CreateOTEntryRequest request)
     {
         if (request.Hours <= 0)
         {
@@ -116,7 +116,7 @@ public class OvertimeService : IOvertimeService
             throw new KeyNotFoundException("Employee not found");
         }
 
-        var overtime = new OvertimeRecord
+        var overtime = new OTEntry
         {
             EmployeeId = request.EmployeeId,
             Date = DateOnly.FromDateTime(request.Date.Date),
@@ -130,7 +130,7 @@ public class OvertimeService : IOvertimeService
             CreatedBy = _currentUserService.UserName ?? "system"
         };
 
-        await _dbContext.OvertimeRecords.AddAsync(overtime);
+        await _dbContext.OTEntries.AddAsync(overtime);
         await _dbContext.SaveChangesAsync();
 
         var employees = new Dictionary<Guid, Domain.Employees.Employee>
@@ -141,9 +141,9 @@ public class OvertimeService : IOvertimeService
         return MapToDto(overtime, employees);
     }
 
-    public async Task UpdateAsync(Guid id, UpdateOvertimeRecordRequest request)
+    public async Task UpdateAsync(Guid id, UpdateOTEntryRequest request)
     {
-        var overtime = await _dbContext.OvertimeRecords.FirstOrDefaultAsync(o => o.Id == id && o.IsActive);
+        var overtime = await _dbContext.OTEntries.FirstOrDefaultAsync(o => o.Id == id && o.IsActive);
         if (overtime is null)
         {
             throw new KeyNotFoundException("Overtime record not found");
@@ -198,7 +198,7 @@ public class OvertimeService : IOvertimeService
 
     public async Task DeleteAsync(Guid id)
     {
-        var overtime = await _dbContext.OvertimeRecords.FirstOrDefaultAsync(o => o.Id == id && o.IsActive);
+        var overtime = await _dbContext.OTEntries.FirstOrDefaultAsync(o => o.Id == id && o.IsActive);
         if (overtime is null)
         {
             throw new KeyNotFoundException("Overtime record not found");
@@ -216,8 +216,8 @@ public class OvertimeService : IOvertimeService
         await _dbContext.SaveChangesAsync();
     }
 
-    private static OvertimeRecordDto MapToDto(
-        OvertimeRecord overtime,
+    private static OTEntryDto MapToDto(
+        OTEntry overtime,
         IReadOnlyDictionary<Guid, Domain.Employees.Employee> employees)
     {
         employees.TryGetValue(overtime.EmployeeId, out var employee);
@@ -225,7 +225,7 @@ public class OvertimeService : IOvertimeService
             ? approver
             : null;
 
-        return new OvertimeRecordDto
+        return new OTEntryDto
         {
             Id = overtime.Id,
             EmployeeId = overtime.EmployeeId,

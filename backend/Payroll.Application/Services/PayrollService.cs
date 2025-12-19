@@ -302,6 +302,15 @@ public class PayrollService : IPayrollService
         payRun.Status = PayRunStatus.Locked;
         payRun.IsLocked = true;
 
+        var overtimeEntries = await _dbContext.OTEntries
+            .Where(o => o.PayRunId == payRun.Id && o.IsActive)
+            .ToListAsync(cancellationToken);
+
+        foreach (var overtimeEntry in overtimeEntries)
+        {
+            overtimeEntry.IsLockedForPayroll = true;
+        }
+
         await _auditLogger.LogAsync(
             nameof(PayRun),
             payRun.Id.ToString(),
@@ -995,8 +1004,9 @@ public class PayrollService : IPayrollService
             .ToListAsync(ct);
 
         var payrollSettings = await GetPayrollSettingsAsync(ct);
+        var overtimeRule = await GetOvertimeRuleSnapshotAsync(ct);
 
-        var overtime = await _dbContext.OvertimeRecords
+        var overtime = await _dbContext.OTEntries
             .Where(o => employeeIds.Contains(o.EmployeeId)
                         && o.Date >= periodStart
                         && o.Date <= periodEnd
@@ -1083,12 +1093,14 @@ public class PayrollService : IPayrollService
                     DeductionTypes = deductionTypes,
                     WorkingDaysPerMonth = payrollSettings.WorkingDaysPerMonth,
                     WorkingHoursPerDay = payrollSettings.WorkingHoursPerDay,
-                    WeekdayOvertimeMultiplier = payrollSettings.WeekdayOvertimeMultiplier,
-                    WeekendOvertimeMultiplier = payrollSettings.WeekendOvertimeMultiplier,
-                    HolidayOvertimeMultiplier = payrollSettings.HolidayOvertimeMultiplier,
-                    OvertimeRoundingMinutes = payrollSettings.OvertimeRoundingMinutes,
-                    OvertimeDailyCapHours = payrollSettings.OvertimeDailyCapHours,
-                    OvertimePayRunCapHours = payrollSettings.OvertimePayRunCapHours
+                    WeekdayOvertimeMultiplier = overtimeRule.WeekdayOvertimeMultiplier,
+                    WeekendOvertimeMultiplier = overtimeRule.WeekendOvertimeMultiplier,
+                    HolidayOvertimeMultiplier = overtimeRule.HolidayOvertimeMultiplier,
+                    OvertimeRoundingMinutes = overtimeRule.OvertimeRoundingMinutes,
+                    OvertimeDailyCapHours = overtimeRule.OvertimeDailyCapHours,
+                    OvertimePayRunCapHours = overtimeRule.OvertimePayRunCapHours,
+                    AppliesOnWeekend = overtimeRule.AppliesOnWeekend,
+                    AppliesOnHoliday = overtimeRule.AppliesOnHoliday
                 },
                 recurringKeySet,
                 ct);
@@ -1138,6 +1150,27 @@ public class PayrollService : IPayrollService
             OvertimeRoundingMinutes = settings?.OvertimeRoundingMinutes ?? PayrollSettingsDefaults.OvertimeRoundingMinutes,
             OvertimeDailyCapHours = settings?.OvertimeDailyCapHours ?? PayrollSettingsDefaults.OvertimeDailyCapHours,
             OvertimePayRunCapHours = settings?.OvertimePayRunCapHours ?? PayrollSettingsDefaults.OvertimePayRunCapHours
+        };
+    }
+
+    private async Task<OvertimeRuleSnapshot> GetOvertimeRuleSnapshotAsync(CancellationToken ct)
+    {
+        var rule = await _dbContext.OTRules
+            .AsNoTracking()
+            .Where(r => r.IsActive)
+            .OrderByDescending(r => r.ModifiedAt ?? r.CreatedAt)
+            .FirstOrDefaultAsync(ct);
+
+        return new OvertimeRuleSnapshot
+        {
+            WeekdayOvertimeMultiplier = rule?.WeekdayMultiplier ?? PayrollSettingsDefaults.WeekdayOvertimeMultiplier,
+            WeekendOvertimeMultiplier = rule?.WeekendMultiplier ?? PayrollSettingsDefaults.WeekendOvertimeMultiplier,
+            HolidayOvertimeMultiplier = rule?.HolidayMultiplier ?? PayrollSettingsDefaults.HolidayOvertimeMultiplier,
+            OvertimeRoundingMinutes = rule?.RoundingMinutes ?? PayrollSettingsDefaults.OvertimeRoundingMinutes,
+            OvertimeDailyCapHours = rule?.DailyCapHours ?? PayrollSettingsDefaults.OvertimeDailyCapHours,
+            OvertimePayRunCapHours = rule?.PayRunCapHours ?? PayrollSettingsDefaults.OvertimePayRunCapHours,
+            AppliesOnWeekend = rule?.AppliesOnWeekend ?? true,
+            AppliesOnHoliday = rule?.AppliesOnHoliday ?? true
         };
     }
 
@@ -1410,8 +1443,8 @@ public class PayrollService : IPayrollService
         {
             var multiplier = overtime.Type switch
             {
-                OvertimeType.Weekend => ctx.WeekendOvertimeMultiplier,
-                OvertimeType.PublicHoliday => ctx.HolidayOvertimeMultiplier,
+                OvertimeType.Weekend when ctx.AppliesOnWeekend => ctx.WeekendOvertimeMultiplier,
+                OvertimeType.PublicHoliday when ctx.AppliesOnHoliday => ctx.HolidayOvertimeMultiplier,
                 _ => ctx.WeekdayOvertimeMultiplier
             };
 
@@ -2209,7 +2242,7 @@ public class PayrollService : IPayrollService
     private static decimal RoundCurrency(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
 
     private static decimal CalculateRoundedOvertimeHours(
-        OvertimeRecord overtime,
+        OTEntry overtime,
         PaySlipCalculationContext ctx,
         ref decimal remainingPayRunCap)
     {
@@ -2394,7 +2427,7 @@ public class PayrollService : IPayrollService
         public Employee Employee { get; init; } = null!;
         public decimal BasicSalary { get; set; }
         public List<AttendanceRecord> Attendance { get; init; } = new();
-        public List<OvertimeRecord> Overtime { get; init; } = new();
+        public List<OTEntry> Overtime { get; init; } = new();
         public List<Loan> ActiveLoans { get; init; } = new();
         public List<EmployeePayItem> PayItems { get; init; } = new();
         public List<EmployeeRecurringPayItem> RecurringPayItems { get; init; } = new();
@@ -2418,6 +2451,8 @@ public class PayrollService : IPayrollService
         public int OvertimeRoundingMinutes { get; init; }
         public double OvertimeDailyCapHours { get; init; }
         public double OvertimePayRunCapHours { get; init; }
+        public bool AppliesOnWeekend { get; init; }
+        public bool AppliesOnHoliday { get; init; }
     }
 
     private sealed record PayeComputationResult(
@@ -2437,6 +2472,18 @@ public class PayrollService : IPayrollService
         public int OvertimeRoundingMinutes { get; init; }
         public double OvertimeDailyCapHours { get; init; }
         public double OvertimePayRunCapHours { get; init; }
+    }
+
+    private sealed class OvertimeRuleSnapshot
+    {
+        public decimal WeekdayOvertimeMultiplier { get; init; }
+        public decimal WeekendOvertimeMultiplier { get; init; }
+        public decimal HolidayOvertimeMultiplier { get; init; }
+        public int OvertimeRoundingMinutes { get; init; }
+        public double OvertimeDailyCapHours { get; init; }
+        public double OvertimePayRunCapHours { get; init; }
+        public bool AppliesOnWeekend { get; init; }
+        public bool AppliesOnHoliday { get; init; }
     }
 
     // TODO: Add integration tests to cover basic, overtime, and statutory calculation scenarios.
