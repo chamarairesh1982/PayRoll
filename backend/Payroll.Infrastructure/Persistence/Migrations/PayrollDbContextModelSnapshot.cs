@@ -522,6 +522,176 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Payroll.Domain.Payroll.PayRunRecurringLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LineType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("PayRunId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("PaySlipLineId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RuleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("PayRunId");
+
+                    b.HasIndex("RuleId");
+
+                    b.HasIndex("PayRunId", "EmployeeId", "RuleId")
+                        .IsUnique();
+
+                    b.ToTable("PayRunRecurringLines", (string)null);
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Payroll.RecurringPayItemAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("RuleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("RuleId");
+
+                    b.HasIndex("RuleId", "EmployeeId");
+
+                    b.ToTable("RecurringPayItemAssignments", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RecurringPayItemAssignments_EffectiveDates", "([EndDate] IS NULL OR [EndDate] >= [StartDate])");
+                        });
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Payroll.RecurringPayItemRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AllowanceTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("DeductionTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("EpfEtfContributable")
+                        .HasColumnType("bit");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Frequency")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("Prorate")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("RuleType")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("Taxable")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AllowanceTypeId");
+
+                    b.HasIndex("DeductionTypeId");
+
+                    b.ToTable("RecurringPayItemRules", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RecurringPayItemRules_ComponentType", "((RuleType = 1 AND AllowanceTypeId IS NOT NULL AND DeductionTypeId IS NULL) OR (RuleType = 2 AND DeductionTypeId IS NOT NULL AND AllowanceTypeId IS NULL))");
+
+                            t.HasCheckConstraint("CK_RecurringPayItemRules_EffectiveDates", "([EndDate] IS NULL OR [EndDate] >= [StartDate])");
+                        });
+                });
+
             modelBuilder.Entity("Payroll.Domain.Leave.LeaveRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1686,6 +1856,63 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.Navigation("AllowanceType");
 
                     b.Navigation("DeductionType");
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Payroll.PayRunRecurringLine", b =>
+                {
+                    b.HasOne("Payroll.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Payroll.Domain.Payroll.PayRun", null)
+                        .WithMany()
+                        .HasForeignKey("PayRunId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Payroll.Domain.Payroll.RecurringPayItemRule", null)
+                        .WithMany()
+                        .HasForeignKey("RuleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Payroll.RecurringPayItemAssignment", b =>
+                {
+                    b.HasOne("Payroll.Domain.Employees.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Payroll.Domain.Payroll.RecurringPayItemRule", "Rule")
+                        .WithMany("Assignments")
+                        .HasForeignKey("RuleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Rule");
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Payroll.RecurringPayItemRule", b =>
+                {
+                    b.HasOne("Payroll.Domain.PayrollConfig.AllowanceType", "AllowanceType")
+                        .WithMany()
+                        .HasForeignKey("AllowanceTypeId");
+
+                    b.HasOne("Payroll.Domain.PayrollConfig.DeductionType", "DeductionType")
+                        .WithMany()
+                        .HasForeignKey("DeductionTypeId");
+
+                    b.Navigation("AllowanceType");
+
+                    b.Navigation("DeductionType");
+
+                    b.Navigation("Assignments");
                 });
 
             modelBuilder.Entity("Payroll.Domain.Loans.LoanRepayment", b =>

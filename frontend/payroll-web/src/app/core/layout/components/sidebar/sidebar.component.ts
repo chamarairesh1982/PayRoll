@@ -10,7 +10,7 @@ export class SidebarComponent {
     { label: 'Dashboard', path: '/' },
     { label: 'Employees', path: '/employees' },
     { label: 'Payroll', path: '/payroll' },
-    { label: 'Recurring Rules', path: '/payroll/recurring-rules' },
+    { label: 'Recurring Pay Items', path: '/payroll/recurring-rules' },
     { label: 'Attendance', path: '/attendance' },
     { label: 'Leave', path: '/leave' },
     { label: 'Overtime', path: '/overtime' },

@@ -94,7 +94,8 @@ public class PayrollService : IPayrollService
 
         var beforeSnapshot = CreatePayRunSnapshot(payRun);
 
-        payRun.PaySlips = await GeneratePaySlipsForPayRunAsync(payRun, employeeIds, cancellationToken);
+        var generationResult = await GeneratePaySlipsForPayRunAsync(payRun, employeeIds, cancellationToken);
+        payRun.PaySlips = generationResult.PaySlips;
         await _auditLogger.LogAsync(
             nameof(PayRun),
             payRun.Id.ToString(),
@@ -105,6 +106,10 @@ public class PayrollService : IPayrollService
             cancellationToken);
 
         await _dbContext.PayRuns.AddAsync(payRun, cancellationToken);
+        if (generationResult.RecurringLines.Count > 0)
+        {
+            await _dbContext.PayRunRecurringLines.AddRangeAsync(generationResult.RecurringLines, cancellationToken);
+        }
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         var updated = await LoadPayRunWithSlipsAsync(id, cancellationToken);
@@ -143,7 +148,15 @@ public class PayrollService : IPayrollService
         _dbContext.PaySlips.RemoveRange(payRun.PaySlips);
         payRun.PaySlips.Clear();
 
-        payRun.PaySlips = await GeneratePaySlipsForPayRunAsync(payRun, employeeIds, cancellationToken);
+        _dbContext.PayRunRecurringLines.RemoveRange(
+            _dbContext.PayRunRecurringLines.Where(r => r.PayRunId == payRun.Id));
+
+        var generationResult = await GeneratePaySlipsForPayRunAsync(payRun, employeeIds, cancellationToken);
+        payRun.PaySlips = generationResult.PaySlips;
+        if (generationResult.RecurringLines.Count > 0)
+        {
+            await _dbContext.PayRunRecurringLines.AddRangeAsync(generationResult.RecurringLines, cancellationToken);
+        }
         payRun.Status = PayRunStatus.Draft;
         payRun.ExportStatus = BankExportStatus.Pending;
         payRun.ExportedBank = null;
@@ -1026,7 +1039,7 @@ public class PayrollService : IPayrollService
         };
     }
 
-    private async Task<List<PaySlip>> GeneratePaySlipsForPayRunAsync(PayRun payRun, List<Guid> employeeIds, CancellationToken ct)
+    private async Task<PaySlipGenerationResult> GeneratePaySlipsForPayRunAsync(PayRun payRun, List<Guid> employeeIds, CancellationToken ct)
     {
         var employees = await ApplyScopeFilter(_dbContext.Employees, payRun.CompanyId, payRun.BranchId, payRun.CostCenterId)
             .Where(e => employeeIds.Contains(e.Id) && e.IsActive)
@@ -1084,12 +1097,21 @@ public class PayrollService : IPayrollService
                         && (pi.EffectiveTo == null || pi.EffectiveTo >= periodStart))
             .ToListAsync(ct);
 
-        var recurringRules = await _dbContext.RecurringRules
+        var recurringAssignments = await _dbContext.RecurringPayItemAssignments
             .AsNoTracking()
-            .Where(r => r.IsActive
-                        && r.Frequency == payRun.PeriodType
-                        && r.StartDate <= DateOnly.FromDateTime(periodEnd)
-                        && (r.EndDate == null || r.EndDate >= DateOnly.FromDateTime(periodStart)))
+            .Include(a => a.Rule)
+                .ThenInclude(r => r!.AllowanceType)
+            .Include(a => a.Rule)
+                .ThenInclude(r => r!.DeductionType)
+            .Where(a => employeeIds.Contains(a.EmployeeId)
+                        && a.IsActive
+                        && a.StartDate <= periodEnd
+                        && (a.EndDate == null || a.EndDate >= periodStart)
+                        && a.Rule != null
+                        && a.Rule.IsActive
+                        && a.Rule.Frequency == payRun.PeriodType
+                        && a.Rule.StartDate <= periodEnd
+                        && (a.Rule.EndDate == null || a.Rule.EndDate >= periodStart))
             .ToListAsync(ct);
 
         var leaveRequests = await _dbContext.LeaveRequests
@@ -1107,7 +1129,13 @@ public class PayrollService : IPayrollService
 
         var paySlips = new List<PaySlip>();
 
-        var recurringKeySet = new HashSet<string>();
+        var existingRecurringLines = await _dbContext.PayRunRecurringLines
+            .AsNoTracking()
+            .Where(r => r.PayRunId == payRun.Id)
+            .ToListAsync(ct);
+
+        var recurringKeySet = new HashSet<string>(existingRecurringLines.Select(r => $"{r.PayRunId}:{r.EmployeeId}:{r.RuleId}"));
+        var recurringLinesToInsert = new List<PayRunRecurringLine>();
 
         foreach (var employee in employees)
         {
@@ -1125,7 +1153,7 @@ public class PayrollService : IPayrollService
                     ActiveLoans = loans.Where(l => l.EmployeeId == employee.Id).ToList(),
                     PayItems = payItems.Where(pi => pi.EmployeeId == employee.Id).ToList(),
                     RecurringPayItems = recurringPayItems.Where(pi => pi.EmployeeId == employee.Id).ToList(),
-                    RecurringRules = recurringRules.Where(r => r.EmployeeId == employee.Id).ToList(),
+                    RecurringAssignments = recurringAssignments.Where(a => a.EmployeeId == employee.Id).ToList(),
                     LeaveRequests = leaveRequests.Where(lr => lr.EmployeeId == employee.Id).ToList(),
                     AllowanceTypes = allowanceTypes,
                     DeductionTypes = deductionTypes,
@@ -1143,13 +1171,14 @@ public class PayrollService : IPayrollService
                     AppliesOnHoliday = overtimeRule.AppliesOnHoliday
                 },
                 recurringKeySet,
+                recurringLinesToInsert,
                 ct);
 
             paySlip.PayRunId = payRun.Id;
             paySlips.Add(paySlip);
         }
 
-        return paySlips;
+        return new PaySlipGenerationResult(paySlips, recurringLinesToInsert);
     }
 
     private Task<PayRun?> LoadPayRunWithSlipsAsync(Guid payRunId, CancellationToken cancellationToken)
@@ -1223,6 +1252,7 @@ public class PayrollService : IPayrollService
         TaxRuleSetDto? taxRuleSet,
         PaySlipCalculationContext ctx,
         HashSet<string> recurringKeys,
+        List<PayRunRecurringLine> recurringLines,
         CancellationToken ct)
     {
         ctx.BasicSalary = employee.BaseSalary;
@@ -1240,7 +1270,7 @@ public class PayrollService : IPayrollService
         await ApplyOvertimeEarningsAsync(ctx, payRun);
         await ApplyFixedAllowancesAsync(ctx, payRun);
         await ApplyFixedDeductionsAsync(ctx, payRun);
-        await ApplyRecurringRulesAsync(ctx, payRun, recurringKeys);
+        await ApplyRecurringPayItemsAsync(ctx, payRun, recurringKeys, recurringLines);
         await ApplyLoansAsync(ctx, payRun);
         await ApplyStatutoryContributionsAsync(ctx, payRun, epfEtfRule, taxRuleSet);
 
@@ -1637,19 +1667,38 @@ public class PayrollService : IPayrollService
         return Task.CompletedTask;
     }
 
-    private Task ApplyRecurringRulesAsync(PaySlipCalculationContext ctx, PayRun payRun, HashSet<string> recurringKeys)
+    private Task ApplyRecurringPayItemsAsync(
+        PaySlipCalculationContext ctx,
+        PayRun payRun,
+        HashSet<string> recurringKeys,
+        List<PayRunRecurringLine> recurringLines)
     {
-        var periodKey = $"{DateOnly.FromDateTime(payRun.PeriodStart):yyyyMMdd}-{DateOnly.FromDateTime(payRun.PeriodEnd):yyyyMMdd}";
+        var periodStart = DateOnly.FromDateTime(payRun.PeriodStart);
+        var periodEnd = DateOnly.FromDateTime(payRun.PeriodEnd);
 
-        foreach (var rule in ctx.RecurringRules)
+        foreach (var assignment in ctx.RecurringAssignments)
         {
-            var key = $"{rule.Id}:{ctx.Employee.Id}:{periodKey}";
+            var rule = assignment.Rule;
+            if (rule is null)
+            {
+                continue;
+            }
+
+            var key = $"{payRun.Id}:{ctx.Employee.Id}:{rule.Id}";
             if (!recurringKeys.Add(key))
             {
                 continue;
             }
 
-            var amount = RoundCurrency(rule.Amount);
+            var effectiveRange = GetRecurringEffectiveRange(rule, assignment, periodStart, periodEnd);
+            if (effectiveRange is null)
+            {
+                continue;
+            }
+
+            var (effectiveStart, effectiveEnd) = effectiveRange.Value;
+            var amount = CalculateRecurringAmount(rule, periodStart, periodEnd, effectiveStart, effectiveEnd);
+
             if (amount <= 0)
             {
                 continue;
@@ -1657,34 +1706,105 @@ public class PayrollService : IPayrollService
 
             if (rule.RuleType == RecurringRuleType.Allowance)
             {
-                ctx.Earnings.Add(new EarningLine
+                var allowance = rule.AllowanceType;
+                if (allowance is null)
+                {
+                    continue;
+                }
+
+                var line = new EarningLine
                 {
                     Id = Guid.NewGuid(),
                     PaySlipId = ctx.PaySlipId,
-                    Code = rule.Code,
+                    Code = allowance.Code,
                     Description = rule.Name,
                     Amount = amount,
-                    IsEpfApplicable = rule.IsEpfApplicable,
-                    IsEtfApplicable = rule.IsEtfApplicable,
-                    IsTaxable = rule.IsTaxable
+                    IsEpfApplicable = rule.EpfEtfContributable,
+                    IsEtfApplicable = rule.EpfEtfContributable,
+                    IsTaxable = rule.Taxable
+                };
+
+                ctx.Earnings.Add(line);
+                recurringLines.Add(new PayRunRecurringLine
+                {
+                    Id = Guid.NewGuid(),
+                    PayRunId = payRun.Id,
+                    EmployeeId = ctx.Employee.Id,
+                    RuleId = rule.Id,
+                    PaySlipLineId = line.Id,
+                    LineType = PaySlipLineType.Earning,
+                    CreatedBy = "system"
                 });
             }
             else
             {
-                ctx.Deductions.Add(new DeductionLine
+                var deduction = rule.DeductionType;
+                if (deduction is null)
+                {
+                    continue;
+                }
+
+                var line = new DeductionLine
                 {
                     Id = Guid.NewGuid(),
                     PaySlipId = ctx.PaySlipId,
-                    Code = rule.Code,
+                    Code = deduction.Code,
                     Description = rule.Name,
                     Amount = amount,
-                    IsPreTax = false,
-                    IsPostTax = true
+                    IsPreTax = deduction.IsPreTax,
+                    IsPostTax = deduction.IsPostTax
+                };
+
+                ctx.Deductions.Add(line);
+                recurringLines.Add(new PayRunRecurringLine
+                {
+                    Id = Guid.NewGuid(),
+                    PayRunId = payRun.Id,
+                    EmployeeId = ctx.Employee.Id,
+                    RuleId = rule.Id,
+                    PaySlipLineId = line.Id,
+                    LineType = PaySlipLineType.Deduction,
+                    CreatedBy = "system"
                 });
             }
         }
 
         return Task.CompletedTask;
+    }
+
+    private static (DateOnly Start, DateOnly End)? GetRecurringEffectiveRange(
+        RecurringPayItemRule rule,
+        RecurringPayItemAssignment assignment,
+        DateOnly periodStart,
+        DateOnly periodEnd)
+    {
+        var effectiveStart = new[] { rule.StartDate, assignment.StartDate, periodStart }.Max();
+        var effectiveEnd = new[] { rule.EndDate ?? DateOnly.MaxValue, assignment.EndDate ?? DateOnly.MaxValue, periodEnd }.Min();
+
+        if (effectiveEnd < effectiveStart)
+        {
+            return null;
+        }
+
+        return (effectiveStart, effectiveEnd);
+    }
+
+    private decimal CalculateRecurringAmount(
+        RecurringPayItemRule rule,
+        DateOnly periodStart,
+        DateOnly periodEnd,
+        DateOnly effectiveStart,
+        DateOnly effectiveEnd)
+    {
+        if (!rule.Prorate || (effectiveStart == periodStart && effectiveEnd == periodEnd))
+        {
+            return RoundCurrency(rule.Amount);
+        }
+
+        var activeDays = effectiveEnd.DayNumber - effectiveStart.DayNumber + 1;
+        var periodDays = periodEnd.DayNumber - periodStart.DayNumber + 1;
+        var prorated = rule.Amount * activeDays / periodDays;
+        return RoundCurrency(prorated);
     }
 
     private Task ApplyLoansAsync(PaySlipCalculationContext ctx, PayRun payRun)
@@ -2520,6 +2640,10 @@ public class PayrollService : IPayrollService
         Dictionary<DateOnly, decimal> DayUnits,
         Dictionary<DateOnly, decimal> MissingHours);
 
+    private sealed record PaySlipGenerationResult(
+        List<PaySlip> PaySlips,
+        List<PayRunRecurringLine> RecurringLines);
+
     private sealed class PaySlipCalculationContext
     {
         public Guid PaySlipId { get; init; }
@@ -2530,7 +2654,7 @@ public class PayrollService : IPayrollService
         public List<Loan> ActiveLoans { get; init; } = new();
         public List<EmployeePayItem> PayItems { get; init; } = new();
         public List<EmployeeRecurringPayItem> RecurringPayItems { get; init; } = new();
-        public List<RecurringRule> RecurringRules { get; init; } = new();
+        public List<RecurringPayItemAssignment> RecurringAssignments { get; init; } = new();
         public List<LeaveRequest> LeaveRequests { get; init; } = new();
         public IReadOnlyDictionary<string, AllowanceType> AllowanceTypes { get; init; } = new Dictionary<string, AllowanceType>();
         public IReadOnlyDictionary<string, DeductionType> DeductionTypes { get; init; } = new Dictionary<string, DeductionType>();
