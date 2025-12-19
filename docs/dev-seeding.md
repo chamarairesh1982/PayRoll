@@ -22,61 +22,68 @@ Seeds master data plus QA scenario data.
 ```bash
 dotnet run --project backend/Payroll.Seeder -- --mode reset
 ```
-Deletes existing data from core payroll tables and reseeds master + scenario data. **Dev only.**
+Deletes only scenario/demo data (records prefixed with `DEMO_`) and reseeds master + scenario data.
+**Dev only** and requires `SEEDER_ALLOW_RESET=true`.
 
 ## Master data inserted (Sri Lanka baseline)
 - **Organization:**
-  - Company `SLPAY` (name includes EPF/ETF registration placeholders)
-  - Branches `HQ`, `KDY`
-  - Cost centers `CORP`, `HQ-OPS`, `KDY-OPS`
+  - Company `DEMO_LANKA` → "Demo Lanka (Pvt) Ltd"
+  - Branches `COL` (Colombo), `KDY` (Kandy)
+  - Cost centers `OPS` (Operations), `SALES` (Sales), `FIN` (Finance)
 - **Payroll settings:**
-  - Working days/hours, no-pay calculation basis, OT multipliers, rounding, caps
+  - Working days per month (26), working hours, no-pay calculation basis, OT multipliers, rounding, caps
+  - Monthly pay period is implicit (no dedicated pay calendar entity yet; pay runs are seeded as monthly)
 - **Earning/Deduction catalog:**
-  - Allowances: `BASIC`, `ALW`, `OT`
-  - Deductions: `EPF_EE`, `EPF_ER`, `ETF_ER`, `PAYE`, `NOPAY`
+  - Allowances: `BASIC`, `ALLOW_TRANSPORT`, `OT`
+  - Deductions: `EPF_EMPLOYEE`, `EPF_EMPLOYER`, `ETF_EMPLOYER`, `PAYE`, `DED_NO_PAY`
 - **Statutory defaults:**
   - EPF/ETF rule set (rates are sample defaults, configurable in the UI/API)
 - **Tax slabs (sample values):**
   - `Sri Lanka PAYE (Sample)` rule set with slabs for YA 2025 and effective dates
-- **Bank templates (available in code):**
-  - `HNB`, `BOC`, `Commercial` (from `Payroll.Application.BankExports.BankExportTemplateResolver`)
-  - Field mappings follow the template definitions in `Payroll.Application.BankExports` (sample layouts)
+- **Bank templates:**
+  - No template entity exists yet; the seeder sets `PayRun.ExportedBank = HNB` on the locked demo pay run.
+
+> Note: component flags like `includeInDailyRateBase` and `includeInOtBase` are not modeled yet, so only taxable/EPF/ETF flags are seeded where the fields exist.
+> Employee EPF/ETF registration numbers and tax status flags are not modeled in the current `Employee` entity, so the seeder cannot populate them yet.
+> Currency defaults are not modeled in `PayrollSettings`, so the seeder cannot persist LKR defaults yet.
 
 ## Scenario data inserted
 ### Pay run lifecycle
-- Draft pay run: `PR-APR25-DRAFT`
-- Prepared pay run: `PR-APR25-PREP` (with approval history)
-- Approved pay run: `PR-APR25-APPR` (with approval history)
-- Locked pay run with valid bank data: `PR-APR25-LOCK` (with approval history, payslips)
-- Locked pay run with invalid bank data: `PR-APR25-LOCK-BAD` (with approval history, payslip missing bank details)
+- Draft pay run: `DEMO_PR_2025_04_DRAFT`
+- Prepared pay run: `DEMO_PR_2025_04_PREP` (with approval history)
+- Approved pay run: `DEMO_PR_2025_04_APPR` (with approval history)
+- Locked pay run: `DEMO_PR_2025_04_LOCK` (with approval history, payslips)
 
 ### Employees
-- Active salaried, hourly, and high-tax employees
-- One inactive employee
-- One employee missing bank details
-- Mix of branches/cost centers for multi-entity coverage
+- `DEMO_EMP_1`: active salaried, complete bank details
+- `DEMO_EMP_2`: active salaried, missing bank account number
+- `DEMO_EMP_3`: active lower-salary employee
+- `DEMO_EMP_4`: inactive employee
+- `DEMO_EMP_5`: different branch/cost center (Kandy/Finance)
 
 ### Recurring items
-- Monthly allowance rule (`RR-ALW-MON`)
-- Temporary deduction rule with start/end (`RR-DED-TEMP`)
-- Inactive rule (`RR-INACTIVE`)
-- Mid-month recurring allowance to exercise proration logic (`EMP-SAL` + `ALW_TRAN`)
+- Monthly allowance rule (`DEMO_RR_ALLOW`)
+- Temporary deduction rule with start/end (`DEMO_RR_DED_TEMP`)
+- Inactive rule (`DEMO_RR_INACTIVE`)
+- Mid-month recurring allowance to exercise proration logic (`DEMO_EMP_1` + `ALLOW_TRANSPORT`)
 
 ### PAYE
-- `EMP-TAX` payslip with taxable income crossing slab thresholds
+- `DEMO_EMP_1` + `DEMO_EMP_5` payslips include PAYE demo deductions
 
 ### EPF/ETF
-- `EMP-EPF` payslip with contributable basic salary + non-contributable allowance (`ALW_NC`)
+- `DEMO_EMP_5` payslip includes a non-contributable allowance (`DEMO_ALLOW_NC`)
 
 ### Bank export validation
-- `PR-APR25-LOCK` uses employees with complete HNB bank fields
-- `PR-APR25-LOCK-BAD` includes `EMP-NOBANK` to trigger missing bank detail validation
+- `DEMO_PR_2025_04_LOCK` includes `DEMO_EMP_2` with missing bank details
 
 ### OT
-- Approved OT entries (weekday + weekend) and one pending OT entry for `EMP-HR`
+- Approved OT entries (weekday + weekend) and one pending OT entry for `DEMO_EMP_3`
 
 ### Attendance no-pay
-- `EMP-HR` has one full-day absence and one half-day attendance entry
+- `DEMO_EMP_3` has one full-day absence and one half-day attendance entry
+
+### Leave
+- Approved annual leave for `DEMO_EMP_1`
 
 ## Reset guidance
-The `reset` mode deletes data from payroll operational tables (employees, pay runs, pay slips, recurring items, attendance, overtime, tax rules, etc.) before reseeding. It is intended **only for local development** and should not be used in shared or production databases.
+The `reset` mode removes only scenario records that start with `DEMO_` (employees, pay runs, pay slips, recurring items, OT, attendance, leave, etc.) before reseeding. It is intended **only for local development** and should not be used in shared or production databases.

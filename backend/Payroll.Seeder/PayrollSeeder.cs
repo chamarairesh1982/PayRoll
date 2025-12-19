@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Payroll.Domain.Attendance;
+using Payroll.Domain.Leave;
 using Payroll.Domain.Employees;
 using Payroll.Domain.Organizations;
 using Payroll.Domain.Overtime;
@@ -15,6 +16,8 @@ namespace Payroll.Seeder;
 public sealed class PayrollSeeder
 {
     private const string SeedUser = "seed";
+    private const string DemoPrefix = "DEMO_";
+    private const string DemoCompanyCode = "DEMO_LANKA";
     private readonly PayrollDbContext _context;
 
     public PayrollSeeder(PayrollDbContext context)
@@ -24,26 +27,26 @@ public sealed class PayrollSeeder
 
     public void SeedMasterData()
     {
-        var company = EnsureCompany("SLPAY", "Sri Lanka Payroll Demo (EPF: EPF-REG-0001, ETF: ETF-REG-0001)");
-        var hqBranch = EnsureBranch("HQ", "Head Office", company.Id);
-        var kdyBranch = EnsureBranch("KDY", "Kandy Branch", company.Id);
+        var company = EnsureCompany(DemoCompanyCode, "Demo Lanka (Pvt) Ltd");
+        var colomboBranch = EnsureBranch("COL", "Colombo", company.Id);
+        var kandyBranch = EnsureBranch("KDY", "Kandy", company.Id);
 
-        EnsureCostCenter("CORP", "Corporate Services", null, company.Id);
-        EnsureCostCenter("HQ-OPS", "Head Office Operations", hqBranch.Id, null);
-        EnsureCostCenter("KDY-OPS", "Kandy Operations", kdyBranch.Id, null);
+        EnsureCostCenter("OPS", "Operations", null, company.Id);
+        EnsureCostCenter("SALES", "Sales", null, company.Id);
+        EnsureCostCenter("FIN", "Finance", null, company.Id);
 
         EnsurePayrollSettings();
         EnsureOvertimeRule();
 
         EnsureAllowanceType("BASIC", "Basic Salary", CalculationBasis.FixedAmount, true, true, true);
-        EnsureAllowanceType("ALW", "General Allowance", CalculationBasis.FixedAmount, true, true, true);
+        EnsureAllowanceType("ALLOW_TRANSPORT", "Transport Allowance", CalculationBasis.FixedAmount, true, true, true);
         EnsureAllowanceType("OT", "Overtime", CalculationBasis.PerHour, true, true, true);
 
-        EnsureDeductionType("EPF_EE", "Employee EPF", CalculationBasis.PercentageOfBasic, true, false);
-        EnsureDeductionType("EPF_ER", "Employer EPF", CalculationBasis.PercentageOfBasic, true, false);
-        EnsureDeductionType("ETF_ER", "Employer ETF", CalculationBasis.PercentageOfBasic, true, false);
-        EnsureDeductionType("PAYE", "PAYE Tax", CalculationBasis.FixedAmount, false, true);
-        EnsureDeductionType("NOPAY", "No Pay", CalculationBasis.PerDay, true, false);
+        EnsureDeductionType("EPF_EMPLOYEE", "Employee EPF", CalculationBasis.PercentageOfBasic, true, false);
+        EnsureDeductionType("EPF_EMPLOYER", "Employer EPF", CalculationBasis.PercentageOfBasic, false, false);
+        EnsureDeductionType("ETF_EMPLOYER", "Employer ETF", CalculationBasis.PercentageOfBasic, false, false);
+        EnsureDeductionType("PAYE", "PAYE", CalculationBasis.FixedAmount, false, true);
+        EnsureDeductionType("DED_NO_PAY", "No Pay", CalculationBasis.PerDay, true, false);
 
         EnsureEpfEtfRuleSet();
         EnsureTaxRuleSet();
@@ -53,99 +56,91 @@ public sealed class PayrollSeeder
     {
         SeedMasterData();
 
-        var company = _context.Companies.Single(c => c.Code == "SLPAY");
-        var hqBranch = _context.Branches.Single(b => b.Code == "HQ");
-        var kdyBranch = _context.Branches.Single(b => b.Code == "KDY");
-        var corpCostCenter = _context.CostCenters.Single(cc => cc.Code == "CORP");
-        var hqCostCenter = _context.CostCenters.Single(cc => cc.Code == "HQ-OPS");
-        var kdyCostCenter = _context.CostCenters.Single(cc => cc.Code == "KDY-OPS");
+        var company = _context.Companies.Single(c => c.Code == DemoCompanyCode);
+        var colomboBranch = _context.Branches.Single(b => b.Code == "COL");
+        var kandyBranch = _context.Branches.Single(b => b.Code == "KDY");
+        var opsCostCenter = _context.CostCenters.Single(cc => cc.Code == "OPS");
+        var salesCostCenter = _context.CostCenters.Single(cc => cc.Code == "SALES");
+        var financeCostCenter = _context.CostCenters.Single(cc => cc.Code == "FIN");
 
-        var transportAllowance = EnsureAllowanceType("ALW_TRAN", "Transport Allowance", CalculationBasis.FixedAmount, true, true, true);
-        var nonContribAllowance = EnsureAllowanceType("ALW_NC", "Non-Contributable Allowance", CalculationBasis.FixedAmount, true, false, false);
-        var tempDeduction = EnsureDeductionType("DED_TEMP", "Temporary Deduction", CalculationBasis.FixedAmount, true, false);
+        var transportAllowance = EnsureAllowanceType("ALLOW_TRANSPORT", "Transport Allowance", CalculationBasis.FixedAmount, true, true, true);
+        var nonContribAllowance = EnsureAllowanceType($"{DemoPrefix}ALLOW_NC", "Demo Non-Contributable Allowance", CalculationBasis.FixedAmount, true, false, false);
+        var tempDeduction = EnsureDeductionType($"{DemoPrefix}DED_TEMP", "Demo Temporary Deduction", CalculationBasis.FixedAmount, true, false);
 
         var salariedEmployee = EnsureEmployee(
-            "EMP-SAL",
+            $"{DemoPrefix}EMP_1",
             "Sahan",
             "Perera",
+            "901234567V",
             120_000m,
             company.Id,
-            hqBranch.Id,
-            hqCostCenter.Id,
+            colomboBranch.Id,
+            opsCostCenter.Id,
             bankName: "HNB",
             bankCode: "7083",
             branchCode: "001",
             bankAccountNumber: "1234567890");
 
-        var hourlyEmployee = EnsureEmployee(
-            "EMP-HR",
+        var missingBankEmployee = EnsureEmployee(
+            $"{DemoPrefix}EMP_2",
             "Nimali",
             "Fernando",
-            45_000m,
+            "925678901V",
+            95_000m,
             company.Id,
-            kdyBranch.Id,
-            kdyCostCenter.Id,
+            colomboBranch.Id,
+            opsCostCenter.Id,
             bankName: "HNB",
             bankCode: "7083",
-            branchCode: "032",
-            bankAccountNumber: "5566778899");
+            branchCode: "001",
+            bankAccountNumber: null);
+
+        var lowerSalaryEmployee = EnsureEmployee(
+            $"{DemoPrefix}EMP_3",
+            "Chathura",
+            "Wijesinghe",
+            "880112233V",
+            45_000m,
+            company.Id,
+            colomboBranch.Id,
+            opsCostCenter.Id,
+            bankName: "HNB",
+            bankCode: "7083",
+            branchCode: "001",
+            bankAccountNumber: "9988776655");
 
         var inactiveEmployee = EnsureEmployee(
-            "EMP-INACTIVE",
+            $"{DemoPrefix}EMP_4",
             "Roshan",
             "Silva",
+            "831234567V",
             65_000m,
             company.Id,
-            hqBranch.Id,
-            corpCostCenter.Id,
+            colomboBranch.Id,
+            salesCostCenter.Id,
             bankName: "HNB",
             bankCode: "7083",
             branchCode: "001",
             bankAccountNumber: "4455667788");
         EnsureEmployeeInactive(inactiveEmployee);
 
-        var missingBankEmployee = EnsureEmployee(
-            "EMP-NOBANK",
-            "Iresha",
-            "Jayasinghe",
-            55_000m,
-            company.Id,
-            hqBranch.Id,
-            hqCostCenter.Id,
-            bankName: null,
-            bankCode: null,
-            branchCode: null,
-            bankAccountNumber: null);
-
-        var taxBoundaryEmployee = EnsureEmployee(
-            "EMP-TAX",
-            "Chathura",
-            "Wijesinghe",
-            210_000m,
-            company.Id,
-            hqBranch.Id,
-            hqCostCenter.Id,
-            bankName: "HNB",
-            bankCode: "7083",
-            branchCode: "001",
-            bankAccountNumber: "9988776655");
-
-        var epfScenarioEmployee = EnsureEmployee(
-            "EMP-EPF",
+        var branchEmployee = EnsureEmployee(
+            $"{DemoPrefix}EMP_5",
             "Lakshmi",
             "Gunasekara",
+            "947654321V",
             90_000m,
             company.Id,
-            kdyBranch.Id,
-            kdyCostCenter.Id,
+            kandyBranch.Id,
+            financeCostCenter.Id,
             bankName: "HNB",
             bankCode: "7083",
             branchCode: "032",
             bankAccountNumber: "2233445566");
 
         EnsureRecurringRule(
-            "RR-ALW-MON",
-            "Monthly Allowance",
+            $"{DemoPrefix}RR_ALLOW",
+            "Demo Monthly Allowance",
             RecurringRuleType.Allowance,
             salariedEmployee.Id,
             new DateOnly(2025, 4, 1),
@@ -157,8 +152,8 @@ public sealed class PayrollSeeder
             true);
 
         EnsureRecurringRule(
-            "RR-DED-TEMP",
-            "Temporary Deduction",
+            $"{DemoPrefix}RR_DED_TEMP",
+            "Demo Temporary Deduction",
             RecurringRuleType.Deduction,
             salariedEmployee.Id,
             new DateOnly(2025, 4, 1),
@@ -170,10 +165,10 @@ public sealed class PayrollSeeder
             true);
 
         EnsureRecurringRule(
-            "RR-INACTIVE",
-            "Inactive Test Rule",
+            $"{DemoPrefix}RR_INACTIVE",
+            "Demo Inactive Test Rule",
             RecurringRuleType.Allowance,
-            hourlyEmployee.Id,
+            lowerSalaryEmployee.Id,
             new DateOnly(2025, 4, 1),
             null,
             2_000m,
@@ -203,7 +198,7 @@ public sealed class PayrollSeeder
             true);
 
         EnsureEmployeeRecurringPayItem(
-            epfScenarioEmployee.Id,
+            branchEmployee.Id,
             PayItemKind.Allowance,
             nonContribAllowance.Id,
             null,
@@ -212,16 +207,18 @@ public sealed class PayrollSeeder
             null,
             true);
 
-        EnsureAttendanceAbsence(hourlyEmployee.Id, new DateOnly(2025, 4, 8));
-        EnsureAttendancePartial(hourlyEmployee.Id, new DateOnly(2025, 4, 18), 4m);
+        EnsureAttendanceAbsence(lowerSalaryEmployee.Id, new DateOnly(2025, 4, 8));
+        EnsureAttendancePartial(lowerSalaryEmployee.Id, new DateOnly(2025, 4, 18), 4m);
 
-        EnsureOvertimeEntry(hourlyEmployee.Id, new DateOnly(2025, 4, 10), 3.5, OvertimeType.Weekday, OvertimeStatus.Approved);
-        EnsureOvertimeEntry(hourlyEmployee.Id, new DateOnly(2025, 4, 12), 4, OvertimeType.Weekend, OvertimeStatus.Approved);
-        EnsureOvertimeEntry(hourlyEmployee.Id, new DateOnly(2025, 4, 20), 2.5, OvertimeType.Weekday, OvertimeStatus.Pending);
+        EnsureOvertimeEntry(lowerSalaryEmployee.Id, new DateOnly(2025, 4, 10), 3.5, OvertimeType.Weekday, OvertimeStatus.Approved);
+        EnsureOvertimeEntry(lowerSalaryEmployee.Id, new DateOnly(2025, 4, 12), 4, OvertimeType.Weekend, OvertimeStatus.Approved);
+        EnsureOvertimeEntry(lowerSalaryEmployee.Id, new DateOnly(2025, 4, 20), 2.5, OvertimeType.Weekday, OvertimeStatus.Pending);
 
-        var draftPayRun = EnsurePayRun(new PayRunSeed
+        EnsureLeaveRequest(salariedEmployee.Id, new DateOnly(2025, 4, 22), new DateOnly(2025, 4, 22), 1, "Approved demo leave");
+
+        EnsurePayRun(new PayRunSeed
         {
-            Code = "PR-APR25-DRAFT",
+            Code = $"{DemoPrefix}PR_2025_04_DRAFT",
             Name = "April 2025 Draft",
             Reference = "APR-2025-DRAFT",
             PeriodStart = new DateTime(2025, 4, 1),
@@ -230,13 +227,13 @@ public sealed class PayrollSeeder
             Status = PayRunStatus.Draft,
             IsLocked = false,
             CompanyId = company.Id,
-            BranchId = hqBranch.Id,
-            CostCenterId = hqCostCenter.Id
+            BranchId = colomboBranch.Id,
+            CostCenterId = opsCostCenter.Id
         });
 
         var preparedPayRun = EnsurePayRun(new PayRunSeed
         {
-            Code = "PR-APR25-PREP",
+            Code = $"{DemoPrefix}PR_2025_04_PREP",
             Name = "April 2025 Prepared",
             Reference = "APR-2025-PREP",
             PeriodStart = new DateTime(2025, 4, 1),
@@ -245,8 +242,8 @@ public sealed class PayrollSeeder
             Status = PayRunStatus.Prepared,
             IsLocked = false,
             CompanyId = company.Id,
-            BranchId = hqBranch.Id,
-            CostCenterId = hqCostCenter.Id,
+            BranchId = colomboBranch.Id,
+            CostCenterId = opsCostCenter.Id,
             PreparedAt = new DateTime(2025, 4, 28, 9, 0, 0, DateTimeKind.Utc),
             PreparedByUserName = "Seeder User"
         });
@@ -254,7 +251,7 @@ public sealed class PayrollSeeder
 
         var approvedPayRun = EnsurePayRun(new PayRunSeed
         {
-            Code = "PR-APR25-APPR",
+            Code = $"{DemoPrefix}PR_2025_04_APPR",
             Name = "April 2025 Approved",
             Reference = "APR-2025-APPR",
             PeriodStart = new DateTime(2025, 4, 1),
@@ -263,8 +260,8 @@ public sealed class PayrollSeeder
             Status = PayRunStatus.Approved,
             IsLocked = false,
             CompanyId = company.Id,
-            BranchId = hqBranch.Id,
-            CostCenterId = hqCostCenter.Id,
+            BranchId = colomboBranch.Id,
+            CostCenterId = opsCostCenter.Id,
             PreparedAt = new DateTime(2025, 4, 28, 9, 0, 0, DateTimeKind.Utc),
             PreparedByUserName = "Seeder User",
             ApprovedAt = new DateTime(2025, 4, 29, 10, 0, 0, DateTimeKind.Utc),
@@ -275,8 +272,8 @@ public sealed class PayrollSeeder
 
         var lockedPayRun = EnsurePayRun(new PayRunSeed
         {
-            Code = "PR-APR25-LOCK",
-            Name = "April 2025 Locked (Valid Bank)",
+            Code = $"{DemoPrefix}PR_2025_04_LOCK",
+            Name = "April 2025 Locked",
             Reference = "APR-2025-LOCK",
             PeriodStart = new DateTime(2025, 4, 1),
             PeriodEnd = new DateTime(2025, 4, 30),
@@ -284,44 +281,21 @@ public sealed class PayrollSeeder
             Status = PayRunStatus.Locked,
             IsLocked = true,
             CompanyId = company.Id,
-            BranchId = hqBranch.Id,
-            CostCenterId = hqCostCenter.Id,
+            BranchId = colomboBranch.Id,
+            CostCenterId = opsCostCenter.Id,
             PreparedAt = new DateTime(2025, 4, 28, 9, 0, 0, DateTimeKind.Utc),
             PreparedByUserName = "Seeder User",
             ApprovedAt = new DateTime(2025, 4, 29, 10, 0, 0, DateTimeKind.Utc),
             ApprovedByUserName = "Seeder Approver",
             LockedAt = new DateTime(2025, 4, 30, 12, 0, 0, DateTimeKind.Utc),
-            LockedByUserName = "Seeder Locker"
+            LockedByUserName = "Seeder Locker",
+            ExportedBank = "HNB"
         });
         EnsurePayRunStatusHistory(lockedPayRun.Id, PayRunStatus.Draft, PayRunStatus.Prepared, "Prepared by Seeder");
         EnsurePayRunStatusHistory(lockedPayRun.Id, PayRunStatus.Prepared, PayRunStatus.Approved, "Approved by Seeder");
         EnsurePayRunStatusHistory(lockedPayRun.Id, PayRunStatus.Approved, PayRunStatus.Locked, "Locked by Seeder");
 
-        var lockedInvalidPayRun = EnsurePayRun(new PayRunSeed
-        {
-            Code = "PR-APR25-LOCK-BAD",
-            Name = "April 2025 Locked (Invalid Bank)",
-            Reference = "APR-2025-LOCK-BAD",
-            PeriodStart = new DateTime(2025, 4, 1),
-            PeriodEnd = new DateTime(2025, 4, 30),
-            PayDate = new DateTime(2025, 4, 30),
-            Status = PayRunStatus.Locked,
-            IsLocked = true,
-            CompanyId = company.Id,
-            BranchId = hqBranch.Id,
-            CostCenterId = hqCostCenter.Id,
-            PreparedAt = new DateTime(2025, 4, 28, 9, 0, 0, DateTimeKind.Utc),
-            PreparedByUserName = "Seeder User",
-            ApprovedAt = new DateTime(2025, 4, 29, 10, 0, 0, DateTimeKind.Utc),
-            ApprovedByUserName = "Seeder Approver",
-            LockedAt = new DateTime(2025, 4, 30, 12, 30, 0, DateTimeKind.Utc),
-            LockedByUserName = "Seeder Locker"
-        });
-        EnsurePayRunStatusHistory(lockedInvalidPayRun.Id, PayRunStatus.Draft, PayRunStatus.Prepared, "Prepared by Seeder");
-        EnsurePayRunStatusHistory(lockedInvalidPayRun.Id, PayRunStatus.Prepared, PayRunStatus.Approved, "Approved by Seeder");
-        EnsurePayRunStatusHistory(lockedInvalidPayRun.Id, PayRunStatus.Approved, PayRunStatus.Locked, "Locked by Seeder");
-
-        EnsurePaySlip(lockedPayRun.Id, salariedEmployee.Id, salariedEmployee.BaseSalary, 8_000m, 2_500m, 125_500m, 9_600m, 14_400m, 3_600m, 6_000m,
+        EnsurePaySlip(lockedPayRun.Id, salariedEmployee.Id, salariedEmployee.BaseSalary, 128_000m, 15_600m, 112_400m, 9_600m, 14_400m, 3_600m, 6_000m,
             new List<EarningLine>
             {
                 new()
@@ -350,7 +324,7 @@ public sealed class PayrollSeeder
                 new()
                 {
                     Id = Guid.NewGuid(),
-                    Code = "EPF_EE",
+                    Code = "EPF_EMPLOYEE",
                     Description = "Employee EPF",
                     Source = "Statutory",
                     Amount = 9_600m,
@@ -369,7 +343,7 @@ public sealed class PayrollSeeder
                 }
             });
 
-        EnsurePaySlip(lockedPayRun.Id, hourlyEmployee.Id, hourlyEmployee.BaseSalary, 4_500m, 1_200m, 48_300m, 3_600m, 5_400m, 1_350m, 1_200m,
+        EnsurePaySlip(lockedPayRun.Id, lowerSalaryEmployee.Id, lowerSalaryEmployee.BaseSalary, 49_500m, 4_800m, 44_700m, 3_600m, 5_400m, 1_350m, 0m,
             new List<EarningLine>
             {
                 new()
@@ -377,7 +351,7 @@ public sealed class PayrollSeeder
                     Id = Guid.NewGuid(),
                     Code = "BASIC",
                     Description = "Basic Salary",
-                    Amount = hourlyEmployee.BaseSalary,
+                    Amount = lowerSalaryEmployee.BaseSalary,
                     IsEpfApplicable = true,
                     IsEtfApplicable = true,
                     IsTaxable = true
@@ -398,7 +372,7 @@ public sealed class PayrollSeeder
                 new()
                 {
                     Id = Guid.NewGuid(),
-                    Code = "EPF_EE",
+                    Code = "EPF_EMPLOYEE",
                     Description = "Employee EPF",
                     Source = "Statutory",
                     Amount = 3_600m,
@@ -408,7 +382,7 @@ public sealed class PayrollSeeder
                 new()
                 {
                     Id = Guid.NewGuid(),
-                    Code = "NOPAY",
+                    Code = "DED_NO_PAY",
                     Description = "No Pay",
                     Source = "Attendance",
                     Amount = 1_200m,
@@ -417,7 +391,7 @@ public sealed class PayrollSeeder
                 }
             });
 
-        EnsurePaySlip(lockedPayRun.Id, taxBoundaryEmployee.Id, taxBoundaryEmployee.BaseSalary, 10_000m, 25_000m, 195_000m, 16_800m, 25_200m, 6_300m, 25_000m,
+        EnsurePaySlip(lockedPayRun.Id, branchEmployee.Id, branchEmployee.BaseSalary, 93_500m, 8_700m, 84_800m, 7_200m, 10_800m, 2_700m, 1_500m,
             new List<EarningLine>
             {
                 new()
@@ -425,55 +399,7 @@ public sealed class PayrollSeeder
                     Id = Guid.NewGuid(),
                     Code = "BASIC",
                     Description = "Basic Salary",
-                    Amount = taxBoundaryEmployee.BaseSalary,
-                    IsEpfApplicable = true,
-                    IsEtfApplicable = true,
-                    IsTaxable = true
-                },
-                new()
-                {
-                    Id = Guid.NewGuid(),
-                    Code = "ALW",
-                    Description = "General Allowance",
-                    Amount = 10_000m,
-                    IsEpfApplicable = true,
-                    IsEtfApplicable = true,
-                    IsTaxable = true
-                }
-            },
-            new List<DeductionLine>
-            {
-                new()
-                {
-                    Id = Guid.NewGuid(),
-                    Code = "EPF_EE",
-                    Description = "Employee EPF",
-                    Source = "Statutory",
-                    Amount = 16_800m,
-                    IsPreTax = true,
-                    IsPostTax = false
-                },
-                new()
-                {
-                    Id = Guid.NewGuid(),
-                    Code = "PAYE",
-                    Description = "PAYE",
-                    Source = "Tax",
-                    Amount = 25_000m,
-                    IsPreTax = false,
-                    IsPostTax = true
-                }
-            });
-
-        EnsurePaySlip(lockedPayRun.Id, epfScenarioEmployee.Id, epfScenarioEmployee.BaseSalary, 3_500m, 1_500m, 92_000m, 7_200m, 10_800m, 2_700m, 1_500m,
-            new List<EarningLine>
-            {
-                new()
-                {
-                    Id = Guid.NewGuid(),
-                    Code = "BASIC",
-                    Description = "Basic Salary",
-                    Amount = epfScenarioEmployee.BaseSalary,
+                    Amount = branchEmployee.BaseSalary,
                     IsEpfApplicable = true,
                     IsEtfApplicable = true,
                     IsTaxable = true
@@ -494,7 +420,7 @@ public sealed class PayrollSeeder
                 new()
                 {
                     Id = Guid.NewGuid(),
-                    Code = "EPF_EE",
+                    Code = "EPF_EMPLOYEE",
                     Description = "Employee EPF",
                     Source = "Statutory",
                     Amount = 7_200m,
@@ -513,7 +439,7 @@ public sealed class PayrollSeeder
                 }
             });
 
-        EnsurePaySlip(lockedInvalidPayRun.Id, missingBankEmployee.Id, missingBankEmployee.BaseSalary, 2_500m, 500m, 57_000m, 4_400m, 6_600m, 1_650m, 500m,
+        EnsurePaySlip(lockedPayRun.Id, missingBankEmployee.Id, missingBankEmployee.BaseSalary, 97_500m, 8_100m, 89_400m, 7_600m, 11_400m, 2_850m, 500m,
             new List<EarningLine>
             {
                 new()
@@ -529,8 +455,8 @@ public sealed class PayrollSeeder
                 new()
                 {
                     Id = Guid.NewGuid(),
-                    Code = "ALW",
-                    Description = "General Allowance",
+                    Code = transportAllowance.Code,
+                    Description = transportAllowance.Name,
                     Amount = 2_500m,
                     IsEpfApplicable = true,
                     IsEtfApplicable = true,
@@ -542,10 +468,10 @@ public sealed class PayrollSeeder
                 new()
                 {
                     Id = Guid.NewGuid(),
-                    Code = "EPF_EE",
+                    Code = "EPF_EMPLOYEE",
                     Description = "Employee EPF",
                     Source = "Statutory",
-                    Amount = 4_400m,
+                    Amount = 7_600m,
                     IsPreTax = true,
                     IsPostTax = false
                 },
@@ -564,36 +490,39 @@ public sealed class PayrollSeeder
 
     public void ResetAndSeedAll()
     {
-        ResetData();
-        SeedMasterData();
+        ResetScenarioData();
         SeedScenarioData();
     }
 
-    private void ResetData()
+    private void ResetScenarioData()
     {
-        _context.PayRunStatusHistories.RemoveRange(_context.PayRunStatusHistories);
-        _context.PaySlips.RemoveRange(_context.PaySlips);
-        _context.PayRuns.RemoveRange(_context.PayRuns);
-        _context.OTEntries.RemoveRange(_context.OTEntries);
-        _context.AttendanceRecords.RemoveRange(_context.AttendanceRecords);
-        _context.LeaveRequests.RemoveRange(_context.LeaveRequests);
-        _context.EmployeeRecurringPayItems.RemoveRange(_context.EmployeeRecurringPayItems);
-        _context.EmployeePayItems.RemoveRange(_context.EmployeePayItems);
-        _context.RecurringRules.RemoveRange(_context.RecurringRules);
-        _context.Loans.RemoveRange(_context.Loans);
-        _context.LoanRepayments.RemoveRange(_context.LoanRepayments);
-        _context.Employees.RemoveRange(_context.Employees);
-        _context.OTRules.RemoveRange(_context.OTRules);
-        _context.PayrollSettings.RemoveRange(_context.PayrollSettings);
-        _context.AllowanceTypes.RemoveRange(_context.AllowanceTypes);
-        _context.DeductionTypes.RemoveRange(_context.DeductionTypes);
-        _context.EpfEtfRuleSets.RemoveRange(_context.EpfEtfRuleSets);
-        _context.TaxReliefs.RemoveRange(_context.TaxReliefs);
-        _context.TaxSlabs.RemoveRange(_context.TaxSlabs);
-        _context.TaxRuleSets.RemoveRange(_context.TaxRuleSets);
-        _context.CostCenters.RemoveRange(_context.CostCenters);
-        _context.Branches.RemoveRange(_context.Branches);
-        _context.Companies.RemoveRange(_context.Companies);
+        var scenarioEmployees = _context.Employees
+            .Where(e => e.EmployeeCode.StartsWith(DemoPrefix))
+            .ToList();
+        var scenarioEmployeeIds = scenarioEmployees.Select(e => e.Id).ToList();
+        var scenarioPayRuns = _context.PayRuns
+            .Where(pr => pr.Code.StartsWith(DemoPrefix))
+            .ToList();
+        var scenarioPayRunIds = scenarioPayRuns.Select(pr => pr.Id).ToList();
+        var scenarioLoans = _context.Loans
+            .Where(l => scenarioEmployeeIds.Contains(l.EmployeeId))
+            .ToList();
+        var scenarioLoanIds = scenarioLoans.Select(l => l.Id).ToList();
+
+        _context.PayRunStatusHistories.RemoveRange(_context.PayRunStatusHistories.Where(h => scenarioPayRunIds.Contains(h.PayRunId)));
+        _context.PaySlips.RemoveRange(_context.PaySlips.Where(ps => scenarioPayRunIds.Contains(ps.PayRunId)));
+        _context.PayRuns.RemoveRange(scenarioPayRuns);
+        _context.OTEntries.RemoveRange(_context.OTEntries.Where(o => scenarioEmployeeIds.Contains(o.EmployeeId)));
+        _context.AttendanceRecords.RemoveRange(_context.AttendanceRecords.Where(a => scenarioEmployeeIds.Contains(a.EmployeeId)));
+        _context.LeaveRequests.RemoveRange(_context.LeaveRequests.Where(l => scenarioEmployeeIds.Contains(l.EmployeeId)));
+        _context.EmployeeRecurringPayItems.RemoveRange(_context.EmployeeRecurringPayItems.Where(pi => scenarioEmployeeIds.Contains(pi.EmployeeId)));
+        _context.EmployeePayItems.RemoveRange(_context.EmployeePayItems.Where(pi => scenarioEmployeeIds.Contains(pi.EmployeeId)));
+        _context.RecurringRules.RemoveRange(_context.RecurringRules.Where(r => r.Code.StartsWith(DemoPrefix)));
+        _context.LoanRepayments.RemoveRange(_context.LoanRepayments.Where(lr => scenarioLoanIds.Contains(lr.LoanId)));
+        _context.Loans.RemoveRange(scenarioLoans);
+        _context.Employees.RemoveRange(scenarioEmployees);
+        _context.AllowanceTypes.RemoveRange(_context.AllowanceTypes.Where(a => a.Code.StartsWith(DemoPrefix)));
+        _context.DeductionTypes.RemoveRange(_context.DeductionTypes.Where(d => d.Code.StartsWith(DemoPrefix)));
 
         _context.SaveChanges();
     }
@@ -661,7 +590,7 @@ public sealed class PayrollSeeder
 
         _context.PayrollSettings.Add(new PayrollSettings
         {
-            WorkingDaysPerMonth = 22,
+            WorkingDaysPerMonth = 26,
             WorkingHoursPerDay = 8,
             NoPayCalculationBasis = CalculationBasis.PerDay,
             AttendanceHalfDayHours = 4,
@@ -844,6 +773,7 @@ public sealed class PayrollSeeder
         string code,
         string firstName,
         string lastName,
+        string nicNumber,
         decimal baseSalary,
         Guid companyId,
         Guid branchId,
@@ -863,7 +793,7 @@ public sealed class PayrollSeeder
             code,
             firstName,
             lastName,
-            $"{code}-NIC",
+            nicNumber,
             new DateTime(1990, 1, 1),
             Gender.Male,
             MaritalStatus.Single,
@@ -886,6 +816,33 @@ public sealed class PayrollSeeder
         _context.SaveChanges();
 
         return employee;
+    }
+
+    private void EnsureLeaveRequest(Guid employeeId, DateOnly startDate, DateOnly endDate, double totalDays, string reason)
+    {
+        if (_context.LeaveRequests.Any(l => l.EmployeeId == employeeId && l.StartDate == startDate && l.EndDate == endDate))
+        {
+            return;
+        }
+
+        _context.LeaveRequests.Add(new LeaveRequest
+        {
+            EmployeeId = employeeId,
+            LeaveType = LeaveTypeCode.Annual,
+            StartDate = startDate,
+            EndDate = endDate,
+            TotalDays = totalDays,
+            Reason = reason,
+            Status = LeaveStatus.Approved,
+            ApprovedById = null,
+            RequestedAt = DateTimeOffset.UtcNow.AddDays(-10),
+            ApprovedAt = DateTimeOffset.UtcNow.AddDays(-8),
+            IsHalfDay = false,
+            HalfDaySession = null,
+            CreatedBy = SeedUser
+        });
+
+        _context.SaveChanges();
     }
 
     private void EnsureEmployeeInactive(Employee employee)
@@ -1062,6 +1019,7 @@ public sealed class PayrollSeeder
             ApprovedByUserName = seed.ApprovedByUserName,
             LockedAt = seed.LockedAt,
             LockedByUserName = seed.LockedByUserName,
+            ExportedBank = seed.ExportedBank,
             CreatedBy = SeedUser
         };
 
@@ -1177,5 +1135,6 @@ public sealed class PayrollSeeder
         public string? ApprovedByUserName { get; init; }
         public DateTime? LockedAt { get; init; }
         public string? LockedByUserName { get; init; }
+        public string? ExportedBank { get; init; }
     }
 }
