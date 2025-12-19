@@ -10,6 +10,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Payroll.Domain", "backend\P
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Payroll.Infrastructure", "backend\Payroll.Infrastructure\Payroll.Infrastructure.csproj", "{3AE1DB17-A897-426E-8F4B-88AB2954FEE4}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Payroll.Seeder", "backend\Payroll.Seeder\Payroll.Seeder.csproj", "{B5CB6A7C-F2C9-4D34-B794-BBF81BDB13A3}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Payroll.Shared", "backend\Payroll.Shared\Payroll.Shared.csproj", "{529290C7-33CB-4B40-8BFB-33CED40D2DEF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Payroll.Application.Tests", "backend\Payroll.Application.Tests\Payroll.Application.Tests.csproj", "{BCB07FBA-3F81-49E2-AC13-0451D9629E88}"
@@ -38,6 +40,10 @@ Global
 		{3AE1DB17-A897-426E-8F4B-88AB2954FEE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3AE1DB17-A897-426E-8F4B-88AB2954FEE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3AE1DB17-A897-426E-8F4B-88AB2954FEE4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B5CB6A7C-F2C9-4D34-B794-BBF81BDB13A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B5CB6A7C-F2C9-4D34-B794-BBF81BDB13A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B5CB6A7C-F2C9-4D34-B794-BBF81BDB13A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B5CB6A7C-F2C9-4D34-B794-BBF81BDB13A3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{529290C7-33CB-4B40-8BFB-33CED40D2DEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{529290C7-33CB-4B40-8BFB-33CED40D2DEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{529290C7-33CB-4B40-8BFB-33CED40D2DEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
