@@ -281,7 +281,7 @@ export class PayRunDetailPageComponent implements OnInit {
   }
 
   get canRecalculate(): boolean {
-    return !!this.payRun && !this.payRun.isLocked && (this.payRun.status === 'Draft' || this.payRun.status === 'Prepared');
+    return !!this.payRun && !this.payRun.isLocked && this.payRun.status === 'Draft';
   }
 
   get canPrepare(): boolean {

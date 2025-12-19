@@ -55,7 +55,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.ToTable("AttendanceRecords", (string)null);
                 });
 
-            modelBuilder.Entity("Payroll.Domain.Auditing.AuditLog", b =>
+            modelBuilder.Entity("Payroll.Domain.Auditing.AuditEvent", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -66,43 +66,56 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<string>("AfterSnapshot")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("BeforeSnapshot")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
+                    b.Property<string>("ActorDisplayName")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ActorUserId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("AfterJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BeforeJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CorrelationId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("EntityId")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("EntityName")
+                    b.Property<string>("EntityType")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("PreviousHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("TimestampUtc")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Action");
 
-                    b.HasIndex("CreatedAt");
+                    b.HasIndex("TimestampUtc");
 
-                    b.HasIndex("CreatedBy");
+                    b.HasIndex("EntityType", "EntityId");
 
-                    b.HasIndex("EntityName", "EntityId");
-
-                    b.ToTable("AuditLogs");
+                    b.ToTable("AuditEvents");
                 });
 
             modelBuilder.Entity("Payroll.Domain.Employees.Employee", b =>
@@ -938,23 +951,19 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.ToTable("PayRuns", (string)null);
                 });
 
-            modelBuilder.Entity("Payroll.Domain.Payroll.PayRunApproval", b =>
+            modelBuilder.Entity("Payroll.Domain.Payroll.PayRunStatusHistory", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("ActionedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<string>("ActorDisplayName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("ActorUserId")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("ActorUserName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Comment")
                         .HasMaxLength(1000)
@@ -970,6 +979,11 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.Property<int>("FromStatus")
                         .HasColumnType("int");
 
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -982,6 +996,13 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("PayRunId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("PreviousHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("TimestampUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("ToStatus")
                         .HasColumnType("int");
 
@@ -989,7 +1010,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("PayRunId");
 
-                    b.ToTable("PayRunApprovals", (string)null);
+                    b.ToTable("PayRunStatusHistory", (string)null);
                 });
 
             modelBuilder.Entity("Payroll.Domain.Payroll.PaySlip", b =>
@@ -1696,10 +1717,10 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Payroll.Domain.Payroll.PayRunApproval", b =>
+            modelBuilder.Entity("Payroll.Domain.Payroll.PayRunStatusHistory", b =>
                 {
                     b.HasOne("Payroll.Domain.Payroll.PayRun", "PayRun")
-                        .WithMany("Approvals")
+                        .WithMany("StatusHistory")
                         .HasForeignKey("PayRunId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1765,7 +1786,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Payroll.Domain.Payroll.PayRun", b =>
                 {
-                    b.Navigation("Approvals");
+                    b.Navigation("StatusHistory");
 
                     b.Navigation("PaySlips");
                 });

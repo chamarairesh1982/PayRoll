@@ -40,8 +40,8 @@ public class PayRunsController : ControllerBase
     [HttpPost("{id:guid}/prepare")]
     public async Task<IActionResult> Prepare(Guid id, [FromBody] PayRunActionRequest request, CancellationToken cancellationToken = default)
     {
-        await _payrollService.PreparePayRunAsync(id, request, cancellationToken);
-        return NoContent();
+        var updated = await _payrollService.PreparePayRunAsync(id, request, cancellationToken);
+        return Ok(updated);
     }
 
     [HttpPost("{id:guid}/recalculate")]
@@ -54,15 +54,15 @@ public class PayRunsController : ControllerBase
     [HttpPost("{id:guid}/approve")]
     public async Task<IActionResult> Approve(Guid id, [FromBody] PayRunActionRequest request, CancellationToken cancellationToken = default)
     {
-        await _payrollService.ApprovePayRunAsync(id, request, cancellationToken);
-        return NoContent();
+        var updated = await _payrollService.ApprovePayRunAsync(id, request, cancellationToken);
+        return Ok(updated);
     }
 
     [HttpPost("{id:guid}/lock")]
     public async Task<IActionResult> Lock(Guid id, [FromBody] PayRunActionRequest request, CancellationToken cancellationToken = default)
     {
-        await _payrollService.LockPayRunAsync(id, request, cancellationToken);
-        return NoContent();
+        var updated = await _payrollService.LockPayRunAsync(id, request, cancellationToken);
+        return Ok(updated);
     }
 
     [HttpPost("{id:guid}/unlock")]

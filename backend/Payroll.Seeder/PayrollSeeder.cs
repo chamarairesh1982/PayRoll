@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Payroll.Domain.Attendance;
 using Payroll.Domain.Employees;
@@ -248,7 +250,7 @@ public sealed class PayrollSeeder
             PreparedAt = new DateTime(2025, 4, 28, 9, 0, 0, DateTimeKind.Utc),
             PreparedByUserName = "Seeder User"
         });
-        EnsurePayRunApproval(preparedPayRun.Id, PayRunStatus.Draft, PayRunStatus.Prepared, "Prepared by Seeder");
+        EnsurePayRunStatusHistory(preparedPayRun.Id, PayRunStatus.Draft, PayRunStatus.Prepared, "Prepared by Seeder");
 
         var approvedPayRun = EnsurePayRun(new PayRunSeed
         {
@@ -268,8 +270,8 @@ public sealed class PayrollSeeder
             ApprovedAt = new DateTime(2025, 4, 29, 10, 0, 0, DateTimeKind.Utc),
             ApprovedByUserName = "Seeder Approver"
         });
-        EnsurePayRunApproval(approvedPayRun.Id, PayRunStatus.Draft, PayRunStatus.Prepared, "Prepared by Seeder");
-        EnsurePayRunApproval(approvedPayRun.Id, PayRunStatus.Prepared, PayRunStatus.Approved, "Approved by Seeder");
+        EnsurePayRunStatusHistory(approvedPayRun.Id, PayRunStatus.Draft, PayRunStatus.Prepared, "Prepared by Seeder");
+        EnsurePayRunStatusHistory(approvedPayRun.Id, PayRunStatus.Prepared, PayRunStatus.Approved, "Approved by Seeder");
 
         var lockedPayRun = EnsurePayRun(new PayRunSeed
         {
@@ -291,9 +293,9 @@ public sealed class PayrollSeeder
             LockedAt = new DateTime(2025, 4, 30, 12, 0, 0, DateTimeKind.Utc),
             LockedByUserName = "Seeder Locker"
         });
-        EnsurePayRunApproval(lockedPayRun.Id, PayRunStatus.Draft, PayRunStatus.Prepared, "Prepared by Seeder");
-        EnsurePayRunApproval(lockedPayRun.Id, PayRunStatus.Prepared, PayRunStatus.Approved, "Approved by Seeder");
-        EnsurePayRunApproval(lockedPayRun.Id, PayRunStatus.Approved, PayRunStatus.Locked, "Locked by Seeder");
+        EnsurePayRunStatusHistory(lockedPayRun.Id, PayRunStatus.Draft, PayRunStatus.Prepared, "Prepared by Seeder");
+        EnsurePayRunStatusHistory(lockedPayRun.Id, PayRunStatus.Prepared, PayRunStatus.Approved, "Approved by Seeder");
+        EnsurePayRunStatusHistory(lockedPayRun.Id, PayRunStatus.Approved, PayRunStatus.Locked, "Locked by Seeder");
 
         var lockedInvalidPayRun = EnsurePayRun(new PayRunSeed
         {
@@ -315,9 +317,9 @@ public sealed class PayrollSeeder
             LockedAt = new DateTime(2025, 4, 30, 12, 30, 0, DateTimeKind.Utc),
             LockedByUserName = "Seeder Locker"
         });
-        EnsurePayRunApproval(lockedInvalidPayRun.Id, PayRunStatus.Draft, PayRunStatus.Prepared, "Prepared by Seeder");
-        EnsurePayRunApproval(lockedInvalidPayRun.Id, PayRunStatus.Prepared, PayRunStatus.Approved, "Approved by Seeder");
-        EnsurePayRunApproval(lockedInvalidPayRun.Id, PayRunStatus.Approved, PayRunStatus.Locked, "Locked by Seeder");
+        EnsurePayRunStatusHistory(lockedInvalidPayRun.Id, PayRunStatus.Draft, PayRunStatus.Prepared, "Prepared by Seeder");
+        EnsurePayRunStatusHistory(lockedInvalidPayRun.Id, PayRunStatus.Prepared, PayRunStatus.Approved, "Approved by Seeder");
+        EnsurePayRunStatusHistory(lockedInvalidPayRun.Id, PayRunStatus.Approved, PayRunStatus.Locked, "Locked by Seeder");
 
         EnsurePaySlip(lockedPayRun.Id, salariedEmployee.Id, salariedEmployee.BaseSalary, 8_000m, 2_500m, 125_500m, 9_600m, 14_400m, 3_600m, 6_000m,
             new List<EarningLine>
@@ -569,7 +571,7 @@ public sealed class PayrollSeeder
 
     private void ResetData()
     {
-        _context.PayRunApprovals.RemoveRange(_context.PayRunApprovals);
+        _context.PayRunStatusHistories.RemoveRange(_context.PayRunStatusHistories);
         _context.PaySlips.RemoveRange(_context.PaySlips);
         _context.PayRuns.RemoveRange(_context.PayRuns);
         _context.OTEntries.RemoveRange(_context.OTEntries);
@@ -1069,21 +1071,33 @@ public sealed class PayrollSeeder
         return payRun;
     }
 
-    private void EnsurePayRunApproval(Guid payRunId, PayRunStatus fromStatus, PayRunStatus toStatus, string comment)
+    private void EnsurePayRunStatusHistory(Guid payRunId, PayRunStatus fromStatus, PayRunStatus toStatus, string comment)
     {
-        if (_context.PayRunApprovals.Any(a => a.PayRunId == payRunId && a.FromStatus == fromStatus && a.ToStatus == toStatus))
+        if (_context.PayRunStatusHistories.Any(a => a.PayRunId == payRunId && a.FromStatus == fromStatus && a.ToStatus == toStatus))
         {
             return;
         }
 
-        _context.PayRunApprovals.Add(new PayRunApproval
+        var timestampUtc = DateTime.UtcNow;
+        var previousHash = _context.PayRunStatusHistories
+            .Where(h => h.PayRunId == payRunId)
+            .OrderByDescending(h => h.TimestampUtc)
+            .ThenByDescending(h => h.Id)
+            .Select(h => h.Hash)
+            .FirstOrDefault();
+        var previousHashValue = previousHash ?? string.Empty;
+        var hashPayload = string.Join('|', payRunId, fromStatus, toStatus, string.Empty, comment, timestampUtc.ToString("O"), previousHashValue);
+
+        _context.PayRunStatusHistories.Add(new PayRunStatusHistory
         {
             PayRunId = payRunId,
             FromStatus = fromStatus,
             ToStatus = toStatus,
-            ActorUserName = "Seeder",
+            ActorDisplayName = "Seeder",
             Comment = comment,
-            ActionedAt = DateTime.UtcNow,
+            TimestampUtc = timestampUtc,
+            PreviousHash = previousHashValue,
+            Hash = ComputeSha256(hashPayload),
             CreatedBy = SeedUser
         });
 
@@ -1128,6 +1142,20 @@ public sealed class PayrollSeeder
 
         _context.PaySlips.Add(paySlip);
         _context.SaveChanges();
+    }
+
+    private static string ComputeSha256(string value)
+    {
+        using var sha = SHA256.Create();
+        var bytes = Encoding.UTF8.GetBytes(value);
+        var hash = sha.ComputeHash(bytes);
+        var builder = new StringBuilder(hash.Length * 2);
+        foreach (var b in hash)
+        {
+            builder.Append(b.ToString("x2"));
+        }
+
+        return builder.ToString();
     }
 
     private sealed class PayRunSeed

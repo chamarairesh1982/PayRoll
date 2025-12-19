@@ -8,7 +8,9 @@
       <h1>{{ payRun.name }}</h1>
       <div class="code">Code: {{ payRun.code }}</div>
     </div>
-    <div class="status">Status: {{ payRun.status }}</div>
+    <div class="status">
+      Status: <span class="status-badge status-{{ payRun.status | lowercase }}">{{ payRun.status }}</span>
+    </div>
   </div>
 
   <div class="summary">
@@ -134,8 +136,8 @@
       </thead>
       <tbody>
         <tr *ngFor="let history of payRun.statusHistory">
-          <td>{{ history.actionedAt }}</td>
-          <td>{{ history.actorUserName }}</td>
+          <td>{{ history.timestampUtc }}</td>
+          <td>{{ history.actorDisplayName || history.actorUserId || 'Unknown' }}</td>
           <td>{{ history.fromStatus }} → {{ history.toStatus }}</td>
           <td>{{ history.comment || '—' }}</td>
         </tr>

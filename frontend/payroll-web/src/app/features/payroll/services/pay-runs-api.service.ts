@@ -91,20 +91,20 @@ export class PayRunsApiService {
     return this.http.post<void>(`${this.baseUrl}/${id}/recalculate`, payload);
   }
 
-  preparePayRun(id: string, payload?: PayRunActionRequest): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/${id}/prepare`, payload ?? {});
+  preparePayRun(id: string, payload?: PayRunActionRequest): Observable<PayRunDetail> {
+    return this.http.post<PayRunDetail>(`${this.baseUrl}/${id}/prepare`, payload ?? {});
   }
 
   changeStatus(id: string, status: PayRunStatus): Observable<void> {
     return this.http.post<void>(`${this.baseUrl}/${id}/status`, { status });
   }
 
-  approvePayRun(id: string, payload?: PayRunActionRequest): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/${id}/approve`, payload ?? {});
+  approvePayRun(id: string, payload?: PayRunActionRequest): Observable<PayRunDetail> {
+    return this.http.post<PayRunDetail>(`${this.baseUrl}/${id}/approve`, payload ?? {});
   }
 
-  lockPayRun(id: string, payload?: PayRunActionRequest): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/${id}/lock`, payload ?? {});
+  lockPayRun(id: string, payload?: PayRunActionRequest): Observable<PayRunDetail> {
+    return this.http.post<PayRunDetail>(`${this.baseUrl}/${id}/lock`, payload ?? {});
   }
 
   unlockPayRun(id: string, payload?: PayRunActionRequest): Observable<void> {

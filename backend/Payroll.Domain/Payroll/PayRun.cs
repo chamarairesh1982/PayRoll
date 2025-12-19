@@ -44,7 +44,7 @@ public class PayRun : AuditableEntity, IAggregateRoot
     public string? LockedByUserId { get; set; }
     public string? LockedByUserName { get; set; }
     public ICollection<PaySlip> PaySlips { get; set; } = new List<PaySlip>();
-    public ICollection<PayRunApproval> Approvals { get; set; } = new List<PayRunApproval>();
+    public ICollection<PayRunStatusHistory> StatusHistory { get; set; } = new List<PayRunStatusHistory>();
 }
 
 public enum PayPeriodType

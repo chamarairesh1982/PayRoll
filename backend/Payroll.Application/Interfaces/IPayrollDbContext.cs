@@ -22,7 +22,7 @@ public interface IPayrollDbContext
     DbSet<Loan> Loans { get; }
     DbSet<PayRun> PayRuns { get; }
     DbSet<PaySlip> PaySlips { get; }
-    DbSet<PayRunApproval> PayRunApprovals { get; }
+    DbSet<PayRunStatusHistory> PayRunStatusHistories { get; }
     DbSet<RecurringRule> RecurringRules { get; }
     DbSet<Company> Companies { get; }
     DbSet<Branch> Branches { get; }
@@ -36,7 +36,7 @@ public interface IPayrollDbContext
     DbSet<TaxRelief> TaxReliefs { get; }
     DbSet<EmployeePayItem> EmployeePayItems { get; }
     DbSet<PayrollSettings> PayrollSettings { get; }
-    DbSet<AuditLog> AuditLogs { get; }
+    DbSet<AuditEvent> AuditEvents { get; }
     DbSet<GeneralLedgerAccountMapping> GeneralLedgerAccountMappings { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
