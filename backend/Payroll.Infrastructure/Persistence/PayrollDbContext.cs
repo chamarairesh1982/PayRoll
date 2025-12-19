@@ -22,7 +22,7 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<PayRun> PayRuns => Set<PayRun>();
     public DbSet<PaySlip> PaySlips => Set<PaySlip>();
-    public DbSet<PayRunApproval> PayRunApprovals => Set<PayRunApproval>();
+    public DbSet<PayRunStatusHistory> PayRunStatusHistories => Set<PayRunStatusHistory>();
     public DbSet<RecurringRule> RecurringRules => Set<RecurringRule>();
     public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
@@ -39,7 +39,7 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public DbSet<TaxRelief> TaxReliefs => Set<TaxRelief>();
     public DbSet<EmployeePayItem> EmployeePayItems => Set<EmployeePayItem>();
     public DbSet<PayrollSettings> PayrollSettings => Set<PayrollSettings>();
-    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
     public DbSet<GeneralLedgerAccountMapping> GeneralLedgerAccountMappings => Set<GeneralLedgerAccountMapping>();
     public DbSet<Company> Companies => Set<Company>();
     public DbSet<Branch> Branches => Set<Branch>();
@@ -49,7 +49,8 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     {
         ValidateEmployeePayItems();
         ValidateEmployeeRecurringPayItems();
-        EnsureAuditLogEntriesAreAppendOnly();
+        EnsureAuditEventEntriesAreAppendOnly();
+        EnsurePayRunStatusHistoryIsAppendOnly();
 
         return base.SaveChangesAsync(cancellationToken);
     }
@@ -154,15 +155,27 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
         }
     }
 
-    private void EnsureAuditLogEntriesAreAppendOnly()
+    private void EnsureAuditEventEntriesAreAppendOnly()
     {
-        var tamperedAuditLogs = ChangeTracker.Entries<AuditLog>()
+        var tamperedAuditLogs = ChangeTracker.Entries<AuditEvent>()
             .Where(e => e.State == EntityState.Modified || e.State == EntityState.Deleted)
             .ToList();
 
         if (tamperedAuditLogs.Any())
         {
-            throw new InvalidOperationException("Audit logs are append-only and cannot be modified or removed.");
+            throw new InvalidOperationException("Audit events are append-only and cannot be modified or removed.");
+        }
+    }
+
+    private void EnsurePayRunStatusHistoryIsAppendOnly()
+    {
+        var tamperedHistory = ChangeTracker.Entries<PayRunStatusHistory>()
+            .Where(e => e.State == EntityState.Modified || e.State == EntityState.Deleted)
+            .ToList();
+
+        if (tamperedHistory.Any())
+        {
+            throw new InvalidOperationException("Pay run status history entries are append-only and cannot be modified or removed.");
         }
     }
 }

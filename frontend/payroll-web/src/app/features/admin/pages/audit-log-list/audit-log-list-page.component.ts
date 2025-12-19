@@ -18,25 +18,25 @@ export class AuditLogListPageComponent implements OnInit {
   isLoading = false;
 
   filters: {
-    entityName: string;
+    entityType: string;
     entityId: string;
     action: string;
-    createdBy: string;
+    actor: string;
     from: string;
     to: string;
   } = {
-    entityName: '',
+    entityType: '',
     entityId: '',
     action: '',
-    createdBy: '',
+    actor: '',
     from: '',
     to: '',
   };
 
   columns: { field: keyof AuditLogRow; header: string }[] = [
     { field: 'createdAtDisplay', header: 'Timestamp' },
-    { field: 'createdBy', header: 'Actor' },
-    { field: 'entityName', header: 'Entity' },
+    { field: 'actorDisplayName', header: 'Actor' },
+    { field: 'entityType', header: 'Entity' },
     { field: 'entityId', header: 'Entity ID' },
     { field: 'action', header: 'Action' },
     { field: 'beforePreview', header: 'Before' },
@@ -55,10 +55,10 @@ export class AuditLogListPageComponent implements OnInit {
       .getAuditLogs({
         page: this.page,
         pageSize: this.pageSize,
-        entityName: this.filters.entityName || undefined,
+        entityType: this.filters.entityType || undefined,
         entityId: this.filters.entityId || undefined,
         action: this.filters.action || undefined,
-        createdBy: this.filters.createdBy || undefined,
+        actor: this.filters.actor || undefined,
         from: this.filters.from || undefined,
         to: this.filters.to || undefined,
       })
@@ -84,10 +84,10 @@ export class AuditLogListPageComponent implements OnInit {
 
   clearFilters(): void {
     this.filters = {
-      entityName: '',
+      entityType: '',
       entityId: '',
       action: '',
-      createdBy: '',
+      actor: '',
       from: '',
       to: '',
     };
@@ -97,10 +97,10 @@ export class AuditLogListPageComponent implements OnInit {
   export(): void {
     this.auditApi
       .exportAuditLogs({
-        entityName: this.filters.entityName || undefined,
+        entityType: this.filters.entityType || undefined,
         entityId: this.filters.entityId || undefined,
         action: this.filters.action || undefined,
-        createdBy: this.filters.createdBy || undefined,
+        actor: this.filters.actor || undefined,
         from: this.filters.from || undefined,
         to: this.filters.to || undefined,
       })
@@ -134,9 +134,10 @@ export class AuditLogListPageComponent implements OnInit {
   private toRow(log: AuditLogEntry): AuditLogRow {
     return {
       ...log,
-      beforePreview: this.preview(log.beforeSnapshot),
-      afterPreview: this.preview(log.afterSnapshot),
-      createdAtDisplay: new Date(log.createdAt).toLocaleString(),
+      actorDisplayName: log.actorDisplayName || log.actorUserId,
+      beforePreview: this.preview(log.beforeJson ?? ''),
+      afterPreview: this.preview(log.afterJson ?? ''),
+      createdAtDisplay: new Date(log.timestampUtc).toLocaleString(),
     };
   }
 

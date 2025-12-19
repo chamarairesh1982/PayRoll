@@ -67,8 +67,8 @@ export interface PayRunStatusHistory {
   id: string;
   fromStatus: PayRunStatus;
   toStatus: PayRunStatus;
-  actorUserName: string;
+  actorDisplayName?: string | null;
   actorUserId?: string | null;
   comment?: string | null;
-  actionedAt: string;
+  timestampUtc: string;
 }

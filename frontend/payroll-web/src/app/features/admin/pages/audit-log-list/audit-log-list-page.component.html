@@ -8,7 +8,7 @@
 <div class="filters">
   <label>
     Entity
-    <input type="text" [(ngModel)]="filters.entityName" (change)="applyFilters()" placeholder="PayRun, PaySlip..." />
+    <input type="text" [(ngModel)]="filters.entityType" (change)="applyFilters()" placeholder="PayRun, PaySlip..." />
   </label>
   <label>
     Entity ID
@@ -20,7 +20,7 @@
   </label>
   <label>
     Actor
-    <input type="text" [(ngModel)]="filters.createdBy" (change)="applyFilters()" />
+    <input type="text" [(ngModel)]="filters.actor" (change)="applyFilters()" />
   </label>
   <label>
     From

@@ -57,8 +57,8 @@ public class PayRunStatusHistoryDto
     public Guid Id { get; set; }
     public PayRunStatus FromStatus { get; set; }
     public PayRunStatus ToStatus { get; set; }
-    public string ActorUserName { get; set; } = string.Empty;
+    public string? ActorDisplayName { get; set; }
     public string? Comment { get; set; }
     public string? ActorUserId { get; set; }
-    public DateTime ActionedAt { get; set; }
+    public DateTime TimestampUtc { get; set; }
 }

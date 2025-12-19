@@ -7,17 +7,17 @@ import { AuditLogEntry } from '../models/audit-log.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuditLogApiService {
-  private baseUrl = `${environment.apiBaseUrl}/audit-logs`;
+  private baseUrl = `${environment.apiBaseUrl}/audit`;
 
   constructor(private http: HttpClient) {}
 
   getAuditLogs(params: {
     page?: number;
     pageSize?: number;
-    entityName?: string;
+    entityType?: string;
     entityId?: string;
     action?: string;
-    createdBy?: string;
+    actor?: string;
     from?: string;
     to?: string;
   }): Observable<PaginatedResult<AuditLogEntry>> {
@@ -31,8 +31,8 @@ export class AuditLogApiService {
       httpParams = httpParams.set('pageSize', params.pageSize);
     }
 
-    if (params.entityName) {
-      httpParams = httpParams.set('entityName', params.entityName);
+    if (params.entityType) {
+      httpParams = httpParams.set('entityType', params.entityType);
     }
 
     if (params.entityId) {
@@ -43,8 +43,8 @@ export class AuditLogApiService {
       httpParams = httpParams.set('action', params.action);
     }
 
-    if (params.createdBy) {
-      httpParams = httpParams.set('createdBy', params.createdBy);
+    if (params.actor) {
+      httpParams = httpParams.set('actor', params.actor);
     }
 
     if (params.from) {
@@ -59,17 +59,17 @@ export class AuditLogApiService {
   }
 
   exportAuditLogs(params: {
-    entityName?: string;
+    entityType?: string;
     entityId?: string;
     action?: string;
-    createdBy?: string;
+    actor?: string;
     from?: string;
     to?: string;
   }): Observable<Blob> {
     let httpParams = new HttpParams().set('export', 'true');
 
-    if (params.entityName) {
-      httpParams = httpParams.set('entityName', params.entityName);
+    if (params.entityType) {
+      httpParams = httpParams.set('entityType', params.entityType);
     }
 
     if (params.entityId) {
@@ -80,8 +80,8 @@ export class AuditLogApiService {
       httpParams = httpParams.set('action', params.action);
     }
 
-    if (params.createdBy) {
-      httpParams = httpParams.set('createdBy', params.createdBy);
+    if (params.actor) {
+      httpParams = httpParams.set('actor', params.actor);
     }
 
     if (params.from) {

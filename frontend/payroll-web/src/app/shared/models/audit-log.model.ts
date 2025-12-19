@@ -1,10 +1,12 @@
 export interface AuditLogEntry {
   id: string;
-  entityName: string;
+  entityType: string;
   entityId: string;
   action: string;
-  beforeSnapshot: string;
-  afterSnapshot: string;
-  createdAt: string;
-  createdBy: string;
+  beforeJson?: string | null;
+  afterJson?: string | null;
+  timestampUtc: string;
+  actorUserId: string;
+  actorDisplayName?: string | null;
+  correlationId?: string | null;
 }

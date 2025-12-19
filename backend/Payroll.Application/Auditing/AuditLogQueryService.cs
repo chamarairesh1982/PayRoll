@@ -13,20 +13,20 @@ public class AuditLogQueryService : IAuditLogQueryService
         _dbContext = dbContext;
     }
 
-    public async Task<PaginatedResult<AuditLogDto>> GetAsync(AuditLogQuery query, CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<AuditEventDto>> GetAsync(AuditLogQuery query, CancellationToken cancellationToken = default)
     {
         var (page, pageSize) = NormalizePaging(query.Page, query.PageSize);
         var logs = ApplyFilters(query);
 
         var totalCount = await logs.CountAsync(cancellationToken);
         var items = await logs
-            .OrderByDescending(l => l.CreatedAt)
+            .OrderByDescending(l => l.TimestampUtc)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(AuditLogDto.FromEntity)
+            .Select(AuditEventDto.FromEntity)
             .ToListAsync(cancellationToken);
 
-        return new PaginatedResult<AuditLogDto>
+        return new PaginatedResult<AuditEventDto>
         {
             Items = items,
             Page = page,
@@ -35,23 +35,32 @@ public class AuditLogQueryService : IAuditLogQueryService
         };
     }
 
-    public async Task<IReadOnlyList<AuditLogDto>> ExportAsync(AuditLogQuery query, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<AuditEventDto>> ExportAsync(AuditLogQuery query, CancellationToken cancellationToken = default)
     {
         var logs = ApplyFilters(query);
         return await logs
-            .OrderByDescending(l => l.CreatedAt)
+            .OrderByDescending(l => l.TimestampUtc)
             .Take(5000)
-            .Select(AuditLogDto.FromEntity)
+            .Select(AuditEventDto.FromEntity)
             .ToListAsync(cancellationToken);
     }
 
-    private IQueryable<Domain.Auditing.AuditLog> ApplyFilters(AuditLogQuery query)
+    public async Task<AuditEventDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var logs = _dbContext.AuditLogs.AsNoTracking();
+        var entity = await _dbContext.AuditEvents
+            .AsNoTracking()
+            .FirstOrDefaultAsync(log => log.Id == id, cancellationToken);
 
-        if (!string.IsNullOrWhiteSpace(query.EntityName))
+        return entity is null ? null : AuditEventDto.FromEntity(entity);
+    }
+
+    private IQueryable<Domain.Auditing.AuditEvent> ApplyFilters(AuditLogQuery query)
+    {
+        var logs = _dbContext.AuditEvents.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(query.EntityType))
         {
-            logs = logs.Where(l => l.EntityName == query.EntityName);
+            logs = logs.Where(l => l.EntityType == query.EntityType);
         }
 
         if (!string.IsNullOrWhiteSpace(query.EntityId))
@@ -64,20 +73,20 @@ public class AuditLogQueryService : IAuditLogQueryService
             logs = logs.Where(l => l.Action == query.Action);
         }
 
-        if (!string.IsNullOrWhiteSpace(query.CreatedBy))
+        if (!string.IsNullOrWhiteSpace(query.Actor))
         {
-            logs = logs.Where(l => l.CreatedBy == query.CreatedBy);
+            logs = logs.Where(l => l.ActorUserId == query.Actor || l.ActorDisplayName == query.Actor);
         }
 
         if (query.From.HasValue)
         {
-            logs = logs.Where(l => l.CreatedAt >= query.From.Value);
+            logs = logs.Where(l => l.TimestampUtc >= query.From.Value);
         }
 
         if (query.To.HasValue)
         {
             var toInclusive = query.To.Value;
-            logs = logs.Where(l => l.CreatedAt <= toInclusive);
+            logs = logs.Where(l => l.TimestampUtc <= toInclusive);
         }
 
         return logs;

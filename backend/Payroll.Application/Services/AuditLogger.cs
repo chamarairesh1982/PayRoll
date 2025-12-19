@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
 using Payroll.Application.Interfaces;
+using Payroll.Application.Utilities;
 using Payroll.Domain.Auditing;
 
 namespace Payroll.Application.Services;
@@ -32,29 +34,58 @@ public class AuditLogger : IAuditLogger
         string? performedBy = null,
         CancellationToken cancellationToken = default)
     {
-        var createdBy = string.IsNullOrWhiteSpace(performedBy)
+        var actorDisplayName = string.IsNullOrWhiteSpace(performedBy)
             ? _currentUserService.UserName ?? "system"
             : performedBy;
 
-        var logEntry = new AuditLog
+        var actorUserId = _currentUserService.UserId ?? "system";
+        var timestampUtc = DateTime.UtcNow;
+        var beforeJson = Serialize(beforeSnapshot);
+        var afterJson = Serialize(afterSnapshot);
+
+        var previousHash = await _dbContext.AuditEvents
+            .AsNoTracking()
+            .OrderByDescending(e => e.TimestampUtc)
+            .ThenByDescending(e => e.Id)
+            .Select(e => e.Hash)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var previousHashValue = previousHash ?? string.Empty;
+        var hashPayload = string.Join('|',
+            entityName,
+            entityId,
+            action,
+            actorUserId,
+            actorDisplayName,
+            timestampUtc.ToString("O"),
+            previousHashValue,
+            beforeJson ?? string.Empty,
+            afterJson ?? string.Empty,
+            string.Empty);
+
+        var logEntry = new AuditEvent
         {
             Id = Guid.NewGuid(),
-            EntityName = entityName,
+            TimestampUtc = timestampUtc,
+            ActorUserId = actorUserId,
+            ActorDisplayName = actorDisplayName,
+            EntityType = entityName,
             EntityId = entityId,
             Action = action,
-            BeforeSnapshot = Serialize(beforeSnapshot),
-            AfterSnapshot = Serialize(afterSnapshot),
-            CreatedAt = DateTime.UtcNow,
-            CreatedBy = createdBy
+            BeforeJson = beforeJson,
+            AfterJson = afterJson,
+            CorrelationId = null,
+            PreviousHash = previousHashValue,
+            Hash = HashingHelper.ComputeSha256Hash(hashPayload)
         };
 
-        await _dbContext.AuditLogs.AddAsync(logEntry, cancellationToken);
+        await _dbContext.AuditEvents.AddAsync(logEntry, cancellationToken);
     }
 
-    private static string Serialize(object? snapshot)
+    private static string? Serialize(object? snapshot)
     {
         return snapshot is null
-            ? string.Empty
+            ? null
             : JsonSerializer.Serialize(snapshot, SerializerOptions);
     }
 }
