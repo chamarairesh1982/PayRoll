@@ -46,5 +46,21 @@ public class PayRunConfiguration : IEntityTypeConfiguration<PayRun>
             .WithMany()
             .HasForeignKey(pr => pr.CostCenterId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(p => p.Company)
+               .WithMany()
+               .HasForeignKey(p => p.CompanyId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(p => p.Branch)
+               .WithMany()
+               .HasForeignKey(p => p.BranchId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(p => p.CostCenter)
+               .WithMany()
+               .HasForeignKey(p => p.CostCenterId)
+               .OnDelete(DeleteBehavior.Restrict);
+
     }
 }

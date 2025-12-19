@@ -115,7 +115,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("EntityType", "EntityId");
 
-                    b.ToTable("AuditEvents");
+                    b.ToTable("AuditEvents", (string)null);
                 });
 
             modelBuilder.Entity("Payroll.Domain.Employees.Employee", b =>
@@ -124,15 +124,36 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("BankAccountNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BankCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BankName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("BaseSalary")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("BranchCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("CallingName")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("ConfirmationDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CostCenterId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -141,15 +162,6 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
-
-                    b.Property<Guid?>("BranchId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("CompanyId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("CostCenterId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("DateOfBirth")
                         .HasColumnType("datetime2");
@@ -161,6 +173,10 @@ namespace Payroll.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime>("EmploymentStartDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("EpfNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -197,17 +213,10 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<string>("EpfNumber")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
                     b.Property<DateTime?>("ProbationEndDate")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("EmployeeCode")
-                        .IsUnique();
 
                     b.HasIndex("BranchId");
 
@@ -215,180 +224,13 @@ namespace Payroll.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CostCenterId");
 
+                    b.HasIndex("EmployeeCode")
+                        .IsUnique();
+
                     b.HasIndex("NicNumber")
                         .IsUnique();
 
-                    b.HasOne("Payroll.Domain.Organizations.Branch", null)
-                        .WithMany()
-                        .HasForeignKey("BranchId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Payroll.Domain.Organizations.Company", null)
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Payroll.Domain.Organizations.CostCenter", null)
-                        .WithMany()
-                        .HasForeignKey("CostCenterId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.ToTable("Employees", (string)null);
-                });
-
-            modelBuilder.Entity("Payroll.Domain.Organizations.Branch", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<Guid>("CompanyId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.HasIndex("CompanyId");
-
-                    b.HasOne("Payroll.Domain.Organizations.Company", "Company")
-                        .WithMany("Branches")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Company");
-
-                    b.ToTable("Branches", (string)null);
-                });
-
-            modelBuilder.Entity("Payroll.Domain.Organizations.Company", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.ToTable("Companies", (string)null);
-                });
-
-            modelBuilder.Entity("Payroll.Domain.Organizations.CostCenter", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("BranchId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<Guid?>("CompanyId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BranchId");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.HasIndex("CompanyId");
-
-                    b.HasOne("Payroll.Domain.Organizations.Branch", "Branch")
-                        .WithMany("CostCenters")
-                        .HasForeignKey("BranchId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Payroll.Domain.Organizations.Company", null)
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Branch");
-
-                    b.ToTable("CostCenters", (string)null);
                 });
 
             modelBuilder.Entity("Payroll.Domain.Employees.EmployeePayItem", b =>
@@ -526,11 +368,16 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Payroll.Domain.Payroll.PayRunRecurringLine", b =>
+            modelBuilder.Entity("Payroll.Domain.GeneralLedger.GeneralLedgerAccountMapping", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -539,125 +386,21 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("EmployeeId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("CreditAccount")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("DebitAccount")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<int>("LineType")
+                    b.Property<int>("MappingType")
                         .HasColumnType("int");
-
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("PayRunId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("PaySlipLineId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("RuleId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EmployeeId");
-
-                    b.HasIndex("PayRunId");
-
-                    b.HasIndex("RuleId");
-
-                    b.HasIndex("PayRunId", "EmployeeId", "RuleId")
-                        .IsUnique();
-
-                    b.ToTable("PayRunRecurringLines", (string)null);
-                });
-
-            modelBuilder.Entity("Payroll.Domain.Payroll.RecurringPayItemAssignment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("EmployeeId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateOnly?>("EndDate")
-                        .HasColumnType("date");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("RuleId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateOnly>("StartDate")
-                        .HasColumnType("date");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EmployeeId");
-
-                    b.HasIndex("RuleId");
-
-                    b.HasIndex("RuleId", "EmployeeId");
-
-                    b.ToTable("RecurringPayItemAssignments", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_RecurringPayItemAssignments_EffectiveDates", "([EndDate] IS NULL OR [EndDate] >= [StartDate])");
-                        });
-                });
-
-            modelBuilder.Entity("Payroll.Domain.Payroll.RecurringPayItemRule", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("AllowanceTypeId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid?>("DeductionTypeId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("EpfEtfContributable")
-                        .HasColumnType("bit");
-
-                    b.Property<DateOnly?>("EndDate")
-                        .HasColumnType("date");
-
-                    b.Property<int>("Frequency")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
 
                     b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("datetime2");
@@ -667,33 +410,19 @@ namespace Payroll.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
-                    b.Property<bool>("Prorate")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("RuleType")
-                        .HasColumnType("int");
-
-                    b.Property<DateOnly>("StartDate")
-                        .HasColumnType("date");
-
-                    b.Property<bool>("Taxable")
-                        .HasColumnType("bit");
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AllowanceTypeId");
+                    b.HasIndex("Code", "MappingType")
+                        .IsUnique();
 
-                    b.HasIndex("DeductionTypeId");
-
-                    b.ToTable("RecurringPayItemRules", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_RecurringPayItemRules_ComponentType", "((RuleType = 1 AND AllowanceTypeId IS NOT NULL AND DeductionTypeId IS NULL) OR (RuleType = 2 AND DeductionTypeId IS NOT NULL AND AllowanceTypeId IS NULL))");
-
-                            t.HasCheckConstraint("CK_RecurringPayItemRules_EffectiveDates", "([EndDate] IS NULL OR [EndDate] >= [StartDate])");
-                        });
+                    b.ToTable("GeneralLedgerAccountMappings", (string)null);
                 });
 
             modelBuilder.Entity("Payroll.Domain.Leave.LeaveRequest", b =>
@@ -844,7 +573,142 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.ToTable("LoanRepayments", (string)null);
                 });
 
-            modelBuilder.Entity("Payroll.Domain.Overtime.OvertimeRecord", b =>
+            modelBuilder.Entity("Payroll.Domain.Organizations.Branch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("CompanyId");
+
+                    b.ToTable("Branches", (string)null);
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Organizations.Company", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("Companies", (string)null);
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Organizations.CostCenter", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("CompanyId");
+
+                    b.ToTable("CostCenters", (string)null);
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Overtime.OTEntry", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -910,6 +774,74 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.ToTable("OvertimeRecords", (string)null);
                 });
 
+            modelBuilder.Entity("Payroll.Domain.Overtime.OTRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("AppliesOnHoliday")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("AppliesOnWeekend")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<double>("DailyCapHours")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("float")
+                        .HasDefaultValue(0.0);
+
+                    b.Property<decimal>("HolidayMultiplier")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<double>("PayRunCapHours")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("float")
+                        .HasDefaultValue(0.0);
+
+                    b.Property<int>("RoundingMinutes")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<decimal>("WeekdayMultiplier")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("WeekendMultiplier")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("OTRules", (string)null);
+                });
+
             modelBuilder.Entity("Payroll.Domain.Payroll.DeductionLine", b =>
                 {
                     b.Property<Guid>("Id")
@@ -940,6 +872,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Source")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)")
                         .HasDefaultValue("");
@@ -995,11 +928,6 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.Property<DateTime?>("ApprovedAt")
                         .HasColumnType("datetime2");
 
@@ -1014,6 +942,11 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("BranchId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<Guid?>("CompanyId")
                         .HasColumnType("uniqueidentifier");
 
@@ -1026,6 +959,42 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ExportDownloadedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ExportStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ExportedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ExportedBank")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("GeneralLedgerApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("GeneralLedgerApprovedByUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("GeneralLedgerApprovedByUserName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("GeneralLedgerExportedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("GeneralLedgerReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("GeneralLedgerReviewedByUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("GeneralLedgerReviewedByUserName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("GeneralLedgerStatus")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -1074,6 +1043,9 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.Property<int>("PeriodType")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("PreparedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("PreparedByUserId")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -1081,9 +1053,6 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.Property<string>("PreparedByUserName")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime?>("PreparedAt")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Reference")
                         .IsRequired()
@@ -1107,22 +1076,56 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.HasIndex("Reference")
                         .IsUnique();
 
-                    b.HasOne("Payroll.Domain.Organizations.Branch", null)
-                        .WithMany()
-                        .HasForeignKey("BranchId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Payroll.Domain.Organizations.Company", null)
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Payroll.Domain.Organizations.CostCenter", null)
-                        .WithMany()
-                        .HasForeignKey("CostCenterId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.ToTable("PayRuns", (string)null);
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Payroll.PayRunRecurringLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LineType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("PayRunId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("PaySlipLineId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RuleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("RuleId");
+
+                    b.HasIndex("PayRunId", "EmployeeId", "RuleId")
+                        .IsUnique();
+
+                    b.ToTable("PayRunRecurringLines", (string)null);
                 });
 
             modelBuilder.Entity("Payroll.Domain.Payroll.PayRunStatusHistory", b =>
@@ -1185,6 +1188,250 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.HasIndex("PayRunId");
 
                     b.ToTable("PayRunStatusHistory", (string)null);
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Payroll.PaySlip", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("BasicSalary")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("EmployeeEpf")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("EmployerEpf")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("EmployerEtf")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("NetPay")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("PayRunId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("PayeTax")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalDeductions")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalEarnings")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("PayRunId");
+
+                    b.ToTable("PaySlips", (string)null);
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Payroll.RecurringPayItemAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("RuleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("RuleId", "EmployeeId");
+
+                    b.ToTable("RecurringPayItemAssignments", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RecurringPayItemAssignments_EffectiveDates", "([EndDate] IS NULL OR [EndDate] >= [StartDate])");
+                        });
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Payroll.RecurringPayItemRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AllowanceTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("DeductionTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("EpfEtfContributable")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Frequency")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("Prorate")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("RuleType")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("Taxable")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AllowanceTypeId");
+
+                    b.HasIndex("DeductionTypeId");
+
+                    b.ToTable("RecurringPayItemRules", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RecurringPayItemRules_ComponentType", "((RuleType = 1 AND AllowanceTypeId IS NOT NULL AND DeductionTypeId IS NULL) OR (RuleType = 2 AND DeductionTypeId IS NOT NULL AND AllowanceTypeId IS NULL))");
+
+                            t.HasCheckConstraint("CK_RecurringPayItemRules_EffectiveDates", "([EndDate] IS NULL OR [EndDate] >= [StartDate])");
+                        });
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Payroll.RecurringRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Frequency")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsEpfApplicable")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsEtfApplicable")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsTaxable")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("RuleType")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("RecurringRules");
                 });
 
             modelBuilder.Entity("Payroll.Domain.Payroll.StatutoryReport", b =>
@@ -1252,12 +1499,12 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.Property<int>("Type")
                         .HasColumnType("int");
 
-                    b.Property<int>("WarningCount")
-                        .HasColumnType("int");
-
                     b.Property<string>("WarningContentType")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("WarningCount")
+                        .HasColumnType("int");
 
                     b.Property<string>("WarningFileName")
                         .HasMaxLength(200)
@@ -1274,67 +1521,6 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.HasIndex("PayRunId", "Type");
 
                     b.ToTable("StatutoryReports", (string)null);
-                });
-
-            modelBuilder.Entity("Payroll.Domain.Payroll.PaySlip", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("BasicSalary")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("EmployeeEpf")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<Guid>("EmployeeId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("EmployerEpf")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("EmployerEtf")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("NetPay")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<Guid>("PayRunId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("PayeTax")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("TotalDeductions")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("TotalEarnings")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EmployeeId");
-
-                    b.HasIndex("PayRunId");
-
-                    b.ToTable("PaySlips", (string)null);
                 });
 
             modelBuilder.Entity("Payroll.Domain.PayrollConfig.AllowanceType", b =>
@@ -1634,6 +1820,11 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<decimal>("AttendanceHalfDayHours")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(5,2)")
+                        .HasDefaultValue(4m);
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -1642,12 +1833,10 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<decimal>("AttendanceHalfDayHours")
-                        .HasColumnType("decimal(5,2)")
-                        .HasDefaultValue(4m);
-
                     b.Property<decimal>("HolidayOvertimeMultiplier")
-                        .HasColumnType("decimal(18,2)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(2.0m);
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -1660,26 +1849,34 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("NoPayCalculationBasis")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasDefaultValue(4);
 
                     b.Property<double>("OvertimeDailyCapHours")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("float")
                         .HasDefaultValue(12.0);
 
                     b.Property<double>("OvertimePayRunCapHours")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("float")
                         .HasDefaultValue(80.0);
 
                     b.Property<int>("OvertimeRoundingMinutes")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasDefaultValue(15);
 
                     b.Property<decimal>("WeekdayOvertimeMultiplier")
-                        .HasColumnType("decimal(18,2)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(1.5m);
 
                     b.Property<decimal>("WeekendOvertimeMultiplier")
-                        .HasColumnType("decimal(18,2)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(2.0m);
 
                     b.Property<int>("WorkingDaysPerMonth")
                         .HasColumnType("int");
@@ -1690,6 +1887,55 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("PayrollSettings", (string)null);
+                });
+
+            modelBuilder.Entity("Payroll.Domain.PayrollConfig.TaxRelief", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Frequency")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("ReliefType")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TaxRuleSetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TaxRuleSetId");
+
+                    b.ToTable("TaxReliefs", (string)null);
                 });
 
             modelBuilder.Entity("Payroll.Domain.PayrollConfig.TaxRuleSet", b =>
@@ -1755,55 +2001,6 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                             Name = "Sri Lanka PAYE YA 2025/26",
                             YearOfAssessment = 2025
                         });
-                });
-
-            modelBuilder.Entity("Payroll.Domain.PayrollConfig.TaxRelief", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("Frequency")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<int>("ReliefType")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("TaxRuleSetId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TaxRuleSetId");
-
-                    b.ToTable("TaxReliefs", (string)null);
                 });
 
             modelBuilder.Entity("Payroll.Domain.PayrollConfig.TaxSlab", b =>
@@ -1928,6 +2125,30 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Payroll.Domain.Employees.Employee", b =>
+                {
+                    b.HasOne("Payroll.Domain.Organizations.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Payroll.Domain.Organizations.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Payroll.Domain.Organizations.CostCenter", "CostCenter")
+                        .WithMany()
+                        .HasForeignKey("CostCenterId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Company");
+
+                    b.Navigation("CostCenter");
+                });
+
             modelBuilder.Entity("Payroll.Domain.Employees.EmployeeRecurringPayItem", b =>
                 {
                     b.HasOne("Payroll.Domain.PayrollConfig.AllowanceType", "AllowanceType")
@@ -1951,6 +2172,87 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.Navigation("DeductionType");
                 });
 
+            modelBuilder.Entity("Payroll.Domain.Loans.LoanRepayment", b =>
+                {
+                    b.HasOne("Payroll.Domain.Loans.Loan", "Loan")
+                        .WithMany("Repayments")
+                        .HasForeignKey("LoanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Loan");
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Organizations.Branch", b =>
+                {
+                    b.HasOne("Payroll.Domain.Organizations.Company", "Company")
+                        .WithMany("Branches")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Organizations.CostCenter", b =>
+                {
+                    b.HasOne("Payroll.Domain.Organizations.Branch", "Branch")
+                        .WithMany("CostCenters")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Payroll.Domain.Organizations.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Company");
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Payroll.DeductionLine", b =>
+                {
+                    b.HasOne("Payroll.Domain.Payroll.PaySlip", null)
+                        .WithMany("Deductions")
+                        .HasForeignKey("PaySlipId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Payroll.EarningLine", b =>
+                {
+                    b.HasOne("Payroll.Domain.Payroll.PaySlip", null)
+                        .WithMany("Earnings")
+                        .HasForeignKey("PaySlipId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Payroll.PayRun", b =>
+                {
+                    b.HasOne("Payroll.Domain.Organizations.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Payroll.Domain.Organizations.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Payroll.Domain.Organizations.CostCenter", "CostCenter")
+                        .WithMany()
+                        .HasForeignKey("CostCenterId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Company");
+
+                    b.Navigation("CostCenter");
+                });
+
             modelBuilder.Entity("Payroll.Domain.Payroll.PayRunRecurringLine", b =>
                 {
                     b.HasOne("Payroll.Domain.Employees.Employee", null)
@@ -1970,6 +2272,36 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         .HasForeignKey("RuleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Payroll.PayRunStatusHistory", b =>
+                {
+                    b.HasOne("Payroll.Domain.Payroll.PayRun", "PayRun")
+                        .WithMany("StatusHistory")
+                        .HasForeignKey("PayRunId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PayRun");
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Payroll.PaySlip", b =>
+                {
+                    b.HasOne("Payroll.Domain.Employees.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Payroll.Domain.Payroll.PayRun", "PayRun")
+                        .WithMany("PaySlips")
+                        .HasForeignKey("PayRunId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("PayRun");
                 });
 
             modelBuilder.Entity("Payroll.Domain.Payroll.RecurringPayItemAssignment", b =>
@@ -2004,48 +2336,17 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.Navigation("AllowanceType");
 
                     b.Navigation("DeductionType");
-
-                    b.Navigation("Assignments");
                 });
 
-            modelBuilder.Entity("Payroll.Domain.Loans.LoanRepayment", b =>
+            modelBuilder.Entity("Payroll.Domain.Payroll.RecurringRule", b =>
                 {
-                    b.HasOne("Payroll.Domain.Loans.Loan", "Loan")
-                        .WithMany("Repayments")
-                        .HasForeignKey("LoanId")
+                    b.HasOne("Payroll.Domain.Employees.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Loan");
-                });
-
-            modelBuilder.Entity("Payroll.Domain.Payroll.DeductionLine", b =>
-                {
-                    b.HasOne("Payroll.Domain.Payroll.PaySlip", null)
-                        .WithMany("Deductions")
-                        .HasForeignKey("PaySlipId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Payroll.Domain.Payroll.EarningLine", b =>
-                {
-                    b.HasOne("Payroll.Domain.Payroll.PaySlip", null)
-                        .WithMany("Earnings")
-                        .HasForeignKey("PaySlipId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Payroll.Domain.Payroll.PayRunStatusHistory", b =>
-                {
-                    b.HasOne("Payroll.Domain.Payroll.PayRun", "PayRun")
-                        .WithMany("StatusHistory")
-                        .HasForeignKey("PayRunId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("PayRun");
+                    b.Navigation("Employee");
                 });
 
             modelBuilder.Entity("Payroll.Domain.Payroll.StatutoryReport", b =>
@@ -2055,25 +2356,6 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         .HasForeignKey("PayRunId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("PayRun");
-                });
-
-            modelBuilder.Entity("Payroll.Domain.Payroll.PaySlip", b =>
-                {
-                    b.HasOne("Payroll.Domain.Employees.Employee", "Employee")
-                        .WithMany()
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Payroll.Domain.Payroll.PayRun", "PayRun")
-                        .WithMany("PaySlips")
-                        .HasForeignKey("PayRunId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Employee");
 
                     b.Navigation("PayRun");
                 });
@@ -2117,9 +2399,9 @@ namespace Payroll.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Payroll.Domain.Payroll.PayRun", b =>
                 {
-                    b.Navigation("StatusHistory");
-
                     b.Navigation("PaySlips");
+
+                    b.Navigation("StatusHistory");
                 });
 
             modelBuilder.Entity("Payroll.Domain.Payroll.PaySlip", b =>
@@ -2127,6 +2409,11 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.Navigation("Deductions");
 
                     b.Navigation("Earnings");
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Payroll.RecurringPayItemRule", b =>
+                {
+                    b.Navigation("Assignments");
                 });
 
             modelBuilder.Entity("Payroll.Domain.PayrollConfig.TaxRuleSet", b =>
