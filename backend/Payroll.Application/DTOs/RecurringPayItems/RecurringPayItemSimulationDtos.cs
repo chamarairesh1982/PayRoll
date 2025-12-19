@@ -5,6 +5,7 @@ namespace Payroll.Application.DTOs.RecurringPayItems;
 public record RecurringPayItemSimulationRequest
 {
     public Guid EmployeeId { get; init; }
+    public Guid? PayPeriodId { get; init; }
     public DateOnly PeriodStart { get; init; }
     public DateOnly PeriodEnd { get; init; }
 }

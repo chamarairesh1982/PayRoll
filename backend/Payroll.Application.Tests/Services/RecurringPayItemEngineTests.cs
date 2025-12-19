@@ -132,6 +132,61 @@ public class RecurringPayItemEngineTests
     }
 
     [Fact]
+    public async Task Simulation_Should_Use_PayPeriod_When_Provided()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP_RECUR_4", "Ria", 60_000m);
+        var allowance = TestDataSeeder.SeedAllowanceType(context.DbContext, "ALW_SIM_PP", "Simulation Allowance PP", true, true, true);
+        var rule = TestDataSeeder.SeedRecurringPayItemRule(
+            context.DbContext,
+            "Simulation Period Rule",
+            RecurringRuleType.Allowance,
+            allowance.Id,
+            2_400m,
+            new DateOnly(2025, 4, 1),
+            null,
+            true,
+            true,
+            false);
+
+        TestDataSeeder.SeedRecurringPayItemAssignment(
+            context.DbContext,
+            rule.Id,
+            employee.Id,
+            new DateOnly(2025, 4, 1),
+            null);
+
+        var payRun = new PayRun
+        {
+            Id = Guid.NewGuid(),
+            Name = "Period April 2025",
+            Code = "PR_APR_2025",
+            Reference = "PR_APR_2025_REF",
+            PeriodType = PayPeriodType.Monthly,
+            PeriodStart = new DateTime(2025, 4, 1),
+            PeriodEnd = new DateTime(2025, 4, 30),
+            PayDate = new DateTime(2025, 4, 30),
+            CreatedBy = "test"
+        };
+
+        context.DbContext.PayRuns.Add(payRun);
+        context.DbContext.SaveChanges();
+
+        var service = CreateRecurringPayItemService(context);
+        var result = await service.SimulateAsync(new RecurringPayItemSimulationRequest
+        {
+            EmployeeId = employee.Id,
+            PayPeriodId = payRun.Id,
+            PeriodStart = default,
+            PeriodEnd = default
+        });
+
+        result.Items.Should().ContainSingle();
+        result.TotalAllowances.Should().Be(2_400m);
+        result.TotalDeductions.Should().Be(0m);
+    }
+
+    [Fact]
     public async Task Recalculate_Should_Not_Duplicate_Recurring_Lines()
     {
         using var context = new TestContext();
