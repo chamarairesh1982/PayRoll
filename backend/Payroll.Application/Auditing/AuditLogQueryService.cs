@@ -23,8 +23,22 @@ public class AuditLogQueryService : IAuditLogQueryService
             .OrderByDescending(l => l.TimestampUtc)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(AuditEventDto.FromEntity)
+           .Select(l => new AuditEventDto
+           {
+               Id = l.Id,
+               TimestampUtc = l.TimestampUtc,
+               ActorUserId = l.ActorUserId,
+               ActorDisplayName = l.ActorDisplayName,
+               EntityType = l.EntityType,
+               EntityId = l.EntityId,
+               Action = l.Action,
+               BeforeJson = l.BeforeJson,
+               AfterJson = l.AfterJson,
+               CorrelationId = l.CorrelationId
+           })
             .ToListAsync(cancellationToken);
+
+           
 
         return new PaginatedResult<AuditEventDto>
         {
@@ -41,7 +55,19 @@ public class AuditLogQueryService : IAuditLogQueryService
         return await logs
             .OrderByDescending(l => l.TimestampUtc)
             .Take(5000)
-            .Select(AuditEventDto.FromEntity)
+               .Select(l => new AuditEventDto
+               {
+                   Id = l.Id,
+                   TimestampUtc = l.TimestampUtc,
+                   ActorUserId = l.ActorUserId,
+                   ActorDisplayName = l.ActorDisplayName,
+                   EntityType = l.EntityType,
+                   EntityId = l.EntityId,
+                   Action = l.Action,
+                   BeforeJson = l.BeforeJson,
+                   AfterJson = l.AfterJson,
+                   CorrelationId = l.CorrelationId
+               })
             .ToListAsync(cancellationToken);
     }
 

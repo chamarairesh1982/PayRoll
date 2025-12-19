@@ -53,9 +53,9 @@ namespace Payroll.Infrastructure.Persistence.Migrations
         }
 
         /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
-        {
-            new PayrollDbContextModelSnapshot().BuildModel(modelBuilder);
-        }
+        //protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        //{
+        //    new PayrollDbContextModelSnapshot().BuildModel(modelBuilder);
+        //}
     }
 }

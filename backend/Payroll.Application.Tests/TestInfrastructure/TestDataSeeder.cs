@@ -1,4 +1,4 @@
-using Payroll.Application.Interfaces;
+﻿using Payroll.Application.Interfaces;
 using Payroll.Domain.Attendance;
 using Payroll.Domain.Employees;
 using Payroll.Domain.Loans;
@@ -242,22 +242,33 @@ public static class TestDataSeeder
 
     public static Employee SeedEmployee(PayrollDbContext context, string code, string name, decimal basicSalary)
     {
+        var joinDate = new DateTime(2020, 1, 1);
+        var probationEndDate = joinDate.AddMonths(3); // ✅ domain-safe default
+
         var employee = Employee.Create(
-            code,
-            name,
-            "Test",
-            $"{code}-NIC",
-            null,
-            new DateTime(1990, 1, 1),
-            Gender.Male,
-            MaritalStatus.Single,
-            new DateTime(2020, 1, 1),
-            basicSalary,
-            null,
-            name,
-            null,
-            null,
-            "seed");
+                employeeCode: code,
+                firstName: name,
+                lastName: "Test",
+                nicNumber: $"{code}-NIC",
+                epfNumber: null,
+                dateOfBirth: new DateTime(1990, 1, 1),
+                gender: Gender.Male,
+                maritalStatus: MaritalStatus.Single,
+                employmentStartDate: joinDate,
+                baseSalary: basicSalary,
+                companyId: null,
+                branchId: null,
+                costCenterId: null,
+                initials: null,
+                callingName: null,
+                probationEndDate: probationEndDate,   // ✅ correct position
+                confirmationDate: null,
+                createdBy: "seed",
+                bankName: null,
+                bankCode: null,
+                branchCode: null,
+                bankAccountNumber: null
+            );
 
         context.Employees.Add(employee);
         context.SaveChanges();

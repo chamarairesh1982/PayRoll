@@ -2,6 +2,7 @@ using System;
 using System.Security.Claims;
 using System.Linq;
 using Payroll.Application.Interfaces;
+using Payroll.Api.StartupExtensions;
 
 namespace Payroll.Api.Middleware;
 

@@ -23,7 +23,7 @@ using Payroll.Domain.Overtime;
 using Payroll.Domain.Payroll;
 using Payroll.Domain.PayrollConfig;
 using Payroll.Shared;
-
+using System.ComponentModel.DataAnnotations;
 namespace Payroll.Application.Services;
 
 public class PayrollService : IPayrollService
@@ -112,7 +112,7 @@ public class PayrollService : IPayrollService
         }
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        var updated = await LoadPayRunWithSlipsAsync(id, cancellationToken);
+        var updated = await LoadPayRunWithSlipsAsync(payRun.Id, cancellationToken);
         return updated is null ? MapToDetailDto(payRun) : MapToDetailDto(updated);
     }
 
@@ -764,15 +764,13 @@ public class PayrollService : IPayrollService
         payRun.GeneralLedgerReviewedByUserId = string.IsNullOrWhiteSpace(actor.UserId) ? null : actor.UserId;
         payRun.GeneralLedgerReviewedByUserName = actor.UserName;
 
-        await _auditLogger.LogAsync(
-            nameof(PayRun),
-            payRun.Id.ToString(),
-            "GeneralLedgerReviewed",
-            beforeSnapshot,
-            CreatePayRunSnapshot(payRun),
-            actor.UserName,
-            cancellationToken,
-            request.Comment);
+        await _auditLogger.LogAsync(    nameof(PayRun),    payRun.Id.ToString(),
+    "GeneralLedgerReviewed",
+    beforeSnapshot,
+    CreatePayRunSnapshot(payRun),
+    actor.UserName,
+    cancellationToken);
+
 
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -800,15 +798,12 @@ public class PayrollService : IPayrollService
         payRun.GeneralLedgerApprovedByUserId = string.IsNullOrWhiteSpace(actor.UserId) ? null : actor.UserId;
         payRun.GeneralLedgerApprovedByUserName = actor.UserName;
 
-        await _auditLogger.LogAsync(
-            nameof(PayRun),
-            payRun.Id.ToString(),
-            "GeneralLedgerApproved",
-            beforeSnapshot,
-            CreatePayRunSnapshot(payRun),
-            actor.UserName,
-            cancellationToken,
-            request.Comment);
+        await _auditLogger.LogAsync(nameof(PayRun), payRun.Id.ToString(),
+"GeneralLedgerReviewed",
+beforeSnapshot,
+CreatePayRunSnapshot(payRun),
+actor.UserName,
+cancellationToken);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -2139,9 +2134,28 @@ public class PayrollService : IPayrollService
         };
     }
 
+    private sealed class JournalKeyComparer : IEqualityComparer<(string Debit, string Credit, string Narrative)>
+    {
+        private static readonly StringComparer Comparer = StringComparer.OrdinalIgnoreCase;
+
+        public bool Equals((string Debit, string Credit, string Narrative) x,
+                           (string Debit, string Credit, string Narrative) y)
+            => Comparer.Equals(x.Debit, y.Debit)
+               && Comparer.Equals(x.Credit, y.Credit)
+               && Comparer.Equals(x.Narrative, y.Narrative);
+
+        public int GetHashCode((string Debit, string Credit, string Narrative) obj)
+            => HashCode.Combine(
+                Comparer.GetHashCode(obj.Debit ?? string.Empty),
+                Comparer.GetHashCode(obj.Credit ?? string.Empty),
+                Comparer.GetHashCode(obj.Narrative ?? string.Empty));
+    }
+
+
     private GeneralLedgerExportDto BuildGeneralLedgerExport(PayRun payRun, List<GeneralLedgerAccountMapping> mappings)
     {
-        var journal = new Dictionary<(string Debit, string Credit, string Narrative), decimal>(StringComparer.OrdinalIgnoreCase);
+        //var journal = new Dictionary<(string Debit, string Credit, string Narrative), decimal>(StringComparer.OrdinalIgnoreCase);
+        var journal = new Dictionary<(string Debit, string Credit, string Narrative), decimal>(new JournalKeyComparer());
 
         void AddEntry(GeneralLedgerAccountMapping mapping, decimal amount, string narrative)
         {
@@ -2447,8 +2461,8 @@ public class PayrollService : IPayrollService
                 page.Footer().Column(column =>
                 {
                     column.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-                    column.Item().Text($"Authenticity hash: {authenticityHash}").FontSize(8).Color(Colors.Grey.Darken1);
-                    column.Item().Text($"Generated on {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC").FontSize(8).Color(Colors.Grey.Darken1);
+                    column.Item().Text($"Authenticity hash: {authenticityHash}").FontSize(8).FontColor(Colors.Grey.Darken1);
+                    column.Item().Text($"Generated on {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC").FontSize(8).FontColor(Colors.Grey.Darken1);
                 });
             });
         }).GeneratePdf();

@@ -18,7 +18,8 @@ public class PayrollServiceTests
         var epfService = new EpfEtfRuleSetService(context.DbContext, context.CurrentUserService);
         var taxService = new TaxRuleSetService(context.DbContext, context.CurrentUserService);
         var auditLogger = new AuditLogger(context.DbContext, context.CurrentUserService);
-        return new PayrollService(context.DbContext, epfService, taxService, auditLogger);
+        return new PayrollService(context.DbContext, epfService, taxService, auditLogger, new FakeCurrentUserService());
+
     }
 
     [Fact]
