@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { OvertimeRecord } from '../../models/overtime-record.model';
+import { OTEntry } from '../../models/ot-entry.model';
 import { OvertimeApiService } from '../../services/overtime-api.service';
 
 @Component({
@@ -11,7 +11,7 @@ import { OvertimeApiService } from '../../services/overtime-api.service';
 export class OvertimeCreatePageComponent {
   constructor(private overtimeApi: OvertimeApiService, private router: Router) {}
 
-  onSubmitted(payload: Partial<OvertimeRecord>): void {
+  onSubmitted(payload: Partial<OTEntry>): void {
     this.overtimeApi.createOvertimeRecord(payload).subscribe({
       next: () => this.router.navigate(['/overtime']),
       error: err => console.error('Failed to create overtime record', err),

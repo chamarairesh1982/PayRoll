@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { PaginatedResult } from '../../employees/models/employee.model';
-import { OvertimeRecord, OvertimeStatus } from '../models/overtime-record.model';
+import { OTEntry, OvertimeStatus } from '../models/ot-entry.model';
 
 @Injectable({ providedIn: 'root' })
 export class OvertimeApiService {
@@ -17,7 +17,7 @@ export class OvertimeApiService {
     employeeId?: string;
     date?: string;
     status?: OvertimeStatus | '';
-  }): Observable<PaginatedResult<OvertimeRecord>> {
+  }): Observable<PaginatedResult<OTEntry>> {
     let httpParams = new HttpParams();
 
     if (params.page !== undefined) {
@@ -40,18 +40,18 @@ export class OvertimeApiService {
       httpParams = httpParams.set('status', params.status ?? '');
     }
 
-    return this.http.get<PaginatedResult<OvertimeRecord>>(this.baseUrl, { params: httpParams });
+    return this.http.get<PaginatedResult<OTEntry>>(this.baseUrl, { params: httpParams });
   }
 
-  getOvertimeRecord(id: string): Observable<OvertimeRecord> {
-    return this.http.get<OvertimeRecord>(`${this.baseUrl}/${id}`);
+  getOvertimeRecord(id: string): Observable<OTEntry> {
+    return this.http.get<OTEntry>(`${this.baseUrl}/${id}`);
   }
 
-  createOvertimeRecord(payload: Partial<OvertimeRecord>): Observable<OvertimeRecord> {
-    return this.http.post<OvertimeRecord>(this.baseUrl, payload);
+  createOvertimeRecord(payload: Partial<OTEntry>): Observable<OTEntry> {
+    return this.http.post<OTEntry>(this.baseUrl, payload);
   }
 
-  updateOvertimeRecord(id: string, payload: Partial<OvertimeRecord>): Observable<void> {
+  updateOvertimeRecord(id: string, payload: Partial<OTEntry>): Observable<void> {
     return this.http.put<void>(`${this.baseUrl}/${id}`, payload);
   }
 

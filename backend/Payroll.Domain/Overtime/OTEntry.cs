@@ -2,7 +2,7 @@ using Payroll.Domain.Common;
 
 namespace Payroll.Domain.Overtime;
 
-public class OvertimeRecord : AuditableEntity
+public class OTEntry : AuditableEntity
 {
     public Guid EmployeeId { get; set; }
 

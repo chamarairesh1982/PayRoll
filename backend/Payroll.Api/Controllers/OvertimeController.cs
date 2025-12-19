@@ -41,14 +41,14 @@ public class OvertimeController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateOvertimeRecordRequest request)
+    public async Task<IActionResult> Create([FromBody] CreateOTEntryRequest request)
     {
         var created = await _service.CreateAsync(request);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateOvertimeRecordRequest request)
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateOTEntryRequest request)
     {
         await _service.UpdateAsync(id, request);
         return NoContent();

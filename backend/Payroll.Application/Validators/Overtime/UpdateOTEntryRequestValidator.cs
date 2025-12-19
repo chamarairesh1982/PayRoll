@@ -3,9 +3,9 @@ using Payroll.Application.Overtime.DTOs;
 
 namespace Payroll.Application.Validators.Overtime;
 
-public class UpdateOvertimeRecordRequestValidator : AbstractValidator<UpdateOvertimeRecordRequest>
+public class UpdateOTEntryRequestValidator : AbstractValidator<UpdateOTEntryRequest>
 {
-    public UpdateOvertimeRecordRequestValidator()
+    public UpdateOTEntryRequestValidator()
     {
         RuleFor(x => x.Hours!.Value)
             .GreaterThan(0)

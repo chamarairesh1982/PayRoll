@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { PaginatedResult } from '../../../employees/models/employee.model';
 import { OvertimeApiService } from '../../services/overtime-api.service';
-import { OvertimeRecord, OvertimeStatus } from '../../models/overtime-record.model';
+import { OTEntry, OvertimeStatus } from '../../models/ot-entry.model';
 
 @Component({
   selector: 'app-overtime-list-page',
@@ -10,7 +10,7 @@ import { OvertimeRecord, OvertimeStatus } from '../../models/overtime-record.mod
   styleUrls: ['./overtime-list-page.component.scss'],
 })
 export class OvertimeListPageComponent implements OnInit {
-  records: OvertimeRecord[] = [];
+  records: OTEntry[] = [];
   page = 1;
   pageSize = 25;
   totalCount = 0;
@@ -21,7 +21,7 @@ export class OvertimeListPageComponent implements OnInit {
   selectedStatus: OvertimeStatus | '' = '';
 
   showConfirm = false;
-  recordToDelete: OvertimeRecord | null = null;
+  recordToDelete: OTEntry | null = null;
 
   constructor(private overtimeApi: OvertimeApiService, private router: Router) {}
 
@@ -40,7 +40,7 @@ export class OvertimeListPageComponent implements OnInit {
         status: this.selectedStatus,
       })
       .subscribe({
-        next: (result: PaginatedResult<OvertimeRecord>) => {
+        next: (result: PaginatedResult<OTEntry>) => {
           this.records = result.items;
           this.totalCount = result.totalCount;
           this.page = result.page;
@@ -70,15 +70,15 @@ export class OvertimeListPageComponent implements OnInit {
     this.router.navigate(['/overtime/new']);
   }
 
-  viewRecord(record: OvertimeRecord): void {
+  viewRecord(record: OTEntry): void {
     this.router.navigate(['/overtime', record.id]);
   }
 
-  editRecord(record: OvertimeRecord): void {
+  editRecord(record: OTEntry): void {
     this.router.navigate(['/overtime', record.id, 'edit']);
   }
 
-  confirmDelete(record: OvertimeRecord): void {
+  confirmDelete(record: OTEntry): void {
     if (record.isLockedForPayroll) {
       alert('This OT record is locked and cannot be deleted.');
       return;

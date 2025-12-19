@@ -5,7 +5,6 @@ using Payroll.Application.Services;
 using Payroll.Domain.Leave;
 using Payroll.Domain.Payroll;
 using Payroll.Domain.Overtime;
-using Payroll.Domain.PayrollConfig;
 using Payroll.Application.Tests.TestInfrastructure;
 using Xunit;
 
@@ -84,14 +83,18 @@ public class PayrollServiceTests
         TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
         TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
 
-        context.DbContext.PayrollSettings.Add(new PayrollSettings
+        context.DbContext.OTRules.Add(new OTRule
         {
-            WeekdayOvertimeMultiplier = 1.5m,
-            WeekendOvertimeMultiplier = 2.0m,
-            HolidayOvertimeMultiplier = 2.5m,
-            OvertimeRoundingMinutes = 30,
-            OvertimeDailyCapHours = 4,
-            OvertimePayRunCapHours = 5
+            Name = "Test OT Rule",
+            WeekdayMultiplier = 1.5m,
+            WeekendMultiplier = 2.0m,
+            HolidayMultiplier = 2.5m,
+            RoundingMinutes = 30,
+            DailyCapHours = 4,
+            PayRunCapHours = 5,
+            AppliesOnWeekend = true,
+            AppliesOnHoliday = true,
+            CreatedBy = "seed"
         });
         await context.DbContext.SaveChangesAsync();
 
@@ -273,7 +276,7 @@ public class PayrollServiceTests
 
         var result = await payrollService.CreatePayRunAsync(request);
 
-        var persistedOvertime = await context.DbContext.OvertimeRecords.FindAsync(overtime.Id);
+        var persistedOvertime = await context.DbContext.OTEntries.FindAsync(overtime.Id);
         persistedOvertime.Should().NotBeNull();
         persistedOvertime!.IsLockedForPayroll.Should().BeTrue();
         persistedOvertime.PayRunId.Should().Be(result.Id);

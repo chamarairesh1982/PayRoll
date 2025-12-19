@@ -17,7 +17,8 @@ public interface IPayrollDbContext
     DbSet<Employee> Employees { get; }
     DbSet<AttendanceRecord> AttendanceRecords { get; }
     DbSet<LeaveRequest> LeaveRequests { get; }
-    DbSet<OvertimeRecord> OvertimeRecords { get; }
+    DbSet<OTEntry> OTEntries { get; }
+    DbSet<OTRule> OTRules { get; }
     DbSet<Loan> Loans { get; }
     DbSet<PayRun> PayRuns { get; }
     DbSet<PaySlip> PaySlips { get; }

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { OvertimeRecord } from '../../models/overtime-record.model';
+import { OTEntry } from '../../models/ot-entry.model';
 import { OvertimeApiService } from '../../services/overtime-api.service';
 
 @Component({
@@ -9,7 +9,7 @@ import { OvertimeApiService } from '../../services/overtime-api.service';
   styleUrls: ['./overtime-edit-page.component.scss'],
 })
 export class OvertimeEditPageComponent implements OnInit {
-  overtimeRecord?: OvertimeRecord;
+  overtimeRecord?: OTEntry;
   isLoading = false;
 
   constructor(private route: ActivatedRoute, private overtimeApi: OvertimeApiService, private router: Router) {}
@@ -31,7 +31,7 @@ export class OvertimeEditPageComponent implements OnInit {
     }
   }
 
-  onSubmitted(payload: Partial<OvertimeRecord>): void {
+  onSubmitted(payload: Partial<OTEntry>): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) {
       return;

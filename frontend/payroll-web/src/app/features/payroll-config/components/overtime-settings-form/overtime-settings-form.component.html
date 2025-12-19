@@ -1,34 +1,56 @@
 <form [formGroup]="form" (ngSubmit)="submit()" class="form">
   <div class="form-row">
     <label>
+      Rule name
+      <input type="text" formControlName="name" />
+    </label>
+  </div>
+
+  <div class="form-row">
+    <label>
       Weekday multiplier
-      <input type="number" step="0.01" formControlName="weekdayOvertimeMultiplier" />
+      <input type="number" step="0.01" formControlName="weekdayMultiplier" />
     </label>
     <label>
       Weekend multiplier
-      <input type="number" step="0.01" formControlName="weekendOvertimeMultiplier" />
+      <input type="number" step="0.01" formControlName="weekendMultiplier" />
     </label>
     <label>
       Public holiday multiplier
-      <input type="number" step="0.01" formControlName="holidayOvertimeMultiplier" />
+      <input type="number" step="0.01" formControlName="holidayMultiplier" />
     </label>
   </div>
 
   <div class="form-row">
     <label>
       Rounding (minutes)
-      <input type="number" step="1" formControlName="overtimeRoundingMinutes" />
+      <input type="number" step="1" formControlName="roundingMinutes" />
       <span class="helper-text">Overtime hours will be rounded to the nearest block.</span>
     </label>
     <label>
       Daily cap (hours)
-      <input type="number" step="0.1" formControlName="overtimeDailyCapHours" />
+      <input type="number" step="0.1" formControlName="dailyCapHours" />
       <span class="helper-text">Limit payable overtime per day to control runaway submissions.</span>
     </label>
     <label>
       Pay run cap (hours)
-      <input type="number" step="0.1" formControlName="overtimePayRunCapHours" />
+      <input type="number" step="0.1" formControlName="payRunCapHours" />
       <span class="helper-text">Maximum overtime billed across this pay run per employee.</span>
+    </label>
+  </div>
+
+  <div class="form-row">
+    <label class="checkbox">
+      <input type="checkbox" formControlName="appliesOnWeekend" />
+      Apply weekend multiplier
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" formControlName="appliesOnHoliday" />
+      Apply holiday multiplier
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" formControlName="isActive" />
+      Active rule
     </label>
   </div>
 

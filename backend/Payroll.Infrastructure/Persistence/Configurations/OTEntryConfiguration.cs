@@ -4,9 +4,9 @@ using Payroll.Domain.Overtime;
 
 namespace Payroll.Infrastructure.Persistence.Configurations;
 
-public class OvertimeRecordConfiguration : IEntityTypeConfiguration<OvertimeRecord>
+public class OTEntryConfiguration : IEntityTypeConfiguration<OTEntry>
 {
-    public void Configure(EntityTypeBuilder<OvertimeRecord> builder)
+    public void Configure(EntityTypeBuilder<OTEntry> builder)
     {
         builder.ToTable("OvertimeRecords");
 
