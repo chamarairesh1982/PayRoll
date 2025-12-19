@@ -40,6 +40,12 @@ switch (mode)
         Console.WriteLine("Scenario data seeding completed.");
         break;
     case SeedMode.Reset:
+        if (!string.Equals(Environment.GetEnvironmentVariable("SEEDER_ALLOW_RESET"), "true", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine("Reset mode is disabled. Set SEEDER_ALLOW_RESET=true to allow scenario data reset.");
+            return;
+        }
+
         seeder.ResetAndSeedAll();
         Console.WriteLine("Database reset and reseeding completed.");
         break;
