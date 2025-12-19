@@ -4,6 +4,7 @@ using Payroll.Application.PayrollConfig;
 using Payroll.Application.Services;
 using Payroll.Domain.Leave;
 using Payroll.Domain.Payroll;
+using Payroll.Domain.PayrollConfig;
 using Payroll.Domain.Overtime;
 using Payroll.Application.Tests.TestInfrastructure;
 using Xunit;
@@ -355,6 +356,50 @@ public class PayrollServiceTests
         paySlip.EmployeeEpf.Should().Be(expectedEpf);
         paySlip.TotalDeductions.Should().Be(expectedTotalDeductions);
         paySlip.NetPay.Should().Be(expectedNet);
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Apply_HalfDay_Attendance_NoPay_Deduction()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP003H", "Cherie", 26_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+        TestDataSeeder.SeedAttendance(context.DbContext, employee, new DateOnly(2025, 4, 7), 4m);
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+
+        var result = await payrollService.CreatePayRunAsync(request);
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        var dailyRate = Math.Round(26_000m / 26m, 2, MidpointRounding.AwayFromZero);
+        var expectedNoPay = Math.Round(dailyRate * 0.5m, 2, MidpointRounding.AwayFromZero);
+
+        paySlip.Deductions.Should().Contain(d => d.Code == "NOPAY" && d.Amount == expectedNoPay && d.Source == "Attendance");
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Apply_Hourly_NoPay_Deduction_For_Missing_Hours()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP003I", "Chloe", 80_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+        context.DbContext.PayrollSettings.Add(new PayrollSettings { NoPayCalculationBasis = CalculationBasis.PerHour });
+        context.DbContext.SaveChanges();
+        TestDataSeeder.SeedAttendance(context.DbContext, employee, new DateOnly(2025, 4, 9), 6m);
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+
+        var result = await payrollService.CreatePayRunAsync(request);
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        var hourlyRate = 80_000m / (26m * 8m);
+        var expectedNoPay = Math.Round(hourlyRate * 2m, 2, MidpointRounding.AwayFromZero);
+
+        paySlip.Deductions.Should().Contain(d => d.Code == "NOPAY" && d.Amount == expectedNoPay && d.Source == "Attendance");
     }
 
     [Fact]

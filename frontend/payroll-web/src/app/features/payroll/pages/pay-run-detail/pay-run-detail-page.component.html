@@ -146,6 +146,27 @@
     </ng-template>
   </div>
 
+  <div class="attendance-no-pay">
+    <h2>Attendance no-pay summary</h2>
+    <table class="table" *ngIf="payRun.attendanceNoPaySummaries?.length; else noNoPay">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>No-pay amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let summary of payRun.attendanceNoPaySummaries">
+          <td>{{ summary.employeeCode || summary.employeeId }} - {{ summary.employeeName || 'N/A' }}</td>
+          <td>{{ summary.noPayAmount }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <ng-template #noNoPay>
+      <div>No attendance no-pay deductions for this period.</div>
+    </ng-template>
+  </div>
+
   <div class="payslips">
     <h2>Payslips</h2>
     <table class="table" *ngIf="payRun.paySlips?.length; else noPayslips">

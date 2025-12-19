@@ -8,6 +8,10 @@ public class PayrollSettings : AuditableEntity
 
     public int WorkingHoursPerDay { get; set; } = PayrollSettingsDefaults.WorkingHoursPerDay;
 
+    public CalculationBasis NoPayCalculationBasis { get; set; } = PayrollSettingsDefaults.NoPayCalculationBasis;
+
+    public decimal AttendanceHalfDayHours { get; set; } = PayrollSettingsDefaults.AttendanceHalfDayHours;
+
     public decimal WeekdayOvertimeMultiplier { get; set; } = PayrollSettingsDefaults.WeekdayOvertimeMultiplier;
 
     public decimal WeekendOvertimeMultiplier { get; set; } = PayrollSettingsDefaults.WeekendOvertimeMultiplier;

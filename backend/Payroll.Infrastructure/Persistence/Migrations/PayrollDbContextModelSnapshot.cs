@@ -751,6 +751,12 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("PaySlipId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("");
+
                     b.HasKey("Id");
 
                     b.HasIndex("PaySlipId");
@@ -1352,6 +1358,10 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<decimal>("AttendanceHalfDayHours")
+                        .HasColumnType("decimal(5,2)")
+                        .HasDefaultValue(4m);
+
                     b.Property<decimal>("HolidayOvertimeMultiplier")
                         .HasColumnType("decimal(18,2)");
 
@@ -1364,6 +1374,10 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.Property<string>("ModifiedBy")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("NoPayCalculationBasis")
+                        .HasColumnType("int")
+                        .HasDefaultValue(4);
 
                     b.Property<double>("OvertimeDailyCapHours")
                         .HasColumnType("float")

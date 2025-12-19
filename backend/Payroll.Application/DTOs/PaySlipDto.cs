@@ -25,4 +25,4 @@ public class PaySlipDto
 
 public record EarningDto(Guid Id, string Code, string Description, decimal Amount, bool IsEpfApplicable, bool IsEtfApplicable, bool IsTaxable);
 
-public record DeductionDto(Guid Id, string Code, string Description, decimal Amount, bool IsPreTax, bool IsPostTax);
+public record DeductionDto(Guid Id, string Code, string Description, string Source, decimal Amount, bool IsPreTax, bool IsPostTax);

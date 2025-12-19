@@ -12,6 +12,7 @@ export interface PaySlipDeductionLine {
   id: string;
   code: string;
   description: string;
+  source: string;
   amount: number;
   isPreTax: boolean;
   isPostTax: boolean;
