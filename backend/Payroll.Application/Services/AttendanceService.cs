@@ -26,15 +26,21 @@ public class AttendanceService : IAttendanceService
         var totalCount = await query.CountAsync(cancellationToken);
 
         var items = await query
+            .Join(
+                _dbContext.Employees.AsNoTracking(),
+                record => record.EmployeeId,
+                employee => employee.Id,
+                (record, employee) => new { record, employee })
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(r => new AttendanceDto
+            .Select(result => new AttendanceDto
             {
-                Id = r.Id,
-                EmployeeId = r.EmployeeId,
-                HoursWorked = r.HoursWorked,
-                PeriodStart = r.Period.Start,
-                PeriodEnd = r.Period.End
+                Id = result.record.Id,
+                EmployeeId = result.record.EmployeeId,
+                EmployeeName = (result.employee.FirstName + " " + result.employee.LastName).Trim(),
+                HoursWorked = result.record.HoursWorked,
+                PeriodStart = result.record.Period.Start,
+                PeriodEnd = result.record.Period.End
             })
             .ToListAsync(cancellationToken);
 
