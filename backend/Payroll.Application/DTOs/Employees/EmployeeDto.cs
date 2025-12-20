@@ -11,6 +11,7 @@ public class EmployeeDto
     public string? Initials { get; set; }
     public string? CallingName { get; set; }
     public string NicNumber { get; set; } = string.Empty;
+    public string? MaskedNicNumber { get; set; }
     public string? EpfNumber { get; set; }
     public DateTime DateOfBirth { get; set; }
     public Gender Gender { get; set; }
@@ -29,6 +30,7 @@ public class EmployeeDto
     public string? BankCode { get; set; }
     public string? BranchCode { get; set; }
     public string? BankAccountNumber { get; set; }
+    public string? MaskedBankAccountNumber { get; set; }
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     public string CreatedBy { get; set; } = string.Empty;

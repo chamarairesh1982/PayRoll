@@ -6,6 +6,7 @@ export interface Employee {
   initials?: string | null;
   callingName?: string | null;
   nicNumber: string;
+  maskedNicNumber?: string | null;
   epfNumber?: string | null;
   dateOfBirth: string;
   gender: 'Male' | 'Female' | 'Other';
@@ -19,6 +20,7 @@ export interface Employee {
   bankCode?: string | null;
   branchCode?: string | null;
   bankAccountNumber?: string | null;
+  maskedBankAccountNumber?: string | null;
   companyId?: string | null;
   branchId?: string | null;
   costCenterId?: string | null;
