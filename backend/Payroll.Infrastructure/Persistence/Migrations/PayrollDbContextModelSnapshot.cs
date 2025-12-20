@@ -2383,6 +2383,99 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Payroll.Domain.PayrollConfig.Bank", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("Banks", (string)null);
+                });
+
+            modelBuilder.Entity("Payroll.Domain.PayrollConfig.BankBranch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BankId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BankId");
+
+                    b.HasIndex("BankId", "Code")
+                        .IsUnique();
+
+                    b.ToTable("BankBranches", (string)null);
+                });
+
             modelBuilder.Entity("Payroll.Domain.PayrollConfig.DeductionType", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3277,6 +3370,17 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.Navigation("DeductionType");
                 });
 
+            modelBuilder.Entity("Payroll.Domain.PayrollConfig.BankBranch", b =>
+                {
+                    b.HasOne("Payroll.Domain.PayrollConfig.Bank", "Bank")
+                        .WithMany("Branches")
+                        .HasForeignKey("BankId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Bank");
+                });
+
             modelBuilder.Entity("Payroll.Domain.Payroll.RecurringRule", b =>
                 {
                     b.HasOne("Payroll.Domain.Employees.Employee", "Employee")
@@ -3337,6 +3441,11 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("Payroll.Domain.Organizations.Company", b =>
+                {
+                    b.Navigation("Branches");
+                });
+
+            modelBuilder.Entity("Payroll.Domain.PayrollConfig.Bank", b =>
                 {
                     b.Navigation("Branches");
                 });

@@ -84,6 +84,7 @@ public class EmployeeService : IEmployeeService
     {
         await EnsureEmployeeCodeIsUniqueAsync(request.EmployeeCode, cancellationToken);
         await EnsureNicNumberIsUniqueAsync(request.NicNumber, cancellationToken);
+        ValidateBankDetails(request.BankName, request.BankCode, request.BranchCode, request.BankAccountNumber);
 
         var createdBy = _currentUserService.UserName ?? "system";
 
@@ -144,7 +145,8 @@ public class EmployeeService : IEmployeeService
         }
 
         await EnsureEmployeeCodeIsUniqueAsync(request.EmployeeCode, cancellationToken, id);
-        await EnsureNicNumberIsUniqueAsync(nicNumber, cancellationToken, id);
+        await EnsureNicNumberIsUniqueAsync(request.NicNumber, cancellationToken, id);
+        ValidateBankDetails(request.BankName, request.BankCode, request.BranchCode, request.BankAccountNumber);
 
         var modifiedBy = _currentUserService.UserName ?? "system";
 
@@ -286,10 +288,26 @@ public class EmployeeService : IEmployeeService
         };
     }
 
-    private bool HasAdminRole()
+    private static void ValidateBankDetails(string? bankName, string? bankCode, string? branchCode, string? bankAccountNumber)
     {
-        return _currentUserService.Roles.Any(role =>
-            string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase));
+        var hasBankSelection = !string.IsNullOrWhiteSpace(bankName)
+            || !string.IsNullOrWhiteSpace(bankCode)
+            || !string.IsNullOrWhiteSpace(branchCode);
+
+        if (hasBankSelection && string.IsNullOrWhiteSpace(bankAccountNumber))
+        {
+            throw new InvalidOperationException("Bank account number is required when a bank is selected.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(bankAccountNumber))
+        {
+            if (string.IsNullOrWhiteSpace(bankName)
+                || string.IsNullOrWhiteSpace(bankCode)
+                || string.IsNullOrWhiteSpace(branchCode))
+            {
+                throw new InvalidOperationException("Bank, bank code, and branch are required when a bank account number is provided.");
+            }
+        }
     }
 }
 

@@ -22,6 +22,8 @@ export class SidebarComponent {
 
   configLinks = [
     { label: 'Allowance Types', path: '/config/allowances' },
+    { label: 'Banks', path: '/config/banks' },
+    { label: 'Bank Branches', path: '/config/bank-branches' },
     { label: 'Deduction Types', path: '/config/deductions' },
     { label: 'EPF/ETF Rules', path: '/config/epf-etf' },
     { label: 'Overtime Rules', path: '/config/overtime' },
