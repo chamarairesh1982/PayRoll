@@ -4,24 +4,24 @@ namespace Payroll.Application.BankExports;
 
 public class BocBankExportTemplate : IBankExportTemplate
 {
-    public string Bank => "BOC";
-    public string FileExtension => "txt";
-    public string ContentType => "text/plain";
+    public string TemplateName => "BOC";
+    public string FileExtension => "csv";
+    public string ContentType => "text/csv";
 
-    public string Render(IEnumerable<BankExportRow> rows, string reference)
+    public string Render(IEnumerable<BankExportRow> rows)
     {
         var builder = new StringBuilder();
+        builder.AppendLine("RowNo,BeneficiaryName,AccountNumber,Amount,Reference,EmployeeCode");
+
         foreach (var row in rows)
         {
-            var line = string.Join('|', new[]
-            {
-                row.BranchCode,
-                row.AccountNumber,
-                row.EmployeeName,
-                row.Amount.ToString("F2"),
-                reference
-            });
-            builder.AppendLine(line);
+            builder.Append(row.RowNo).Append(',');
+            builder.Append('"').Append(row.BeneficiaryName.Replace("\"", "''")).Append('"').Append(',');
+            builder.Append(row.AccountNumber).Append(',');
+            builder.Append(row.Amount.ToString("F2")).Append(',');
+            builder.Append(row.Reference).Append(',');
+            builder.Append(row.EmployeeCode);
+            builder.AppendLine();
         }
 
         return builder.ToString();

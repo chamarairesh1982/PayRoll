@@ -3,7 +3,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { BranchOption, CompanyOption, CostCenterOption } from '../../../../shared/models/organization.model';
 import { OrganizationApiService } from '../../../../shared/services/organization-api.service';
 import { ApitReport, FileExportResult } from '../../models/apit-report.model';
-import { BankExportFailure, BankExportResult, PayRunDetail } from '../../models/pay-run.model';
+import {
+  BankExportTemplate,
+  BankExportValidationError,
+  PayRunBankExport,
+} from '../../models/bank-export.model';
+import { PayRunDetail } from '../../models/pay-run.model';
 import { PaySlipEarningLine } from '../../models/payslip.model';
 import { PayRunsApiService } from '../../services/pay-runs-api.service';
 
@@ -23,9 +28,11 @@ export class PayRunDetailPageComponent implements OnInit {
   companies: CompanyOption[] = [];
   branches: BranchOption[] = [];
   costCenters: CostCenterOption[] = [];
-  bankExportFailures: BankExportFailure[] = [];
-  selectedBank = 'HNB';
-  bankOptions = ['HNB', 'BOC', 'Commercial'];
+  bankExportTemplates: BankExportTemplate[] = [];
+  bankExports: PayRunBankExport[] = [];
+  bankExportErrors: BankExportValidationError[] = [];
+  selectedTemplateId: string | null = null;
+  isLoadingExports = false;
   apitReport?: ApitReport;
   isLoadingApit = false;
   apitError: string | null = null;
@@ -41,6 +48,7 @@ export class PayRunDetailPageComponent implements OnInit {
   ngOnInit(): void {
     this.loadScopeOptions();
     this.loadPayRun();
+    this.loadBankExportTemplates();
   }
 
   loadScopeOptions(): void {
@@ -61,11 +69,44 @@ export class PayRunDetailPageComponent implements OnInit {
       next: payRun => {
         this.payRun = payRun;
         this.isLoading = false;
+        this.loadBankExports();
       },
       error: err => {
         console.error('Failed to load pay run', err);
         this.errorMessage = 'Failed to load pay run. Please try again later.';
         this.isLoading = false;
+      },
+    });
+  }
+
+  loadBankExportTemplates(): void {
+    this.payRunsApi.getBankExportTemplates().subscribe({
+      next: templates => {
+        this.bankExportTemplates = templates;
+        if (!this.selectedTemplateId && templates.length) {
+          this.selectedTemplateId = templates[0].id;
+        }
+      },
+      error: err => {
+        console.error('Failed to load bank export templates', err);
+      },
+    });
+  }
+
+  loadBankExports(): void {
+    if (!this.payRun) {
+      return;
+    }
+
+    this.isLoadingExports = true;
+    this.payRunsApi.getPayRunBankExports(this.payRun.id).subscribe({
+      next: exports => {
+        this.bankExports = exports;
+        this.isLoadingExports = false;
+      },
+      error: err => {
+        console.error('Failed to load bank exports', err);
+        this.isLoadingExports = false;
       },
     });
   }
@@ -176,24 +217,24 @@ export class PayRunDetailPageComponent implements OnInit {
   }
 
   generateBankExport(): void {
-    if (!this.payRun) {
+    if (!this.payRun || !this.selectedTemplateId) {
       return;
     }
 
     this.isExporting = true;
     this.errorMessage = null;
-    this.bankExportFailures = [];
+    this.bankExportErrors = [];
 
-    this.payRunsApi.generateBankExport(this.payRun.id, this.selectedBank).subscribe({
+    this.payRunsApi.generateBankExport(this.payRun.id, this.selectedTemplateId).subscribe({
       next: result => {
         this.isExporting = false;
 
-        if (result.failures?.length) {
-          this.bankExportFailures = result.failures;
-          return;
+        if (result.validationErrors?.length) {
+          this.bankExportErrors = result.validationErrors;
         }
 
-        this.downloadExport(result);
+        this.loadBankExports();
+        this.loadPayRun();
       },
       error: err => {
         console.error('Failed to generate bank export', err);
@@ -203,12 +244,29 @@ export class PayRunDetailPageComponent implements OnInit {
     });
   }
 
-  private downloadExport(result: BankExportResult): void {
-    this.saveBase64File(result, 'bank-export.txt');
+  downloadExport(exportRecord: PayRunBankExport): void {
+    this.payRunsApi.downloadBankExport(exportRecord.id).subscribe({
+      next: file => {
+        this.saveBase64File(file, 'bank-export.txt');
+        this.loadBankExports();
+        this.loadPayRun();
+      },
+      error: err => {
+        console.error('Failed to download bank export', err);
+        this.errorMessage = err.error?.message || 'Failed to download bank export file.';
+      },
+    });
+  }
 
-    this.payRunsApi.markBankExportDownloaded(this.payRun!.id).subscribe({
-      next: () => this.loadPayRun(),
-      error: err => console.warn('Failed to mark export downloaded', err),
+  downloadExportErrors(exportRecord: PayRunBankExport): void {
+    this.payRunsApi.downloadBankExportErrors(exportRecord.id).subscribe({
+      next: file => {
+        this.saveBase64File(file, 'bank-export-errors.csv');
+      },
+      error: err => {
+        console.error('Failed to download bank export errors', err);
+        this.errorMessage = err.error?.message || 'Failed to download bank export errors.';
+      },
     });
   }
 
@@ -294,6 +352,10 @@ export class PayRunDetailPageComponent implements OnInit {
 
   get canLock(): boolean {
     return !!this.payRun && !this.payRun.isLocked && this.payRun.status === 'Approved';
+  }
+
+  get canGenerateBankExport(): boolean {
+    return !!this.payRun && this.payRun.isLocked && this.payRun.status === 'Locked';
   }
 
   get scopeLabel(): string {

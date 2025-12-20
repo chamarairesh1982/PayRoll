@@ -50,6 +50,11 @@ public sealed class PayrollSeeder
 
         EnsureEpfEtfRuleSet();
         EnsureTaxRuleSet();
+        EnsureBankExportTemplate("HNB", BankExportFormat.Csv, ",", 1);
+        EnsureBankExportTemplate("BOC", BankExportFormat.Csv, ",", 1);
+        EnsureBankExportTemplate("Commercial", BankExportFormat.Csv, ",", 1);
+        EnsureBankExportTemplate("Sampath", BankExportFormat.Csv, ",", 1);
+        EnsureBankExportTemplate("DFCC", BankExportFormat.Csv, ",", 1);
     }
 
     public void SeedScenarioData()
@@ -791,6 +796,27 @@ public sealed class PayrollSeeder
             Frequency = TaxReliefFrequency.Monthly,
             CreatedBy = SeedUser
         });
+        _context.SaveChanges();
+    }
+
+    private void EnsureBankExportTemplate(string name, BankExportFormat format, string delimiter, int headerRowCount)
+    {
+        if (_context.BankExportTemplates.Any(template => template.Name == name))
+        {
+            return;
+        }
+
+        _context.BankExportTemplates.Add(new BankExportTemplate
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            Format = format,
+            Delimiter = delimiter,
+            HeaderRowCount = headerRowCount,
+            IsActive = true,
+            CreatedBy = SeedUser
+        });
+
         _context.SaveChanges();
     }
 

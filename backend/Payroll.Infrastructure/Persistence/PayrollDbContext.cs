@@ -24,6 +24,9 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public DbSet<PayRun> PayRuns => Set<PayRun>();
     public DbSet<PaySlip> PaySlips => Set<PaySlip>();
     public DbSet<PayRunStatusHistory> PayRunStatusHistories => Set<PayRunStatusHistory>();
+    public DbSet<BankExportTemplate> BankExportTemplates => Set<BankExportTemplate>();
+    public DbSet<PayRunBankExport> PayRunBankExports => Set<PayRunBankExport>();
+    public DbSet<PayRunBankExportError> PayRunBankExportErrors => Set<PayRunBankExportError>();
     public DbSet<StatutoryReport> StatutoryReports => Set<StatutoryReport>();
     public DbSet<RecurringRule> RecurringRules => Set<RecurringRule>();
     public DbSet<RecurringPayItemRule> RecurringPayItemRules => Set<RecurringPayItemRule>();

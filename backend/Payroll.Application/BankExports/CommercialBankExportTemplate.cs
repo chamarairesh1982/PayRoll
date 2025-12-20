@@ -4,24 +4,24 @@ namespace Payroll.Application.BankExports;
 
 public class CommercialBankExportTemplate : IBankExportTemplate
 {
-    public string Bank => "Commercial";
+    public string TemplateName => "Commercial";
     public string FileExtension => "csv";
     public string ContentType => "text/csv";
 
-    public string Render(IEnumerable<BankExportRow> rows, string reference)
+    public string Render(IEnumerable<BankExportRow> rows)
     {
         var builder = new StringBuilder();
-        builder.AppendLine("Branch,Account,Amount,Employee,Reference");
+        builder.AppendLine("RowNo,BeneficiaryName,AccountNumber,Amount,Reference,EmployeeCode");
 
         foreach (var row in rows)
         {
-            builder
-                .Append(row.BranchCode).Append(',')
-                .Append(row.AccountNumber).Append(',')
-                .Append(row.Amount.ToString("F2")).Append(',')
-                .Append(row.EmployeeCode).Append('-').Append(row.EmployeeName).Append(',')
-                .Append(reference)
-                .AppendLine();
+            builder.Append(row.RowNo).Append(',');
+            builder.Append('"').Append(row.BeneficiaryName.Replace("\"", "''")).Append('"').Append(',');
+            builder.Append(row.AccountNumber).Append(',');
+            builder.Append(row.Amount.ToString("F2")).Append(',');
+            builder.Append(row.Reference).Append(',');
+            builder.Append(row.EmployeeCode);
+            builder.AppendLine();
         }
 
         return builder.ToString();
