@@ -2,7 +2,12 @@
   <div class="grid">
     <label>
       Employee ID
-      <input type="text" formControlName="employeeId" placeholder="Employee ID or Code" />
+      <select formControlName="employeeId">
+        <option value="" disabled>Select an employee</option>
+        <option *ngFor="let employee of employees" [value]="employee.id">
+          {{ employee.employeeCode }} - {{ employee.firstName }} {{ employee.lastName }}
+        </option>
+      </select>
       <app-form-field-error [control]="form.get('employeeId')"></app-form-field-error>
     </label>
 
