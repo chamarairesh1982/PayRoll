@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Payroll.Application.DTOs.Organizations;
+using Payroll.Application.Exceptions;
 using Payroll.Application.Interfaces;
 
 namespace Payroll.Application.Services;
@@ -7,14 +8,17 @@ namespace Payroll.Application.Services;
 public class OrganizationService : IOrganizationService
 {
     private readonly IPayrollDbContext _dbContext;
+    private readonly ICurrentUserService _currentUserService;
 
-    public OrganizationService(IPayrollDbContext dbContext)
+    public OrganizationService(IPayrollDbContext dbContext, ICurrentUserService currentUserService)
     {
         _dbContext = dbContext;
+        _currentUserService = currentUserService;
     }
 
     public async Task<IReadOnlyList<CompanyDto>> GetCompaniesAsync(CancellationToken cancellationToken = default)
     {
+        EnsureAdminRole();
         var companies = await _dbContext.Companies
             .AsNoTracking()
             .OrderBy(c => c.Code)
@@ -31,6 +35,7 @@ public class OrganizationService : IOrganizationService
 
     public async Task<IReadOnlyList<BranchDto>> GetBranchesAsync(Guid? companyId = null, CancellationToken cancellationToken = default)
     {
+        EnsureAdminRole();
         var branches = _dbContext.Branches.AsNoTracking();
 
         if (companyId.HasValue)
@@ -57,6 +62,7 @@ public class OrganizationService : IOrganizationService
         Guid? branchId = null,
         CancellationToken cancellationToken = default)
     {
+        EnsureAdminRole();
         var costCenters = _dbContext.CostCenters.AsNoTracking();
 
         if (companyId.HasValue)
@@ -87,5 +93,16 @@ public class OrganizationService : IOrganizationService
             .ToListAsync(cancellationToken);
 
         return results;
+    }
+
+    private void EnsureAdminRole()
+    {
+        var hasRole = _currentUserService.Roles.Any(role =>
+            string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase));
+
+        if (!hasRole)
+        {
+            throw new ForbiddenAccessException("Only admins can access organization master data.");
+        }
     }
 }

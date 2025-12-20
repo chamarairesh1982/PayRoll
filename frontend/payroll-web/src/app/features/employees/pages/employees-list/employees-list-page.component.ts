@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { AuthService } from '../../../../core/services/auth.service';
 import { OrganizationApiService } from '../../../../shared/services/organization-api.service';
 import { BranchOption, CompanyOption, CostCenterOption } from '../../../../shared/models/organization.model';
 import { EmployeesApiService } from '../../services/employees-api.service';
 import { Employee, PaginatedResult } from '../../models/employee.model';
 
-type EmployeeRow = Employee & { fullName: string };
+type EmployeeRow = Employee & { fullName: string; nicDisplay: string };
 
 @Component({
   selector: 'app-employees-list-page',
@@ -26,7 +27,7 @@ export class EmployeesListPageComponent implements OnInit {
   columns = [
     { field: 'employeeCode' as const, header: 'Employee Code' },
     { field: 'fullName' as const, header: 'Name' },
-    { field: 'nicNumber' as const, header: 'NIC' },
+    { field: 'nicDisplay' as const, header: 'NIC' },
     { field: 'epfNumber' as const, header: 'EPF Number' },
     { field: 'employmentStartDate' as const, header: 'Employment Start' },
     { field: 'baseSalary' as const, header: 'Base Salary' },
@@ -40,6 +41,7 @@ export class EmployeesListPageComponent implements OnInit {
     private employeesApi: EmployeesApiService,
     private organizationApi: OrganizationApiService,
     private router: Router,
+    private authService: AuthService,
   ) {}
 
   ngOnInit(): void {
@@ -77,7 +79,12 @@ export class EmployeesListPageComponent implements OnInit {
         costCenterId: this.costCenterFilter || undefined,
       })
       .subscribe((result: PaginatedResult<Employee>) => {
-        this.employees = result.items.map(item => ({ ...item, fullName: `${item.firstName} ${item.lastName}` }));
+        const isAdmin = this.authService.isAdmin();
+        this.employees = result.items.map(item => ({
+          ...item,
+          fullName: `${item.firstName} ${item.lastName}`,
+          nicDisplay: isAdmin ? item.nicNumber : item.maskedNicNumber || '',
+        }));
         this.totalCount = result.totalCount;
       });
   }

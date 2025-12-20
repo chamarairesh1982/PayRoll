@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { AuthService } from '../../../../core/services/auth.service';
 import { EmployeesApiService } from '../../services/employees-api.service';
 import { Employee } from '../../models/employee.model';
 
@@ -11,12 +12,28 @@ import { Employee } from '../../models/employee.model';
 export class EmployeeEditPageComponent implements OnInit {
   employee?: Employee;
 
-  constructor(private employeesApi: EmployeesApiService, private route: ActivatedRoute, private router: Router) {}
+  constructor(
+    private employeesApi: EmployeesApiService,
+    private route: ActivatedRoute,
+    private router: Router,
+    private authService: AuthService,
+  ) {}
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.employeesApi.getEmployee(id).subscribe(employee => (this.employee = employee));
+      this.employeesApi.getEmployee(id).subscribe(employee => {
+        if (this.authService.isAdmin()) {
+          this.employee = employee;
+          return;
+        }
+
+        this.employee = {
+          ...employee,
+          nicNumber: employee.maskedNicNumber || '',
+          bankAccountNumber: employee.maskedBankAccountNumber || '',
+        };
+      });
     }
   }
 
