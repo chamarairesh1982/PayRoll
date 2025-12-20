@@ -26,6 +26,7 @@ public interface IPayrollDbContext
     DbSet<PayRun> PayRuns { get; }
     DbSet<PaySlip> PaySlips { get; }
     DbSet<PayslipDocument> PayslipDocuments { get; }
+    DbSet<GeneratedTaxDocument> GeneratedTaxDocuments { get; }
     DbSet<PayRunStatusHistory> PayRunStatusHistories { get; }
     DbSet<BankExportTemplate> BankExportTemplates { get; }
     DbSet<PayRunBankExport> PayRunBankExports { get; }

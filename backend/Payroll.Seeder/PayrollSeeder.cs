@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Payroll.Domain.Attendance;
 using Payroll.Domain.Leave;
@@ -369,7 +370,8 @@ public sealed class PayrollSeeder
                     IsPreTax = false,
                     IsPostTax = true
                 }
-            });
+            },
+            BuildTaxCalculationJson(128_000m, 28_000m, 100_000m, 6_000m, 0.06m));
 
         EnsurePaySlip(lockedPayRun.Id, lowerSalaryEmployee.Id, lowerSalaryEmployee.BaseSalary, 49_500m, 4_800m, 44_700m, 3_600m, 5_400m, 1_350m, 0m,
             new List<EarningLine>
@@ -417,7 +419,8 @@ public sealed class PayrollSeeder
                     IsPreTax = true,
                     IsPostTax = false
                 }
-            });
+            },
+            BuildTaxCalculationJson(49_500m, 49_500m, 0m, 0m, 0m));
 
         EnsurePaySlip(lockedPayRun.Id, branchEmployee.Id, branchEmployee.BaseSalary, 93_500m, 8_700m, 84_800m, 7_200m, 10_800m, 2_700m, 1_500m,
             new List<EarningLine>
@@ -465,7 +468,8 @@ public sealed class PayrollSeeder
                     IsPreTax = false,
                     IsPostTax = true
                 }
-            });
+            },
+            BuildTaxCalculationJson(93_500m, 68_500m, 25_000m, 1_500m, 0.06m));
 
         EnsurePaySlip(lockedPayRun.Id, missingBankEmployee.Id, missingBankEmployee.BaseSalary, 97_500m, 8_100m, 89_400m, 7_600m, 11_400m, 2_850m, 500m,
             new List<EarningLine>
@@ -513,7 +517,100 @@ public sealed class PayrollSeeder
                     IsPreTax = false,
                     IsPostTax = true
                 }
-            });
+            },
+            BuildTaxCalculationJson(97_500m, 89_167m, 8_333m, 500m, 0.06m));
+
+        var lockedBonusPayRun = EnsurePayRun(new PayRunSeed
+        {
+            Code = $"{DemoPrefix}PR_2025_04_LOCK_BONUS",
+            Name = "April 2025 Bonus",
+            Reference = "APR-2025-BONUS",
+            PeriodStart = new DateTime(2025, 4, 1),
+            PeriodEnd = new DateTime(2025, 4, 15),
+            PayDate = new DateTime(2025, 4, 15),
+            Status = PayRunStatus.Locked,
+            IsLocked = true,
+            CompanyId = company.Id,
+            BranchId = colomboBranch.Id,
+            CostCenterId = opsCostCenter.Id,
+            PreparedAt = new DateTime(2025, 4, 14, 9, 0, 0, DateTimeKind.Utc),
+            PreparedByUserName = "Seeder User",
+            ApprovedAt = new DateTime(2025, 4, 14, 10, 0, 0, DateTimeKind.Utc),
+            ApprovedByUserName = "Seeder Approver",
+            LockedAt = new DateTime(2025, 4, 15, 12, 0, 0, DateTimeKind.Utc),
+            LockedByUserName = "Seeder Locker"
+        });
+        EnsurePayRunStatusHistory(lockedBonusPayRun.Id, PayRunStatus.Draft, PayRunStatus.Prepared, "Prepared by Seeder");
+        EnsurePayRunStatusHistory(lockedBonusPayRun.Id, PayRunStatus.Prepared, PayRunStatus.Approved, "Approved by Seeder");
+        EnsurePayRunStatusHistory(lockedBonusPayRun.Id, PayRunStatus.Approved, PayRunStatus.Locked, "Locked by Seeder");
+
+        EnsurePaySlip(lockedBonusPayRun.Id, salariedEmployee.Id, salariedEmployee.BaseSalary, 20_000m, 2_000m, 18_000m, 1_600m, 2_400m, 600m, 1_200m,
+            new List<EarningLine>
+            {
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    Code = "BONUS",
+                    Description = "Bonus",
+                    Amount = 20_000m,
+                    IsEpfApplicable = true,
+                    IsEtfApplicable = true,
+                    IsTaxable = true
+                }
+            },
+            new List<DeductionLine>
+            {
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    Code = "EPF_EMPLOYEE",
+                    Description = "Employee EPF",
+                    Source = "Statutory",
+                    Amount = 1_600m,
+                    IsPreTax = true,
+                    IsPostTax = false
+                },
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    Code = "PAYE",
+                    Description = "PAYE",
+                    Source = "Tax",
+                    Amount = 1_200m,
+                    IsPreTax = false,
+                    IsPostTax = true
+                }
+            },
+            BuildTaxCalculationJson(20_000m, 0m, 20_000m, 1_200m, 0.06m));
+
+        EnsurePaySlip(lockedBonusPayRun.Id, missingBankEmployee.Id, missingBankEmployee.BaseSalary, 15_000m, 1_500m, 13_500m, 1_200m, 1_800m, 450m, 0m,
+            new List<EarningLine>
+            {
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    Code = "BONUS",
+                    Description = "Bonus",
+                    Amount = 15_000m,
+                    IsEpfApplicable = true,
+                    IsEtfApplicable = true,
+                    IsTaxable = true
+                }
+            },
+            new List<DeductionLine>
+            {
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    Code = "EPF_EMPLOYEE",
+                    Description = "Employee EPF",
+                    Source = "Statutory",
+                    Amount = 1_200m,
+                    IsPreTax = true,
+                    IsPostTax = false
+                }
+            },
+            BuildTaxCalculationJson(15_000m, 15_000m, 0m, 0m, 0m));
     }
 
     public void ResetAndSeedAll()
@@ -1354,7 +1451,8 @@ public sealed class PayrollSeeder
         decimal employerEtf,
         decimal payeTax,
         List<EarningLine> earnings,
-        List<DeductionLine> deductions)
+        List<DeductionLine> deductions,
+        string? taxCalculationJson = null)
     {
         if (_context.PaySlips.Any(ps => ps.PayRunId == payRunId && ps.EmployeeId == employeeId))
         {
@@ -1373,6 +1471,7 @@ public sealed class PayrollSeeder
             EmployerEpf = employerEpf,
             EmployerEtf = employerEtf,
             PayeTax = payeTax,
+            TaxCalculationJson = taxCalculationJson,
             Earnings = earnings,
             Deductions = deductions,
             CreatedBy = SeedUser
@@ -1394,6 +1493,55 @@ public sealed class PayrollSeeder
         }
 
         return builder.ToString();
+    }
+
+    private static string BuildTaxCalculationJson(
+        decimal taxableEarnings,
+        decimal reliefTotal,
+        decimal taxableBase,
+        decimal tax,
+        decimal rate)
+    {
+        var payload = new TaxCalculationSummarySeed
+        {
+            SlabSetId = Guid.Parse("99999999-9999-9999-9999-999999999999"),
+            TaxableEarnings = taxableEarnings,
+            ReliefTotal = reliefTotal,
+            TaxableBase = taxableBase,
+            Tax = tax,
+            Breakdown = new List<TaxCalculationBreakdownSeed>
+            {
+                new()
+                {
+                    BandFrom = 0m,
+                    BandTo = taxableBase,
+                    Rate = rate,
+                    TaxableInBand = taxableBase,
+                    TaxForBand = tax
+                }
+            }
+        };
+
+        return JsonSerializer.Serialize(payload, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+    }
+
+    private sealed class TaxCalculationSummarySeed
+    {
+        public Guid? SlabSetId { get; init; }
+        public decimal TaxableEarnings { get; init; }
+        public decimal ReliefTotal { get; init; }
+        public decimal TaxableBase { get; init; }
+        public decimal Tax { get; init; }
+        public IReadOnlyList<TaxCalculationBreakdownSeed> Breakdown { get; init; } = Array.Empty<TaxCalculationBreakdownSeed>();
+    }
+
+    private sealed class TaxCalculationBreakdownSeed
+    {
+        public decimal BandFrom { get; init; }
+        public decimal? BandTo { get; init; }
+        public decimal Rate { get; init; }
+        public decimal TaxableInBand { get; init; }
+        public decimal TaxForBand { get; init; }
     }
 
     private sealed class PayRunSeed

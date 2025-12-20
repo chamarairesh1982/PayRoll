@@ -1,10 +1,12 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { StatutoryReportsPageComponent } from './pages/statutory-reports-page/statutory-reports-page.component';
+import { TaxReportsPageComponent } from './pages/tax-reports-page/tax-reports-page.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'statutory', pathMatch: 'full' },
   { path: 'statutory', component: StatutoryReportsPageComponent },
+  { path: 'tax', component: TaxReportsPageComponent },
 ];
 
 @NgModule({
