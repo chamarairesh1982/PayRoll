@@ -72,4 +72,32 @@
     <div><strong>Employer ETF:</strong> {{ paySlip.employerEtf }}</div>
     <div><strong>PAYE Tax:</strong> {{ paySlip.payeTax }}</div>
   </div>
+
+  <div class="tax-breakdown" *ngIf="paySlip.taxCalculation as taxCalc">
+    <h3>Tax breakdown</h3>
+    <div class="tax-summary">
+      <div><strong>Taxable earnings:</strong> {{ taxCalc.taxableEarnings }}</div>
+      <div><strong>Relief total:</strong> {{ taxCalc.reliefTotal }}</div>
+      <div><strong>Taxable base:</strong> {{ taxCalc.taxableBase }}</div>
+      <div><strong>Tax (PAYE/APIT):</strong> {{ taxCalc.tax }}</div>
+    </div>
+    <table *ngIf="taxCalc.breakdown?.length">
+      <thead>
+        <tr>
+          <th>Band</th>
+          <th>Rate</th>
+          <th>Taxable in band</th>
+          <th>Tax</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let band of taxCalc.breakdown">
+          <td>{{ band.bandFrom }} - {{ band.bandTo ?? '∞' }}</td>
+          <td>{{ band.rate }}</td>
+          <td>{{ band.taxableInBand }}</td>
+          <td>{{ band.taxForBand }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </section>

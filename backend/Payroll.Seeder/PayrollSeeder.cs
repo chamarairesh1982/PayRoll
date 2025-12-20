@@ -138,6 +138,12 @@ public sealed class PayrollSeeder
             branchCode: "032",
             bankAccountNumber: "2233445566");
 
+        EnsureEmployeeTaxProfile(salariedEmployee);
+        EnsureEmployeeTaxProfile(missingBankEmployee);
+        EnsureEmployeeTaxProfile(lowerSalaryEmployee);
+        EnsureEmployeeTaxProfile(inactiveEmployee);
+        EnsureEmployeeTaxProfile(branchEmployee);
+
         var monthlyAllowanceRule = EnsureRecurringPayItemRule(
             "Demo Monthly Allowance",
             RecurringRuleType.Allowance,
@@ -728,6 +734,7 @@ public sealed class PayrollSeeder
             YearOfAssessment = 2025,
             EffectiveFrom = new DateOnly(2025, 4, 1),
             EffectiveTo = null,
+            Frequency = TaxRuleSetFrequency.Monthly,
             IsDefault = !_context.TaxRuleSets.Any(r => r.IsDefault),
             IsActive = true,
             CreatedBy = SeedUser
@@ -740,7 +747,7 @@ public sealed class PayrollSeeder
                 TaxRuleSet = ruleSet,
                 FromAmount = 0m,
                 ToAmount = 100_000m,
-                RatePercent = 0m,
+                Rate = 0m,
                 Order = 1,
                 CreatedBy = SeedUser
             },
@@ -749,7 +756,7 @@ public sealed class PayrollSeeder
                 TaxRuleSet = ruleSet,
                 FromAmount = 100_000m,
                 ToAmount = 141_667m,
-                RatePercent = 6m,
+                Rate = 0.06m,
                 Order = 2,
                 CreatedBy = SeedUser
             },
@@ -758,7 +765,7 @@ public sealed class PayrollSeeder
                 TaxRuleSet = ruleSet,
                 FromAmount = 141_667m,
                 ToAmount = 183_333m,
-                RatePercent = 12m,
+                Rate = 0.12m,
                 Order = 3,
                 CreatedBy = SeedUser
             },
@@ -767,7 +774,7 @@ public sealed class PayrollSeeder
                 TaxRuleSet = ruleSet,
                 FromAmount = 183_333m,
                 ToAmount = null,
-                RatePercent = 18m,
+                Rate = 0.18m,
                 Order = 4,
                 CreatedBy = SeedUser
             }
@@ -775,6 +782,15 @@ public sealed class PayrollSeeder
 
         _context.TaxRuleSets.Add(ruleSet);
         _context.TaxSlabs.AddRange(slabs);
+        _context.TaxReliefs.Add(new TaxRelief
+        {
+            TaxRuleSet = ruleSet,
+            Name = "Monthly Relief",
+            Amount = 10_000m,
+            ReliefType = TaxReliefType.IncomeRelief,
+            Frequency = TaxReliefFrequency.Monthly,
+            CreatedBy = SeedUser
+        });
         _context.SaveChanges();
     }
 
@@ -826,6 +842,23 @@ public sealed class PayrollSeeder
         _context.SaveChanges();
 
         return employee;
+    }
+
+    private void EnsureEmployeeTaxProfile(Employee employee, bool isTaxExempt = false, Guid? slabSetOverrideId = null)
+    {
+        if (_context.EmployeeTaxProfiles.Any(p => p.EmployeeId == employee.Id))
+        {
+            return;
+        }
+
+        _context.EmployeeTaxProfiles.Add(new EmployeeTaxProfile
+        {
+            EmployeeId = employee.Id,
+            IsTaxExempt = isTaxExempt,
+            SlabSetOverrideId = slabSetOverrideId,
+            CreatedBy = SeedUser
+        });
+        _context.SaveChanges();
     }
 
     private void EnsureLeaveRequest(Guid employeeId, DateOnly startDate, DateOnly endDate, double totalDays, string reason)

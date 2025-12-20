@@ -10,6 +10,7 @@ public class UpdateTaxRuleSetRequest
     public DateTime? EffectiveTo { get; set; }
     public bool? IsDefault { get; set; }
     public bool? IsActive { get; set; }
+    public TaxRuleSetFrequency? Frequency { get; set; }
 
     public List<UpdateTaxSlabItem>? Slabs { get; set; }
     public List<UpdateTaxReliefItem>? Reliefs { get; set; }
@@ -20,7 +21,7 @@ public class UpdateTaxSlabItem
     public Guid? Id { get; set; }
     public decimal FromAmount { get; set; }
     public decimal? ToAmount { get; set; }
-    public decimal RatePercent { get; set; }
+    public decimal Rate { get; set; }
     public int Order { get; set; }
 }
 

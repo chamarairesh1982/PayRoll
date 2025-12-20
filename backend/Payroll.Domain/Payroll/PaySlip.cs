@@ -17,6 +17,7 @@ public class PaySlip : AuditableEntity
     public decimal EmployerEpf { get; set; }
     public decimal EmployerEtf { get; set; }
     public decimal PayeTax { get; set; }
+    public string? TaxCalculationJson { get; set; }
     public ICollection<EarningLine> Earnings { get; set; } = new List<EarningLine>();
     public ICollection<DeductionLine> Deductions { get; set; } = new List<DeductionLine>();
 }

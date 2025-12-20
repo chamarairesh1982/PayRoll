@@ -17,7 +17,7 @@ export class TaxSlabsEditorComponent {
       {
         fromAmount: 0,
         toAmount: null,
-        ratePercent: 0,
+        rate: 0,
         order: nextOrder,
       },
     ];
@@ -55,7 +55,7 @@ export class TaxSlabsEditorComponent {
       order: index + 1,
       fromAmount: Number(slab.fromAmount),
       toAmount: slab.toAmount === null || slab.toAmount === undefined ? null : Number(slab.toAmount),
-      ratePercent: Number(slab.ratePercent),
+      rate: Number(slab.rate),
     }));
     this.emitChange();
   }

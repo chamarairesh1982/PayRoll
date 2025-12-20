@@ -22,7 +22,7 @@ export class SidebarComponent {
     { label: 'Deduction Types', path: '/config/deductions' },
     { label: 'EPF/ETF Rules', path: '/config/epf-etf' },
     { label: 'Overtime Rules', path: '/config/overtime' },
-    { label: 'PAYE Tax Rules', path: '/config/tax-rules' },
+    { label: 'Tax Configuration', path: '/config/tax-rules' },
   ];
 
   adminLinks = [{ label: 'Audit Logs', path: '/admin/audit-logs' }];

@@ -9,7 +9,7 @@ public class TaxSlab : AuditableEntity
 
     public decimal FromAmount { get; set; }
     public decimal? ToAmount { get; set; }
-    public decimal RatePercent { get; set; }
+    public decimal Rate { get; set; }
 
     public int Order { get; set; }
 }

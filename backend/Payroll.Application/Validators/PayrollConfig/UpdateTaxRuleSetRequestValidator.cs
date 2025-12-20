@@ -14,6 +14,10 @@ public class UpdateTaxRuleSetRequestValidator : AbstractValidator<UpdateTaxRuleS
             .GreaterThan(0)
             .When(x => x.YearOfAssessment.HasValue);
 
+        RuleFor(x => x.Frequency)
+            .IsInEnum()
+            .When(x => x.Frequency.HasValue);
+
         RuleFor(x => x)
             .Must(x => !x.EffectiveFrom.HasValue || !x.EffectiveTo.HasValue || x.EffectiveTo.Value >= x.EffectiveFrom.Value)
             .WithMessage("EffectiveTo cannot be earlier than EffectiveFrom.");
@@ -35,7 +39,7 @@ public class UpdateTaxSlabItemValidator : AbstractValidator<UpdateTaxSlabItem>
     public UpdateTaxSlabItemValidator()
     {
         RuleFor(x => x.FromAmount).GreaterThanOrEqualTo(0);
-        RuleFor(x => x.RatePercent).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.Rate).GreaterThanOrEqualTo(0).LessThanOrEqualTo(1);
         RuleFor(x => x.Order).GreaterThanOrEqualTo(0);
         RuleFor(x => x.ToAmount)
             .GreaterThan(x => x.FromAmount)

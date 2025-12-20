@@ -15,6 +15,7 @@ namespace Payroll.Application.Interfaces;
 public interface IPayrollDbContext
 {
     DbSet<Employee> Employees { get; }
+    DbSet<EmployeeTaxProfile> EmployeeTaxProfiles { get; }
     DbSet<AttendanceRecord> AttendanceRecords { get; }
     DbSet<LeaveRequest> LeaveRequests { get; }
     DbSet<OTEntry> OTEntries { get; }

@@ -84,8 +84,13 @@ public class TaxRuleSetService : ITaxRuleSetService
     public async Task<TaxRuleSetDto> CreateAsync(CreateTaxRuleSetRequest request)
     {
         ValidateRuleSetDates(request.EffectiveFrom, request.EffectiveTo);
-        ValidateSlabs(request.Slabs.Select(s => (s.FromAmount, s.ToAmount, s.RatePercent, s.Order)));
+        ValidateSlabs(request.Slabs.Select(s => (s.FromAmount, s.ToAmount, s.Rate, s.Order)));
         ValidateReliefs(request.Reliefs.Select(r => (r.Name, r.Amount)));
+        await ValidateNoOverlapAsync(
+            request.EffectiveFrom,
+            request.EffectiveTo,
+            request.IsActive,
+            null);
 
         if (request.IsDefault)
         {
@@ -100,13 +105,15 @@ public class TaxRuleSetService : ITaxRuleSetService
             EffectiveFrom = DateOnly.FromDateTime(request.EffectiveFrom),
             EffectiveTo = request.EffectiveTo.HasValue ? DateOnly.FromDateTime(request.EffectiveTo.Value) : null,
             IsDefault = request.IsDefault,
+            Frequency = request.Frequency,
+            IsActive = request.IsActive,
             CreatedBy = _currentUserService.UserName ?? "system",
             Slabs = request.Slabs.Select(s => new TaxSlab
             {
                 Id = Guid.NewGuid(),
                 FromAmount = s.FromAmount,
                 ToAmount = s.ToAmount,
-                RatePercent = s.RatePercent,
+                Rate = s.Rate,
                 Order = s.Order,
                 CreatedBy = _currentUserService.UserName ?? "system"
             }).ToList(),
@@ -149,7 +156,7 @@ public class TaxRuleSetService : ITaxRuleSetService
 
         if (request.Slabs != null)
         {
-            ValidateSlabs(request.Slabs.Select(s => (s.FromAmount, s.ToAmount, s.RatePercent, s.Order)));
+            ValidateSlabs(request.Slabs.Select(s => (s.FromAmount, s.ToAmount, s.Rate, s.Order)));
         }
 
         if (request.Reliefs != null)
@@ -169,6 +176,11 @@ public class TaxRuleSetService : ITaxRuleSetService
 
         ruleSet.EffectiveFrom = newEffectiveFrom;
         ruleSet.EffectiveTo = newEffectiveTo;
+
+        if (request.Frequency.HasValue)
+        {
+            ruleSet.Frequency = request.Frequency.Value;
+        }
 
         if (request.IsActive.HasValue)
         {
@@ -194,7 +206,7 @@ public class TaxRuleSetService : ITaxRuleSetService
                 TaxRuleSetId = ruleSet.Id,
                 FromAmount = s.FromAmount,
                 ToAmount = s.ToAmount,
-                RatePercent = s.RatePercent,
+                Rate = s.Rate,
                 Order = s.Order,
                 CreatedBy = _currentUserService.UserName ?? "system"
             }).ToList();
@@ -218,6 +230,196 @@ public class TaxRuleSetService : ITaxRuleSetService
         ruleSet.ModifiedAt = DateTime.UtcNow;
         ruleSet.ModifiedBy = _currentUserService.UserName ?? "system";
 
+        await ValidateNoOverlapAsync(
+            ruleSet.EffectiveFrom.ToDateTime(TimeOnly.MinValue),
+            ruleSet.EffectiveTo?.ToDateTime(TimeOnly.MinValue),
+            ruleSet.IsActive,
+            ruleSet.Id);
+
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<IReadOnlyList<TaxSlabDto>> GetSlabsAsync(Guid slabSetId)
+    {
+        var slabs = await _dbContext.TaxSlabs
+            .Where(s => s.TaxRuleSetId == slabSetId)
+            .OrderBy(s => s.Order)
+            .ThenBy(s => s.FromAmount)
+            .AsNoTracking()
+            .ToListAsync();
+
+        return slabs.Select(s => new TaxSlabDto
+        {
+            Id = s.Id,
+            FromAmount = s.FromAmount,
+            ToAmount = s.ToAmount,
+            Rate = s.Rate,
+            Order = s.Order
+        }).ToList();
+    }
+
+    public async Task<TaxSlabDto> AddSlabAsync(Guid slabSetId, CreateTaxSlabRequest request)
+    {
+        var ruleSet = await _dbContext.TaxRuleSets
+            .Include(r => r.Slabs)
+            .FirstOrDefaultAsync(r => r.Id == slabSetId);
+        if (ruleSet is null)
+        {
+            throw new KeyNotFoundException("Tax slab set not found.");
+        }
+
+        var slab = new TaxSlab
+        {
+            Id = Guid.NewGuid(),
+            TaxRuleSetId = slabSetId,
+            FromAmount = request.FromAmount,
+            ToAmount = request.ToAmount,
+            Rate = request.Rate,
+            Order = request.Order,
+            CreatedBy = _currentUserService.UserName ?? "system"
+        };
+
+        var candidateSlabs = ruleSet.Slabs
+            .Select(s => (s.FromAmount, s.ToAmount, s.Rate, s.Order))
+            .Append((slab.FromAmount, slab.ToAmount, slab.Rate, slab.Order));
+        ValidateSlabs(candidateSlabs);
+
+        ruleSet.Slabs.Add(slab);
+        await _dbContext.SaveChangesAsync();
+
+        return new TaxSlabDto
+        {
+            Id = slab.Id,
+            FromAmount = slab.FromAmount,
+            ToAmount = slab.ToAmount,
+            Rate = slab.Rate,
+            Order = slab.Order
+        };
+    }
+
+    public async Task UpdateSlabAsync(Guid slabId, UpdateTaxSlabRequest request)
+    {
+        var slab = await _dbContext.TaxSlabs.FirstOrDefaultAsync(s => s.Id == slabId);
+        if (slab is null)
+        {
+            throw new KeyNotFoundException("Tax slab not found.");
+        }
+
+        slab.FromAmount = request.FromAmount;
+        slab.ToAmount = request.ToAmount;
+        slab.Rate = request.Rate;
+        slab.Order = request.Order;
+        slab.ModifiedAt = DateTime.UtcNow;
+        slab.ModifiedBy = _currentUserService.UserName ?? "system";
+
+        var slabs = await _dbContext.TaxSlabs
+            .Where(s => s.TaxRuleSetId == slab.TaxRuleSetId)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var candidateSlabs = slabs
+            .Where(s => s.Id != slabId)
+            .Select(s => (s.FromAmount, s.ToAmount, s.Rate, s.Order))
+            .Append((request.FromAmount, request.ToAmount, request.Rate, request.Order));
+
+        ValidateSlabs(candidateSlabs);
+
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task DeleteSlabAsync(Guid slabId)
+    {
+        var slab = await _dbContext.TaxSlabs.FirstOrDefaultAsync(s => s.Id == slabId);
+        if (slab is null)
+        {
+            return;
+        }
+
+        _dbContext.TaxSlabs.Remove(slab);
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<IReadOnlyList<TaxReliefDto>> GetReliefsAsync(Guid slabSetId)
+    {
+        var reliefs = await _dbContext.TaxReliefs
+            .Where(r => r.TaxRuleSetId == slabSetId)
+            .OrderBy(r => r.Name)
+            .AsNoTracking()
+            .ToListAsync();
+
+        return reliefs.Select(r => new TaxReliefDto
+        {
+            Id = r.Id,
+            Name = r.Name,
+            Amount = r.Amount,
+            ReliefType = r.ReliefType,
+            Frequency = r.Frequency
+        }).ToList();
+    }
+
+    public async Task<TaxReliefDto> AddReliefAsync(Guid slabSetId, CreateTaxReliefRequest request)
+    {
+        var ruleSetExists = await _dbContext.TaxRuleSets.AnyAsync(r => r.Id == slabSetId);
+        if (!ruleSetExists)
+        {
+            throw new KeyNotFoundException("Tax slab set not found.");
+        }
+
+        var relief = new TaxRelief
+        {
+            Id = Guid.NewGuid(),
+            TaxRuleSetId = slabSetId,
+            Name = request.Name.Trim(),
+            Amount = request.Amount,
+            ReliefType = request.ReliefType,
+            Frequency = request.Frequency,
+            CreatedBy = _currentUserService.UserName ?? "system"
+        };
+
+        ValidateReliefs(new[] { (relief.Name, relief.Amount) });
+
+        await _dbContext.TaxReliefs.AddAsync(relief);
+        await _dbContext.SaveChangesAsync();
+
+        return new TaxReliefDto
+        {
+            Id = relief.Id,
+            Name = relief.Name,
+            Amount = relief.Amount,
+            ReliefType = relief.ReliefType,
+            Frequency = relief.Frequency
+        };
+    }
+
+    public async Task UpdateReliefAsync(Guid reliefId, UpdateTaxReliefRequest request)
+    {
+        var relief = await _dbContext.TaxReliefs.FirstOrDefaultAsync(r => r.Id == reliefId);
+        if (relief is null)
+        {
+            throw new KeyNotFoundException("Tax relief not found.");
+        }
+
+        relief.Name = request.Name.Trim();
+        relief.Amount = request.Amount;
+        relief.ReliefType = request.ReliefType;
+        relief.Frequency = request.Frequency;
+        relief.ModifiedAt = DateTime.UtcNow;
+        relief.ModifiedBy = _currentUserService.UserName ?? "system";
+
+        ValidateReliefs(new[] { (relief.Name, relief.Amount) });
+
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task DeleteReliefAsync(Guid reliefId)
+    {
+        var relief = await _dbContext.TaxReliefs.FirstOrDefaultAsync(r => r.Id == reliefId);
+        if (relief is null)
+        {
+            return;
+        }
+
+        _dbContext.TaxReliefs.Remove(relief);
         await _dbContext.SaveChangesAsync();
     }
 
@@ -243,7 +445,7 @@ public class TaxRuleSetService : ITaxRuleSetService
         }
     }
 
-    private static void ValidateSlabs(IEnumerable<(decimal FromAmount, decimal? ToAmount, decimal RatePercent, int Order)> slabs)
+    private static void ValidateSlabs(IEnumerable<(decimal FromAmount, decimal? ToAmount, decimal Rate, int Order)> slabs)
     {
         var ordered = slabs
             .OrderBy(s => s.FromAmount)
@@ -252,17 +454,28 @@ public class TaxRuleSetService : ITaxRuleSetService
 
         decimal? previousUpperBound = null;
         var hasPrevious = false;
+        var first = true;
 
         foreach (var slab in ordered)
         {
-            if (slab.FromAmount < 0 || slab.RatePercent < 0)
+            if (slab.FromAmount < 0 || slab.Rate < 0 || slab.Rate > 1)
             {
-                throw new InvalidOperationException("Tax slab amounts and rates must be non-negative.");
+                throw new InvalidOperationException("Tax slab amounts and rates must be between 0 and 1.");
             }
 
             if (slab.ToAmount.HasValue && slab.ToAmount.Value <= slab.FromAmount)
             {
                 throw new InvalidOperationException("Tax slab ToAmount must be greater than FromAmount when provided.");
+            }
+
+            if (first)
+            {
+                if (slab.FromAmount != 0)
+                {
+                    throw new InvalidOperationException("The first tax slab must start from 0.");
+                }
+
+                first = false;
             }
 
             if (hasPrevious)
@@ -299,6 +512,24 @@ public class TaxRuleSetService : ITaxRuleSetService
         }
     }
 
+    public async Task<IReadOnlyDictionary<Guid, TaxRuleSetDto>> GetByIdsAsync(IEnumerable<Guid> ids)
+    {
+        var idList = ids.Distinct().ToList();
+        if (idList.Count == 0)
+        {
+            return new Dictionary<Guid, TaxRuleSetDto>();
+        }
+
+        var ruleSets = await _dbContext.TaxRuleSets
+            .Include(r => r.Slabs)
+            .Include(r => r.Reliefs)
+            .AsNoTracking()
+            .Where(r => idList.Contains(r.Id))
+            .ToListAsync();
+
+        return ruleSets.ToDictionary(r => r.Id, MapToDto);
+    }
+
     private static TaxRuleSetDto MapToDto(TaxRuleSet ruleSet)
     {
         return new TaxRuleSetDto
@@ -310,6 +541,7 @@ public class TaxRuleSetService : ITaxRuleSetService
             EffectiveTo = ruleSet.EffectiveTo?.ToDateTime(TimeOnly.MinValue),
             IsDefault = ruleSet.IsDefault,
             IsActive = ruleSet.IsActive,
+            Frequency = ruleSet.Frequency,
             Slabs = ruleSet.Slabs
                 .OrderBy(s => s.Order)
                 .ThenBy(s => s.FromAmount)
@@ -318,7 +550,7 @@ public class TaxRuleSetService : ITaxRuleSetService
                     Id = s.Id,
                     FromAmount = s.FromAmount,
                     ToAmount = s.ToAmount,
-                    RatePercent = s.RatePercent,
+                    Rate = s.Rate,
                     Order = s.Order
                 })
                 .ToList(),
@@ -334,5 +566,38 @@ public class TaxRuleSetService : ITaxRuleSetService
                 })
                 .ToList()
         };
+    }
+
+    private async Task ValidateNoOverlapAsync(
+        DateTime effectiveFrom,
+        DateTime? effectiveTo,
+        bool isActive,
+        Guid? excludeId)
+    {
+        if (!isActive)
+        {
+            return;
+        }
+
+        var fromDate = DateOnly.FromDateTime(effectiveFrom);
+        var toDate = effectiveTo.HasValue ? DateOnly.FromDateTime(effectiveTo.Value) : (DateOnly?)null;
+
+        var query = _dbContext.TaxRuleSets
+            .AsNoTracking()
+            .Where(r => r.IsActive);
+
+        if (excludeId.HasValue)
+        {
+            query = query.Where(r => r.Id != excludeId.Value);
+        }
+
+        var overlaps = await query.AnyAsync(r =>
+            r.EffectiveFrom <= (toDate ?? DateOnly.MaxValue)
+            && (r.EffectiveTo ?? DateOnly.MaxValue) >= fromDate);
+
+        if (overlaps)
+        {
+            throw new InvalidOperationException("An active tax slab set already exists for the selected effective date range.");
+        }
     }
 }

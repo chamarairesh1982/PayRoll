@@ -19,6 +19,7 @@ public class PaySlipConfiguration : IEntityTypeConfiguration<PaySlip>
         builder.Property(ps => ps.EmployerEpf).HasColumnType("decimal(18,2)");
         builder.Property(ps => ps.EmployerEtf).HasColumnType("decimal(18,2)");
         builder.Property(ps => ps.PayeTax).HasColumnType("decimal(18,2)");
+        builder.Property(ps => ps.TaxCalculationJson).HasColumnType("nvarchar(max)");
 
         builder.HasOne(ps => ps.PayRun)
             .WithMany(pr => pr.PaySlips)

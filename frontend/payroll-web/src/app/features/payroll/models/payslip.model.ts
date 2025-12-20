@@ -18,6 +18,23 @@ export interface PaySlipDeductionLine {
   isPostTax: boolean;
 }
 
+export interface TaxCalculationBreakdownLine {
+  bandFrom: number;
+  bandTo?: number | null;
+  rate: number;
+  taxableInBand: number;
+  taxForBand: number;
+}
+
+export interface TaxCalculationSummary {
+  slabSetId?: string | null;
+  taxableEarnings: number;
+  reliefTotal: number;
+  taxableBase: number;
+  tax: number;
+  breakdown: TaxCalculationBreakdownLine[];
+}
+
 export interface PaySlip {
   id: string;
   payRunId: string;
@@ -34,6 +51,7 @@ export interface PaySlip {
   employerEpf: number;
   employerEtf: number;
   payeTax: number;
+  taxCalculation?: TaxCalculationSummary | null;
 
   currency: string;
 

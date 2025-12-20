@@ -19,6 +19,7 @@ public class PaySlipDto
     public decimal EmployerEpf { get; set; }
     public decimal EmployerEtf { get; set; }
     public decimal PayeTax { get; set; }
+    public TaxCalculationSummaryDto? TaxCalculation { get; set; }
     public IEnumerable<EarningDto> Earnings { get; set; } = Enumerable.Empty<EarningDto>();
     public IEnumerable<DeductionDto> Deductions { get; set; } = Enumerable.Empty<DeductionDto>();
 }

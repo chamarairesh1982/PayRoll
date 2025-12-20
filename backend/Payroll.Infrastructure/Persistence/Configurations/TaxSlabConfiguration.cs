@@ -25,8 +25,8 @@ public class TaxSlabConfiguration : IEntityTypeConfiguration<TaxSlab>
         builder.Property(s => s.ToAmount)
             .HasColumnType("decimal(18,2)");
 
-        builder.Property(s => s.RatePercent)
-            .HasColumnType("decimal(5,2)")
+        builder.Property(s => s.Rate)
+            .HasColumnType("decimal(5,4)")
             .IsRequired();
 
         builder.Property(s => s.Order)
@@ -46,7 +46,7 @@ public class TaxSlabConfiguration : IEntityTypeConfiguration<TaxSlab>
                 TaxRuleSetId = ruleSetId,
                 FromAmount = 0,
                 ToAmount = 100000,
-                RatePercent = 0,
+                Rate = 0m,
                 CreatedAt = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                 CreatedBy = "system",
                 Order = 1
@@ -57,7 +57,7 @@ public class TaxSlabConfiguration : IEntityTypeConfiguration<TaxSlab>
                 TaxRuleSetId = ruleSetId,
                 FromAmount = 100000,
                 ToAmount = 141667,
-                RatePercent = 6,
+                Rate = 0.06m,
                 CreatedAt = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                 CreatedBy = "system",
                 Order = 2
@@ -68,7 +68,7 @@ public class TaxSlabConfiguration : IEntityTypeConfiguration<TaxSlab>
                 TaxRuleSetId = ruleSetId,
                 FromAmount = 141667,
                 ToAmount = 183333,
-                RatePercent = 12,
+                Rate = 0.12m,
                 CreatedAt = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                 CreatedBy = "system",
                 Order = 3
@@ -79,7 +79,7 @@ public class TaxSlabConfiguration : IEntityTypeConfiguration<TaxSlab>
                 TaxRuleSetId = ruleSetId,
                 FromAmount = 183333,
                 ToAmount = null,
-                RatePercent = 18,
+                Rate = 0.18m,
                 CreatedAt = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                 CreatedBy = "system",
                 Order = 4

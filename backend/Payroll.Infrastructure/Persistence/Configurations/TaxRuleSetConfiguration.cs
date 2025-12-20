@@ -28,6 +28,10 @@ public class TaxRuleSetConfiguration : IEntityTypeConfiguration<TaxRuleSet>
             .IsRequired()
             .HasDefaultValue(true);
 
+        builder.Property(r => r.Frequency)
+            .IsRequired()
+            .HasDefaultValue(TaxRuleSetFrequency.Monthly);
+
         builder.Property(r => r.CreatedBy)
             .HasMaxLength(100);
 
@@ -42,6 +46,7 @@ public class TaxRuleSetConfiguration : IEntityTypeConfiguration<TaxRuleSet>
             Name = "Sri Lanka PAYE YA 2025/26",
             YearOfAssessment = 2025,
             EffectiveFrom = new DateOnly(2025, 4, 1),
+            Frequency = TaxRuleSetFrequency.Monthly,
             CreatedAt = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             CreatedBy = "system",
             IsDefault = true,

@@ -11,6 +11,7 @@ public class TaxRuleSetDto
     public DateTime? EffectiveTo { get; set; }
     public bool IsDefault { get; set; }
     public bool IsActive { get; set; }
+    public TaxRuleSetFrequency Frequency { get; set; }
 
     public List<TaxSlabDto> Slabs { get; set; } = new();
     public List<TaxReliefDto> Reliefs { get; set; } = new();
