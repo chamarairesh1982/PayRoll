@@ -71,7 +71,7 @@ export class EmployeeFormComponent implements OnInit, OnChanges {
         probationEndDate: this.normalizeDateInput(this.initialValue.probationEndDate),
         confirmationDate: this.normalizeDateInput(this.initialValue.confirmationDate),
       };
-      this.form.patchValue(normalizedValue);
+      this.form.patchValue(normalizedValue, { emitEvent: false });
       const companyId = this.form.get('companyId')?.value || undefined;
       const branchId = this.form.get('branchId')?.value || undefined;
       this.loadBranches(companyId);
