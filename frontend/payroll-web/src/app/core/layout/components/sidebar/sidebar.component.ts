@@ -16,6 +16,7 @@ export class SidebarComponent {
     { label: 'Overtime', path: '/overtime' },
     { label: 'Overtime Approvals', path: '/overtime/approvals' },
     { label: 'Reports', path: '/reports' },
+    { label: 'Tax Reports', path: '/reports/tax' },
   ];
 
   configLinks = [

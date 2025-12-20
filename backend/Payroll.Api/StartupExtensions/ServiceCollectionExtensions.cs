@@ -60,6 +60,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IOvertimeRuleService, OvertimeRuleService>();
         services.AddScoped<IBankExportService, BankExportService>();
         services.AddScoped<IPayslipDocumentService, PayslipDocumentService>();
+        services.AddScoped<ITaxDocumentService, TaxDocumentService>();
         services.AddScoped<IAuditLogger, AuditLogger>();
         services.AddScoped<IAuditLogQueryService, AuditLogQueryService>();
         services.AddScoped<ICurrentUserService, SimpleCurrentUserService>();
@@ -73,6 +74,7 @@ public static class ServiceCollectionExtensions
         services.Configure<BankExportStorageOptions>(configuration.GetSection("BankExportStorage"));
         services.Configure<ReportStorageOptions>(configuration.GetSection("ReportStorage"));
         services.Configure<PayslipDocumentStorageOptions>(configuration.GetSection("PayslipDocumentStorage"));
+        services.Configure<TaxDocumentStorageOptions>(configuration.GetSection("TaxDocumentStorage"));
         var databaseOptions = new DatabaseOptions();
         configuration.GetSection("Database").Bind(databaseOptions);
         var connectionString = databaseOptions.ConnectionString;
@@ -86,6 +88,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IStatutoryReportStorage, FileSystemStatutoryReportStorage>();
         services.AddScoped<IBankExportStorage, FileSystemBankExportStorage>();
         services.AddScoped<IPayslipDocumentStorage, FileSystemPayslipDocumentStorage>();
+        services.AddScoped<ITaxDocumentStorage, FileSystemTaxDocumentStorage>();
         services.AddIdentityLayer();
         services.AddStructuredLogging(configuration);
         return services;

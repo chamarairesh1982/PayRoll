@@ -1,0 +1,192 @@
+<section class="tax-reports">
+  <div class="page-header">
+    <h1>Tax Reports</h1>
+  </div>
+
+  <div class="card">
+    <h2>Scope (Optional)</h2>
+    <div class="form-row">
+      <label>
+        Company
+        <select [(ngModel)]="companyFilter" (change)="onCompanyChange($event.target.value)">
+          <option value="">All companies</option>
+          <option *ngFor="let company of companies" [value]="company.id">
+            {{ company.name }} ({{ company.code }})
+          </option>
+        </select>
+      </label>
+      <label>
+        Branch
+        <select [(ngModel)]="branchFilter" (change)="onBranchChange($event.target.value)">
+          <option value="">All branches</option>
+          <option *ngFor="let branch of branches" [value]="branch.id">
+            {{ branch.name }} ({{ branch.code }})
+          </option>
+        </select>
+      </label>
+      <label>
+        Cost Center
+        <select [(ngModel)]="costCenterFilter">
+          <option value="">All cost centers</option>
+          <option *ngFor="let costCenter of costCenters" [value]="costCenter.id">
+            {{ costCenter.name }} ({{ costCenter.code }})
+          </option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Monthly APIT Report</h2>
+    <div class="form-row">
+      <label>
+        Year
+        <input type="number" [(ngModel)]="monthlyYear" min="2000" />
+      </label>
+      <label>
+        Month
+        <select [(ngModel)]="monthlyMonth">
+          <option *ngFor="let month of [1,2,3,4,5,6,7,8,9,10,11,12]" [value]="month">{{ month }}</option>
+        </select>
+      </label>
+      <label>
+        Format
+        <select [(ngModel)]="monthlyFormat">
+          <option value="csv">CSV</option>
+          <option value="pdf">PDF</option>
+        </select>
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" [(ngModel)]="monthlyRegenerate" />
+        Regenerate
+      </label>
+      <button type="button" (click)="generateMonthly()" [disabled]="isLoading">
+        {{ isLoading ? 'Generating...' : 'Generate Monthly Report' }}
+      </button>
+    </div>
+    <div *ngIf="monthlyResult" class="summary-grid">
+      <div><strong>Status:</strong> {{ monthlyResult.status }}</div>
+      <div><strong>File:</strong> {{ monthlyResult.fileName || 'Pending' }}</div>
+      <div><strong>Checksum:</strong> {{ monthlyResult.checksumSha256 || '—' }}</div>
+      <button type="button" (click)="downloadDocument(monthlyResult, 'apit-monthly-report.csv')" [disabled]="monthlyResult.status !== 'Generated'">
+        Download
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Annual APIT Report</h2>
+    <div class="form-row">
+      <label>
+        Year
+        <input type="number" [(ngModel)]="annualYear" min="2000" />
+      </label>
+      <label>
+        Format
+        <select [(ngModel)]="annualFormat">
+          <option value="csv">CSV</option>
+          <option value="pdf">PDF</option>
+        </select>
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" [(ngModel)]="annualRegenerate" />
+        Regenerate
+      </label>
+      <button type="button" (click)="generateAnnual()" [disabled]="isLoading">
+        {{ isLoading ? 'Generating...' : 'Generate Annual Report' }}
+      </button>
+    </div>
+    <div *ngIf="annualResult" class="summary-grid">
+      <div><strong>Status:</strong> {{ annualResult.status }}</div>
+      <div><strong>File:</strong> {{ annualResult.fileName || 'Pending' }}</div>
+      <div><strong>Checksum:</strong> {{ annualResult.checksumSha256 || '—' }}</div>
+      <button type="button" (click)="downloadDocument(annualResult, 'apit-annual-report.csv')" [disabled]="annualResult.status !== 'Generated'">
+        Download
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Employee Tax Certificate</h2>
+    <div class="form-row">
+      <label>
+        Employee
+        <input
+          type="text"
+          placeholder="Search employee"
+          [value]="employeeSearch"
+          (input)="onEmployeeSearch($event.target.value)"
+        />
+        <select [(ngModel)]="selectedEmployeeId">
+          <option value="">Select employee</option>
+          <option *ngFor="let employee of filteredEmployees" [value]="employee.id">
+            {{ employee.employeeCode || employee.id }} - {{ employee.firstName }} {{ employee.lastName }}
+          </option>
+        </select>
+      </label>
+      <label>
+        Year
+        <input type="number" [(ngModel)]="certificateYear" min="2000" />
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" [(ngModel)]="certificateRegenerate" />
+        Regenerate
+      </label>
+      <button type="button" (click)="generateCertificate()" [disabled]="isLoading">
+        {{ isLoading ? 'Generating...' : 'Generate Certificate' }}
+      </button>
+    </div>
+    <div *ngIf="certificateResult" class="summary-grid">
+      <div><strong>Status:</strong> {{ certificateResult.status }}</div>
+      <div><strong>File:</strong> {{ certificateResult.fileName || 'Pending' }}</div>
+      <div><strong>Checksum:</strong> {{ certificateResult.checksumSha256 || '—' }}</div>
+      <button
+        type="button"
+        (click)="downloadDocument(certificateResult, 'apit-certificate.pdf')"
+        [disabled]="certificateResult.status !== 'Generated'"
+      >
+        Download
+      </button>
+    </div>
+  </div>
+
+  <div class="error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+  <div class="card">
+    <h2>History</h2>
+    <table class="table" *ngIf="history?.length; else noHistory">
+      <thead>
+        <tr>
+          <th>Generated At</th>
+          <th>Type</th>
+          <th>Period</th>
+          <th>Employee</th>
+          <th>Status</th>
+          <th>File</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let doc of history">
+          <td>{{ doc.generatedAtUtc | dateFormat }}</td>
+          <td>{{ doc.type }}</td>
+          <td>
+            <span *ngIf="doc.periodStart">{{ doc.periodStart | dateFormat }} - {{ doc.periodEnd | dateFormat }}</span>
+            <span *ngIf="!doc.periodStart && doc.year">{{ doc.year }}</span>
+          </td>
+          <td>{{ doc.employeeCode || doc.employeeName || '—' }}</td>
+          <td>{{ doc.status }}</td>
+          <td>{{ doc.fileName || '—' }}</td>
+          <td>
+            <button type="button" (click)="downloadDocument(doc, 'tax-document')" [disabled]="doc.status !== 'Generated'">
+              Download
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <ng-template #noHistory>
+      <div>No tax documents generated yet.</div>
+    </ng-template>
+  </div>
+</section>
