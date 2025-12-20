@@ -1,7 +1,9 @@
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Payroll.Application.DTOs;
 using Payroll.Application.PayrollConfig;
 using Payroll.Application.Services;
+using Payroll.Application.TimeReconciliation;
 using Payroll.Domain.Leave;
 using Payroll.Domain.Payroll;
 using Payroll.Domain.PayrollConfig;
@@ -18,7 +20,14 @@ public class PayrollServiceTests
         var epfService = new EpfEtfRuleSetService(context.DbContext, context.CurrentUserService);
         var taxService = new TaxRuleSetService(context.DbContext, context.CurrentUserService);
         var auditLogger = new AuditLogger(context.DbContext, context.CurrentUserService);
-        return new PayrollService(context.DbContext, epfService, taxService, auditLogger, new FakeCurrentUserService());
+        var timeReconciliationService = new TimeReconciliationService();
+        return new PayrollService(
+            context.DbContext,
+            epfService,
+            taxService,
+            auditLogger,
+            new FakeCurrentUserService(),
+            timeReconciliationService);
 
     }
 
@@ -477,6 +486,7 @@ public class PayrollServiceTests
         var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP003", "Carol", 100_000m);
         TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
         TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+        TestDataSeeder.SeedLeaveTypes(context.DbContext);
         TestDataSeeder.SeedAbsence(context.DbContext, employee, new DateOnly(2025, 4, 5));
         TestDataSeeder.SeedAbsence(context.DbContext, employee, new DateOnly(2025, 4, 10));
 
@@ -492,7 +502,7 @@ public class PayrollServiceTests
         var expectedTotalDeductions = expectedEpf + expectedNoPay;
         var expectedNet = Math.Round(100_000m - expectedTotalDeductions, 2, MidpointRounding.AwayFromZero);
 
-        paySlip.Deductions.Should().Contain(d => d.Code == "NOPAY" && d.Amount == expectedNoPay);
+        paySlip.Deductions.Should().Contain(d => d.Code == "DED_NO_PAY" && d.Amount == expectedNoPay);
         paySlip.EmployeeEpf.Should().Be(expectedEpf);
         paySlip.TotalDeductions.Should().Be(expectedTotalDeductions);
         paySlip.NetPay.Should().Be(expectedNet);
@@ -505,6 +515,7 @@ public class PayrollServiceTests
         var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP003H", "Cherie", 26_000m);
         TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
         TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+        TestDataSeeder.SeedLeaveTypes(context.DbContext);
         TestDataSeeder.SeedAttendance(context.DbContext, employee, new DateOnly(2025, 4, 7), 4m);
 
         var payrollService = CreatePayrollService(context);
@@ -516,7 +527,7 @@ public class PayrollServiceTests
         var dailyRate = Math.Round(26_000m / 26m, 2, MidpointRounding.AwayFromZero);
         var expectedNoPay = Math.Round(dailyRate * 0.5m, 2, MidpointRounding.AwayFromZero);
 
-        paySlip.Deductions.Should().Contain(d => d.Code == "NOPAY" && d.Amount == expectedNoPay && d.Source == "Attendance");
+        paySlip.Deductions.Should().Contain(d => d.Code == "DED_NO_PAY" && d.Amount == expectedNoPay && d.Source == "TimeReconciliation");
     }
 
     [Fact]
@@ -526,6 +537,7 @@ public class PayrollServiceTests
         var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP003I", "Chloe", 80_000m);
         TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
         TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+        TestDataSeeder.SeedLeaveTypes(context.DbContext);
         context.DbContext.PayrollSettings.Add(new PayrollSettings { NoPayCalculationBasis = CalculationBasis.PerHour });
         context.DbContext.SaveChanges();
         TestDataSeeder.SeedAttendance(context.DbContext, employee, new DateOnly(2025, 4, 9), 6m);
@@ -539,7 +551,7 @@ public class PayrollServiceTests
         var hourlyRate = 80_000m / (26m * 8m);
         var expectedNoPay = Math.Round(hourlyRate * 2m, 2, MidpointRounding.AwayFromZero);
 
-        paySlip.Deductions.Should().Contain(d => d.Code == "NOPAY" && d.Amount == expectedNoPay && d.Source == "Attendance");
+        paySlip.Deductions.Should().Contain(d => d.Code == "DED_NO_PAY" && d.Amount == expectedNoPay && d.Source == "TimeReconciliation");
     }
 
     [Fact]
@@ -549,6 +561,7 @@ public class PayrollServiceTests
         var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP003A", "Cathy", 26_000m);
         TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
         TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+        TestDataSeeder.SeedLeaveTypes(context.DbContext);
         TestDataSeeder.SeedLeave(context.DbContext, employee, new DateOnly(2025, 4, 8), new DateOnly(2025, 4, 8), LeaveTypeCode.NoPay, 0.5, true);
 
         var payrollService = CreatePayrollService(context);
@@ -560,19 +573,24 @@ public class PayrollServiceTests
         var dailyRate = Math.Round(26_000m / 26m, 2, MidpointRounding.AwayFromZero);
         var expectedNoPay = Math.Round(dailyRate * 0.5m, 2, MidpointRounding.AwayFromZero);
 
-        paySlip.Deductions.Should().Contain(d => d.Code == "LEAVE_NOPAY" && d.Amount == expectedNoPay);
-        paySlip.Deductions.Should().NotContain(d => d.Code == "NOPAY");
+        paySlip.Deductions.Should().Contain(d => d.Code == "DED_NO_PAY" && d.Amount == expectedNoPay);
     }
 
     [Fact]
-    public async Task CreatePayRun_Should_Encash_Paid_Leave_When_Overlapping_Absence()
+    public async Task CreatePayRun_Should_Encash_Approved_Leave_Request()
     {
         using var context = new TestContext();
         var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP003B", "Cris", 26_000m);
         TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
         TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
-        TestDataSeeder.SeedAbsence(context.DbContext, employee, new DateOnly(2025, 4, 12));
-        TestDataSeeder.SeedLeave(context.DbContext, employee, new DateOnly(2025, 4, 12), new DateOnly(2025, 4, 12), LeaveTypeCode.Annual, 1);
+        TestDataSeeder.SeedLeaveTypes(context.DbContext);
+        TestDataSeeder.SeedLeaveEncashmentRequest(
+            context.DbContext,
+            employee,
+            LeaveTypeCode.Annual,
+            1m,
+            new DateOnly(2025, 4, 1),
+            new DateOnly(2025, 4, 30));
 
         var payrollService = CreatePayrollService(context);
         var request = BuildDefaultRequest(employee.Id);
@@ -582,11 +600,97 @@ public class PayrollServiceTests
         var paySlip = result.PaySlips.Should().ContainSingle().Subject;
         var dailyRate = Math.Round(26_000m / 26m, 2, MidpointRounding.AwayFromZero);
         var expectedEpf = Math.Round(26_000m * 0.08m, 2, MidpointRounding.AwayFromZero);
-        var expectedNet = Math.Round((26_000m + dailyRate) - (expectedEpf + dailyRate), 2, MidpointRounding.AwayFromZero);
+        var expectedNet = Math.Round((26_000m + dailyRate) - expectedEpf, 2, MidpointRounding.AwayFromZero);
 
-        paySlip.Earnings.Should().Contain(e => e.Code == "LEAVE_ENCASH" && e.Amount == dailyRate && !e.IsEpfApplicable && !e.IsTaxable);
-        paySlip.Deductions.Should().Contain(d => d.Code == "NOPAY" && d.Amount == dailyRate);
+        paySlip.Earnings.Should().Contain(e => e.Code == "LEAVE_ENCASHMENT" && e.Amount == dailyRate && !e.IsEpfApplicable && !e.IsTaxable);
+        paySlip.Deductions.Should().NotContain(d => d.Code == "DED_NO_PAY" && d.Amount == dailyRate);
         paySlip.NetPay.Should().Be(expectedNet);
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Not_Deduct_Paid_Leave_When_Attendance_Absent()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP003C", "Cora", 52_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+        TestDataSeeder.SeedLeaveTypes(context.DbContext);
+        TestDataSeeder.SeedAbsence(context.DbContext, employee, new DateOnly(2025, 4, 11));
+        TestDataSeeder.SeedLeave(context.DbContext, employee, new DateOnly(2025, 4, 11), new DateOnly(2025, 4, 11), LeaveTypeCode.Annual, 1);
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+
+        var result = await payrollService.CreatePayRunAsync(request);
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        paySlip.Deductions.Should().NotContain(d => d.Code == "DED_NO_PAY");
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Prioritize_Leave_Over_Attendance_Absence()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP003D", "Cade", 52_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+        TestDataSeeder.SeedLeaveTypes(context.DbContext);
+        TestDataSeeder.SeedAbsence(context.DbContext, employee, new DateOnly(2025, 4, 14));
+        TestDataSeeder.SeedLeave(context.DbContext, employee, new DateOnly(2025, 4, 14), new DateOnly(2025, 4, 14), LeaveTypeCode.NoPay, 1);
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+
+        var result = await payrollService.CreatePayRunAsync(request);
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        var dailyRate = Math.Round(52_000m / 26m, 2, MidpointRounding.AwayFromZero);
+        paySlip.Deductions.Should().Contain(d => d.Code == "DED_NO_PAY" && d.Amount == dailyRate);
+    }
+
+    [Fact]
+    public async Task GetTimeReconciliation_Should_Report_Conflicts_For_Attendance_And_FullDay_Leave()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP003E", "Cleo", 52_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+        TestDataSeeder.SeedLeaveTypes(context.DbContext);
+        TestDataSeeder.SeedAttendance(context.DbContext, employee, new DateOnly(2025, 4, 17), 8m);
+        TestDataSeeder.SeedLeave(context.DbContext, employee, new DateOnly(2025, 4, 17), new DateOnly(2025, 4, 17), LeaveTypeCode.Annual, 1);
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+        var payRun = await payrollService.CreatePayRunAsync(request);
+
+        var reconciliation = await payrollService.GetTimeReconciliationAsync(payRun.Id);
+
+        reconciliation.Should().NotBeNull();
+        reconciliation!.Conflicts.Should().ContainSingle(conflict => conflict.EmployeeId == employee.Id);
+    }
+
+    [Fact]
+    public async Task RecalculatePayRun_Should_Not_Duplicate_NoPay_Deductions()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP003F", "Cyrus", 60_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+        TestDataSeeder.SeedLeaveTypes(context.DbContext);
+        TestDataSeeder.SeedAbsence(context.DbContext, employee, new DateOnly(2025, 4, 3));
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+
+        var payRun = await payrollService.CreatePayRunAsync(request);
+        await payrollService.RecalculatePayRunAsync(payRun.Id, new RecalculatePayRunRequest());
+        await payrollService.RecalculatePayRunAsync(payRun.Id, new RecalculatePayRunRequest());
+
+        var paySlip = await context.DbContext.PaySlips
+            .Include(ps => ps.Deductions)
+            .FirstAsync(ps => ps.PayRunId == payRun.Id);
+
+        paySlip.Deductions.Count(d => d.Code == "DED_NO_PAY").Should().Be(1);
     }
 
     [Fact]

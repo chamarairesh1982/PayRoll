@@ -11,6 +11,7 @@ using Payroll.Application.Overtime;
 using Payroll.Application.PayrollConfig;
 using Payroll.Application.RecurringPayItems;
 using Payroll.Application.Services;
+using Payroll.Application.TimeReconciliation;
 using Payroll.Application.RecurringRules;
 using Payroll.Application.Validators.Employees;
 using Payroll.Infrastructure.Identity;
@@ -42,6 +43,7 @@ public static class ServiceCollectionExtensions
         services.AddValidatorsFromAssemblyContaining<CreateEmployeeRequestDtoValidator>();
         services.AddScoped<IEmployeeService, EmployeeService>();
         services.AddScoped<IPayrollService, PayrollService>();
+        services.AddScoped<ITimeReconciliationService, TimeReconciliationService>();
         services.AddScoped<IAttendanceService, AttendanceService>();
         services.AddScoped<ILeaveRequestService, LeaveRequestService>();
         services.AddScoped<IOvertimeService, OvertimeService>();

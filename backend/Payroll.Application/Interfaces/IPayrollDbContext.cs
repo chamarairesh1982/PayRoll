@@ -18,6 +18,8 @@ public interface IPayrollDbContext
     DbSet<EmployeeTaxProfile> EmployeeTaxProfiles { get; }
     DbSet<AttendanceRecord> AttendanceRecords { get; }
     DbSet<LeaveRequest> LeaveRequests { get; }
+    DbSet<LeaveTypeDefinition> LeaveTypes { get; }
+    DbSet<LeaveEncashmentRequest> LeaveEncashmentRequests { get; }
     DbSet<OTEntry> OTEntries { get; }
     DbSet<OTRule> OTRules { get; }
     DbSet<Loan> Loans { get; }

@@ -35,6 +35,8 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public DbSet<PayRunRecurringLine> PayRunRecurringLines => Set<PayRunRecurringLine>();
     public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
+    public DbSet<LeaveTypeDefinition> LeaveTypes => Set<LeaveTypeDefinition>();
+    public DbSet<LeaveEncashmentRequest> LeaveEncashmentRequests => Set<LeaveEncashmentRequest>();
     public DbSet<OTEntry> OTEntries => Set<OTEntry>();
     public DbSet<OTRule> OTRules => Set<OTRule>();
     public DbSet<Loan> Loans => Set<Loan>();

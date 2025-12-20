@@ -64,8 +64,8 @@ public class DeductionTypeConfiguration : IEntityTypeConfiguration<DeductionType
             new DeductionType
             {
                 Id = Guid.Parse("66666666-6666-6666-6666-666666666666"),
-                Code = "NOPAY",
-                Name = "No Pay Deduction",
+                Code = "DED_NO_PAY",
+                Name = "No Pay",
                 Basis = CalculationBasis.FixedAmount,
                 CreatedAt = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                 CreatedBy = "system",

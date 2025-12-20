@@ -37,6 +37,7 @@ public sealed class PayrollSeeder
 
         EnsurePayrollSettings();
         EnsureOvertimeRule();
+        EnsureLeaveTypes();
 
         EnsureAllowanceType("BASIC", "Basic Salary", CalculationBasis.FixedAmount, true, true, true);
         EnsureAllowanceType("ALLOW_TRANSPORT", "Transport Allowance", CalculationBasis.FixedAmount, true, true, true);
@@ -227,12 +228,18 @@ public sealed class PayrollSeeder
 
         EnsureAttendanceAbsence(lowerSalaryEmployee.Id, new DateOnly(2025, 4, 8));
         EnsureAttendancePartial(lowerSalaryEmployee.Id, new DateOnly(2025, 4, 18), 4m);
+        EnsureAttendanceAbsence(salariedEmployee.Id, new DateOnly(2025, 4, 15));
+        EnsureAttendancePartial(missingBankEmployee.Id, new DateOnly(2025, 4, 16), 8m);
 
         EnsureOvertimeEntry(salariedEmployee.Id, new DateOnly(2025, 4, 10), 210, OvertimeType.Normal, OvertimeStatus.Approved);
         EnsureOvertimeEntry(salariedEmployee.Id, new DateOnly(2025, 4, 12), 180, OvertimeType.Weekend, OvertimeStatus.Approved);
         EnsureOvertimeEntry(lowerSalaryEmployee.Id, new DateOnly(2025, 4, 20), 150, OvertimeType.Normal, OvertimeStatus.Submitted);
 
-        EnsureLeaveRequest(salariedEmployee.Id, new DateOnly(2025, 4, 22), new DateOnly(2025, 4, 22), 1, "Approved demo leave");
+        EnsureLeaveRequest(salariedEmployee.Id, new DateOnly(2025, 4, 22), new DateOnly(2025, 4, 22), 1, "Approved demo leave", LeaveTypeCode.Annual);
+        EnsureLeaveRequest(salariedEmployee.Id, new DateOnly(2025, 4, 12), new DateOnly(2025, 4, 12), 0.5, "Half-day unpaid leave", LeaveTypeCode.NoPay, true, "AM");
+        EnsureLeaveRequest(salariedEmployee.Id, new DateOnly(2025, 4, 24), new DateOnly(2025, 4, 24), 1, "Paid leave", LeaveTypeCode.Annual);
+        EnsureLeaveRequest(missingBankEmployee.Id, new DateOnly(2025, 4, 16), new DateOnly(2025, 4, 16), 1, "Conflict leave", LeaveTypeCode.Annual);
+        EnsureLeaveEncashmentRequest(salariedEmployee.Id, LeaveTypeCode.Annual, 1m, new DateOnly(2025, 4, 1), new DateOnly(2025, 4, 30), "Approved encashment");
 
         EnsurePayRun(new PayRunSeed
         {
@@ -533,6 +540,7 @@ public sealed class PayrollSeeder
         _context.OTEntries.RemoveRange(_context.OTEntries.Where(o => scenarioEmployeeIds.Contains(o.EmployeeId)));
         _context.AttendanceRecords.RemoveRange(_context.AttendanceRecords.Where(a => scenarioEmployeeIds.Contains(a.EmployeeId)));
         _context.LeaveRequests.RemoveRange(_context.LeaveRequests.Where(l => scenarioEmployeeIds.Contains(l.EmployeeId)));
+        _context.LeaveEncashmentRequests.RemoveRange(_context.LeaveEncashmentRequests.Where(r => scenarioEmployeeIds.Contains(r.EmployeeId)));
         _context.EmployeeRecurringPayItems.RemoveRange(_context.EmployeeRecurringPayItems.Where(pi => scenarioEmployeeIds.Contains(pi.EmployeeId)));
         _context.RecurringPayItemAssignments.RemoveRange(_context.RecurringPayItemAssignments.Where(a => scenarioEmployeeIds.Contains(a.EmployeeId)));
         _context.RecurringPayItemRules.RemoveRange(_context.RecurringPayItemRules.Where(r => r.Name.StartsWith("Demo")));
@@ -673,6 +681,78 @@ public sealed class PayrollSeeder
                 EffectiveFrom = effectiveFrom,
                 EffectiveTo = null,
                 IsActive = true,
+                CreatedBy = SeedUser
+            });
+
+        _context.SaveChanges();
+    }
+
+    private void EnsureLeaveTypes()
+    {
+        if (_context.LeaveTypes.Any())
+        {
+            return;
+        }
+
+        _context.LeaveTypes.AddRange(
+            new LeaveTypeDefinition
+            {
+                Code = LeaveTypeCode.Annual,
+                Name = "Annual Leave",
+                IsPaid = true,
+                AllowsHalfDay = true,
+                Encashable = true,
+                EncashmentRateMultiplier = 1m,
+                CreatedBy = SeedUser
+            },
+            new LeaveTypeDefinition
+            {
+                Code = LeaveTypeCode.Casual,
+                Name = "Casual Leave",
+                IsPaid = true,
+                AllowsHalfDay = true,
+                Encashable = false,
+                EncashmentRateMultiplier = 1m,
+                CreatedBy = SeedUser
+            },
+            new LeaveTypeDefinition
+            {
+                Code = LeaveTypeCode.Sick,
+                Name = "Sick Leave",
+                IsPaid = true,
+                AllowsHalfDay = true,
+                Encashable = false,
+                EncashmentRateMultiplier = 1m,
+                CreatedBy = SeedUser
+            },
+            new LeaveTypeDefinition
+            {
+                Code = LeaveTypeCode.Maternity,
+                Name = "Maternity Leave",
+                IsPaid = true,
+                AllowsHalfDay = false,
+                Encashable = false,
+                EncashmentRateMultiplier = 1m,
+                CreatedBy = SeedUser
+            },
+            new LeaveTypeDefinition
+            {
+                Code = LeaveTypeCode.NoPay,
+                Name = "No Pay Leave",
+                IsPaid = false,
+                AllowsHalfDay = true,
+                Encashable = false,
+                EncashmentRateMultiplier = 1m,
+                CreatedBy = SeedUser
+            },
+            new LeaveTypeDefinition
+            {
+                Code = LeaveTypeCode.Other,
+                Name = "Other Leave",
+                IsPaid = true,
+                AllowsHalfDay = true,
+                Encashable = false,
+                EncashmentRateMultiplier = 1m,
                 CreatedBy = SeedUser
             });
 
@@ -917,7 +997,15 @@ public sealed class PayrollSeeder
         _context.SaveChanges();
     }
 
-    private void EnsureLeaveRequest(Guid employeeId, DateOnly startDate, DateOnly endDate, double totalDays, string reason)
+    private void EnsureLeaveRequest(
+        Guid employeeId,
+        DateOnly startDate,
+        DateOnly endDate,
+        double totalDays,
+        string reason,
+        LeaveTypeCode leaveType = LeaveTypeCode.Annual,
+        bool isHalfDay = false,
+        string? halfDaySession = null)
     {
         if (_context.LeaveRequests.Any(l => l.EmployeeId == employeeId && l.StartDate == startDate && l.EndDate == endDate))
         {
@@ -927,7 +1015,7 @@ public sealed class PayrollSeeder
         _context.LeaveRequests.Add(new LeaveRequest
         {
             EmployeeId = employeeId,
-            LeaveType = LeaveTypeCode.Annual,
+            LeaveType = leaveType,
             StartDate = startDate,
             EndDate = endDate,
             TotalDays = totalDays,
@@ -936,8 +1024,8 @@ public sealed class PayrollSeeder
             ApprovedById = null,
             RequestedAt = DateTimeOffset.UtcNow.AddDays(-10),
             ApprovedAt = DateTimeOffset.UtcNow.AddDays(-8),
-            IsHalfDay = false,
-            HalfDaySession = null,
+            IsHalfDay = isHalfDay,
+            HalfDaySession = halfDaySession,
             CreatedBy = SeedUser
         });
 
@@ -952,6 +1040,36 @@ public sealed class PayrollSeeder
         }
 
         employee.SoftDelete(SeedUser);
+        _context.SaveChanges();
+    }
+
+    private void EnsureLeaveEncashmentRequest(
+        Guid employeeId,
+        LeaveTypeCode leaveType,
+        decimal days,
+        DateOnly periodStart,
+        DateOnly periodEnd,
+        string? notes)
+    {
+        if (_context.LeaveEncashmentRequests.Any(r => r.EmployeeId == employeeId && r.PeriodStart == periodStart && r.PeriodEnd == periodEnd))
+        {
+            return;
+        }
+
+        _context.LeaveEncashmentRequests.Add(new LeaveEncashmentRequest
+        {
+            EmployeeId = employeeId,
+            LeaveType = leaveType,
+            Days = days,
+            PeriodStart = periodStart,
+            PeriodEnd = periodEnd,
+            Status = LeaveEncashmentStatus.Approved,
+            Notes = notes,
+            RequestedAt = DateTimeOffset.UtcNow.AddDays(-12),
+            ApprovedAt = DateTimeOffset.UtcNow.AddDays(-10),
+            CreatedBy = SeedUser
+        });
+
         _context.SaveChanges();
     }
 

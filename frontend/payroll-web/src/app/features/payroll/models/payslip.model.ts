@@ -16,6 +16,9 @@ export interface PaySlipDeductionLine {
   amount: number;
   isPreTax: boolean;
   isPostTax: boolean;
+  noPayDays?: number | null;
+  noPayHours?: number | null;
+  metadataJson?: string | null;
 }
 
 export interface TaxCalculationBreakdownLine {

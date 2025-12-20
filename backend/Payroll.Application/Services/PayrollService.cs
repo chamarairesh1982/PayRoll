@@ -23,6 +23,7 @@ using Payroll.Domain.Overtime;
 using Payroll.Domain.Payroll;
 using Payroll.Domain.PayrollConfig;
 using Payroll.Shared;
+using Payroll.Application.TimeReconciliation;
 using System.ComponentModel.DataAnnotations;
 namespace Payroll.Application.Services;
 
@@ -33,19 +34,22 @@ public class PayrollService : IPayrollService
     private readonly ITaxRuleSetService _taxRuleSetService;
     private readonly IAuditLogger _auditLogger;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ITimeReconciliationService _timeReconciliationService;
 
     public PayrollService(
         IPayrollDbContext dbContext,
         IEpfEtfRuleSetService epfEtfRuleSetService,
         ITaxRuleSetService taxRuleSetService,
         IAuditLogger auditLogger,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        ITimeReconciliationService timeReconciliationService)
     {
         _dbContext = dbContext;
         _epfEtfRuleSetService = epfEtfRuleSetService;
         _taxRuleSetService = taxRuleSetService;
         _auditLogger = auditLogger;
         _currentUserService = currentUserService;
+        _timeReconciliationService = timeReconciliationService;
     }
 
     public async Task<PayRunDetailDto> CreatePayRunAsync(CreatePayRunRequest request, CancellationToken cancellationToken = default)
@@ -521,6 +525,93 @@ public class PayrollService : IPayrollService
         return paySlip is null ? null : MapToDto(paySlip);
     }
 
+    public async Task<TimeReconciliationResultDto?> GetTimeReconciliationAsync(Guid payRunId, CancellationToken cancellationToken = default)
+    {
+        var payRun = await _dbContext.PayRuns
+            .Include(pr => pr.PaySlips)
+                .ThenInclude(ps => ps.Employee)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(pr => pr.Id == payRunId, cancellationToken);
+
+        if (payRun is null)
+        {
+            return null;
+        }
+
+        var employeeIds = payRun.PaySlips.Select(ps => ps.EmployeeId).Distinct().ToList();
+        var periodStart = DateOnly.FromDateTime(payRun.PeriodStart);
+        var periodEnd = DateOnly.FromDateTime(payRun.PeriodEnd);
+
+        var attendance = await _dbContext.AttendanceRecords
+            .AsNoTracking()
+            .Where(a => employeeIds.Contains(a.EmployeeId)
+                        && a.Period.Start <= periodEnd
+                        && a.Period.End >= periodStart)
+            .ToListAsync(cancellationToken);
+
+        var leaveRequests = await _dbContext.LeaveRequests
+            .AsNoTracking()
+            .Where(lr => employeeIds.Contains(lr.EmployeeId)
+                         && lr.IsActive
+                         && lr.Status == LeaveStatus.Approved
+                         && lr.StartDate <= periodEnd
+                         && lr.EndDate >= periodStart)
+            .ToListAsync(cancellationToken);
+
+        var leaveTypes = await GetLeaveTypeDefinitionsAsync(periodEnd, cancellationToken);
+        var payrollSettings = await GetPayrollSettingsAsync(cancellationToken);
+
+        var result = new TimeReconciliationResultDto
+        {
+            PayRunId = payRun.Id,
+            PeriodStart = payRun.PeriodStart,
+            PeriodEnd = payRun.PeriodEnd
+        };
+
+        foreach (var paySlip in payRun.PaySlips)
+        {
+            var employee = paySlip.Employee;
+            var employeeAttendance = attendance.Where(a => a.EmployeeId == paySlip.EmployeeId).ToList();
+            var employeeLeave = leaveRequests.Where(lr => lr.EmployeeId == paySlip.EmployeeId).ToList();
+
+            var reconciliation = _timeReconciliationService.ReconcileEmployee(new TimeReconciliationEmployeeInput(
+                paySlip.EmployeeId,
+                employee?.Code,
+                employee?.FullName,
+                periodStart,
+                periodEnd,
+                payrollSettings.WorkingHoursPerDay,
+                payrollSettings.AttendanceHalfDayHours,
+                employeeAttendance,
+                employeeLeave,
+                leaveTypes));
+
+            result.Employees.Add(new TimeReconciliationEmployeeSummaryDto
+            {
+                EmployeeId = reconciliation.EmployeeId,
+                EmployeeCode = reconciliation.EmployeeCode,
+                EmployeeName = reconciliation.EmployeeName,
+                WorkedDays = reconciliation.WorkedDays,
+                PaidLeaveDays = reconciliation.PaidLeaveDays,
+                UnpaidLeaveDays = reconciliation.UnpaidLeaveDays,
+                AbsentDays = reconciliation.AbsentDays,
+                NoPayDays = reconciliation.NoPayDays,
+                NoPayHours = reconciliation.NoPayHours
+            });
+
+            result.Conflicts.AddRange(reconciliation.Conflicts.Select(conflict => new TimeReconciliationConflictDto
+            {
+                EmployeeId = conflict.EmployeeId,
+                EmployeeCode = conflict.EmployeeCode,
+                EmployeeName = conflict.EmployeeName,
+                Date = conflict.Date.ToDateTime(TimeOnly.MinValue),
+                Warning = conflict.Warning
+            }));
+        }
+
+        return result;
+    }
+
     public async Task<TaxCalculationSummaryDto> PreviewTaxAsync(TaxPreviewRequest request, CancellationToken cancellationToken = default)
     {
         var employee = await _dbContext.Employees
@@ -618,6 +709,16 @@ public class PayrollService : IPayrollService
                          && lr.EndDate >= periodStart)
             .ToListAsync(cancellationToken);
 
+        var leaveTypes = await GetLeaveTypeDefinitionsAsync(periodEnd, cancellationToken);
+        var leaveEncashmentRequests = await _dbContext.LeaveEncashmentRequests
+            .AsNoTracking()
+            .Where(r => r.EmployeeId == employee.Id
+                        && r.IsActive
+                        && r.Status == LeaveEncashmentStatus.Approved
+                        && r.PeriodStart <= periodEnd
+                        && r.PeriodEnd >= periodStart)
+            .ToListAsync(cancellationToken);
+
         var payrollSettings = await GetPayrollSettingsAsync(cancellationToken);
         var overtimeRules = await GetOvertimeRulesAsync(DateOnly.FromDateTime(payRun.PeriodEnd), cancellationToken);
 
@@ -644,6 +745,8 @@ public class PayrollService : IPayrollService
             RecurringPayItems = recurringPayItems,
             RecurringAssignments = recurringAssignments,
             LeaveRequests = leaveRequests,
+            LeaveTypes = leaveTypes,
+            LeaveEncashmentRequests = leaveEncashmentRequests,
             AllowanceTypes = allowanceTypes,
             DeductionTypes = deductionTypes,
             WorkingDaysPerMonth = payrollSettings.WorkingDaysPerMonth,
@@ -1135,6 +1238,16 @@ cancellationToken);
                          && lr.EndDate >= periodStart)
             .ToListAsync(ct);
 
+        var leaveTypes = await GetLeaveTypeDefinitionsAsync(periodEnd, ct);
+        var leaveEncashmentRequests = await _dbContext.LeaveEncashmentRequests
+            .AsNoTracking()
+            .Where(r => employeeIds.Contains(r.EmployeeId)
+                        && r.IsActive
+                        && r.Status == LeaveEncashmentStatus.Approved
+                        && r.PeriodStart <= periodEnd
+                        && r.PeriodEnd >= periodStart)
+            .ToListAsync(ct);
+
         var payDateOnly = DateOnly.FromDateTime(payRun.PeriodEnd);
         var epfEtfRule = await _epfEtfRuleSetService.GetActiveRuleForDateAsync(payDateOnly);
         var taxRuleSet = await _taxRuleSetService.GetActiveRuleForDateAsync(payDateOnly);
@@ -1182,6 +1295,8 @@ cancellationToken);
                     RecurringPayItems = recurringPayItems.Where(pi => pi.EmployeeId == employee.Id).ToList(),
                     RecurringAssignments = recurringAssignments.Where(a => a.EmployeeId == employee.Id).ToList(),
                     LeaveRequests = leaveRequests.Where(lr => lr.EmployeeId == employee.Id).ToList(),
+                    LeaveTypes = leaveTypes,
+                    LeaveEncashmentRequests = leaveEncashmentRequests.Where(req => req.EmployeeId == employee.Id).ToList(),
                     AllowanceTypes = allowanceTypes,
                     DeductionTypes = deductionTypes,
                     WorkingDaysPerMonth = payrollSettings.WorkingDaysPerMonth,
@@ -1243,6 +1358,20 @@ cancellationToken);
             OvertimeDailyCapHours = settings?.OvertimeDailyCapHours ?? PayrollSettingsDefaults.OvertimeDailyCapHours,
             OvertimePayRunCapHours = settings?.OvertimePayRunCapHours ?? PayrollSettingsDefaults.OvertimePayRunCapHours
         };
+    }
+
+    private async Task<IReadOnlyDictionary<LeaveTypeCode, LeaveTypeDefinition>> GetLeaveTypeDefinitionsAsync(
+        DateOnly effectiveDate,
+        CancellationToken ct)
+    {
+        var leaveTypes = await _dbContext.LeaveTypes
+            .AsNoTracking()
+            .Where(lt => lt.IsActive
+                         && (lt.EffectiveFrom == null || lt.EffectiveFrom <= effectiveDate)
+                         && (lt.EffectiveTo == null || lt.EffectiveTo >= effectiveDate))
+            .ToListAsync(ct);
+
+        return leaveTypes.ToDictionary(lt => lt.Code, lt => lt);
     }
 
     private async Task<IReadOnlyDictionary<OvertimeType, OvertimeRuleSnapshot>> GetOvertimeRulesAsync(
@@ -1370,236 +1499,91 @@ cancellationToken);
     {
         var periodStart = DateOnly.FromDateTime(payRun.PeriodStart);
         var periodEnd = DateOnly.FromDateTime(payRun.PeriodEnd);
+        var dailyRate = RoundCurrency(ctx.BasicSalary / ctx.WorkingDaysPerMonth);
+        var hourlyRate = ctx.BasicSalary / (ctx.WorkingDaysPerMonth * ctx.WorkingHoursPerDay);
 
-        var attendanceAbsences = BuildAttendanceAbsenceSummary(
-            ctx.Attendance,
+        var reconciliation = _timeReconciliationService.ReconcileEmployee(new TimeReconciliationEmployeeInput(
+            ctx.Employee.Id,
+            ctx.Employee.Code,
+            ctx.Employee.FullName,
             periodStart,
             periodEnd,
             ctx.WorkingHoursPerDay,
-            ctx.AttendanceHalfDayHours);
-        var absentDayUnits = attendanceAbsences.DayUnits;
-        var missingHoursByDay = attendanceAbsences.MissingHours;
-        var encashableAbsences = new Dictionary<DateOnly, decimal>(absentDayUnits);
+            ctx.AttendanceHalfDayHours,
+            ctx.Attendance,
+            ctx.LeaveRequests,
+            ctx.LeaveTypes));
 
-        var dailyRate = RoundCurrency(ctx.BasicSalary / ctx.WorkingDaysPerMonth);
+        var noPayAmount = ctx.NoPayCalculationBasis == CalculationBasis.PerHour
+            ? RoundCurrency(hourlyRate * reconciliation.NoPayHours)
+            : RoundCurrency(dailyRate * reconciliation.NoPayDays);
 
-        foreach (var leave in ctx.LeaveRequests)
-        {
-            var leaveDayUnits = GetOverlappingLeaveDayUnits(leave, periodStart, periodEnd);
-            if (leaveDayUnits.Count == 0)
-            {
-                continue;
-            }
-
-            var leaveDays = leaveDayUnits.Values.Sum();
-            var (overlapStart, overlapEnd) = GetOverlapRange(leave, periodStart, periodEnd);
-
-            if (leave.LeaveType == LeaveTypeCode.NoPay)
-            {
-                var noPayAmount = RoundCurrency(dailyRate * leaveDays);
-                if (noPayAmount > 0)
-                {
-                    ctx.Deductions.Add(new DeductionLine
-                    {
-                        Id = Guid.NewGuid(),
-                        PaySlipId = ctx.PaySlipId,
-                        Code = "LEAVE_NOPAY",
-                        Description = $"No Pay Leave ({leave.LeaveType} {overlapStart:yyyy-MM-dd} to {overlapEnd:yyyy-MM-dd}, Ref: {leave.Id})",
-                        Source = "Leave",
-                        Amount = noPayAmount,
-                        IsPreTax = true,
-                        IsPostTax = false
-                    });
-                }
-
-                foreach (var unit in leaveDayUnits)
-                {
-                    ReduceDayUnit(absentDayUnits, unit.Key, unit.Value);
-                    ReduceDayUnit(encashableAbsences, unit.Key, unit.Value);
-                    ReduceDayUnit(missingHoursByDay, unit.Key, unit.Value * ctx.WorkingHoursPerDay);
-                }
-            }
-            else
-            {
-                var encashUnitsForLeave = 0m;
-
-                foreach (var unit in leaveDayUnits)
-                {
-                    if (!encashableAbsences.TryGetValue(unit.Key, out var available))
-                    {
-                        continue;
-                    }
-
-                    var encashUnits = Math.Min(unit.Value, available);
-                    encashUnitsForLeave += encashUnits;
-
-                    ReduceDayUnit(encashableAbsences, unit.Key, encashUnits);
-                }
-
-                if (encashUnitsForLeave > 0)
-                {
-                    ctx.Earnings.Add(new EarningLine
-                    {
-                        Id = Guid.NewGuid(),
-                        PaySlipId = ctx.PaySlipId,
-                        Code = "LEAVE_ENCASH",
-                        Description = $"Leave Encashment ({leave.LeaveType} {overlapStart:yyyy-MM-dd} to {overlapEnd:yyyy-MM-dd}, Ref: {leave.Id})",
-                        Amount = RoundCurrency(dailyRate * encashUnitsForLeave),
-                        IsEpfApplicable = false,
-                        IsEtfApplicable = false,
-                        IsTaxable = false
-                    });
-                }
-            }
-        }
-
-        var noPayAmountForAttendance = ctx.NoPayCalculationBasis == CalculationBasis.PerHour
-            ? RoundCurrency((ctx.BasicSalary / (ctx.WorkingDaysPerMonth * ctx.WorkingHoursPerDay)) * missingHoursByDay.Values.Sum())
-            : RoundCurrency(dailyRate * absentDayUnits.Values.Sum());
-
-        if (noPayAmountForAttendance > 0)
+        if (noPayAmount > 0)
         {
             var unitLabel = ctx.NoPayCalculationBasis == CalculationBasis.PerHour ? "hours" : "days";
             var unitTotal = ctx.NoPayCalculationBasis == CalculationBasis.PerHour
-                ? missingHoursByDay.Values.Sum()
-                : absentDayUnits.Values.Sum();
+                ? reconciliation.NoPayHours
+                : reconciliation.NoPayDays;
             ctx.Deductions.Add(new DeductionLine
             {
                 Id = Guid.NewGuid(),
                 PaySlipId = ctx.PaySlipId,
-                Code = "NOPAY",
-                Description = $"No Pay for Attendance ({unitTotal:0.##} {unitLabel})",
-                Source = "Attendance",
-                Amount = noPayAmountForAttendance,
+                Code = "DED_NO_PAY",
+                Description = $"No Pay ({unitTotal:0.##} {unitLabel})",
+                Source = "TimeReconciliation",
+                Amount = noPayAmount,
                 IsPreTax = true,
-                IsPostTax = false
+                IsPostTax = false,
+                NoPayDays = reconciliation.NoPayDays,
+                NoPayHours = reconciliation.NoPayHours,
+                MetadataJson = JsonSerializer.Serialize(new NoPayBreakdown
+                {
+                    NoPayDays = reconciliation.NoPayDays,
+                    NoPayHours = reconciliation.NoPayHours,
+                    Days = reconciliation.Days.Select(day => new NoPayBreakdownDay
+                    {
+                        Date = day.Date,
+                        Status = day.Status.ToString(),
+                        NoPayDays = day.NoPayDayUnits,
+                        NoPayHours = day.NoPayHours,
+                        Warnings = day.Warnings.ToList()
+                    }).ToList()
+                })
+            });
+        }
+
+        foreach (var request in ctx.LeaveEncashmentRequests)
+        {
+            if (!ctx.LeaveTypes.TryGetValue(request.LeaveType, out var leaveType) || !leaveType.Encashable)
+            {
+                continue;
+            }
+
+            if (request.Days <= 0)
+            {
+                continue;
+            }
+
+            var encashAmount = RoundCurrency(dailyRate * request.Days * leaveType.EncashmentRateMultiplier);
+            if (encashAmount <= 0)
+            {
+                continue;
+            }
+
+            ctx.Earnings.Add(new EarningLine
+            {
+                Id = Guid.NewGuid(),
+                PaySlipId = ctx.PaySlipId,
+                Code = "LEAVE_ENCASHMENT",
+                Description = $"Leave Encashment ({request.LeaveType}, {request.Days:0.##} days)",
+                Amount = encashAmount,
+                IsEpfApplicable = false,
+                IsEtfApplicable = false,
+                IsTaxable = false
             });
         }
 
         return Task.CompletedTask;
-    }
-
-    private static AttendanceAbsenceSummary BuildAttendanceAbsenceSummary(
-        IEnumerable<AttendanceRecord> attendance,
-        DateOnly periodStart,
-        DateOnly periodEnd,
-        int workingHoursPerDay,
-        decimal attendanceHalfDayHours)
-    {
-        var dayUnits = new Dictionary<DateOnly, decimal>();
-        var missingHours = new Dictionary<DateOnly, decimal>();
-        var maxHalfDayHours = Math.Min(attendanceHalfDayHours, workingHoursPerDay);
-
-        foreach (var record in attendance)
-        {
-            var overlapStart = record.Period.Start > periodStart ? record.Period.Start : periodStart;
-            var overlapEnd = record.Period.End < periodEnd ? record.Period.End : periodEnd;
-
-            if (overlapEnd < overlapStart)
-            {
-                continue;
-            }
-
-            var hoursWorked = Math.Clamp(record.HoursWorked, 0, workingHoursPerDay);
-            var missingHoursForDay = workingHoursPerDay - hoursWorked;
-
-            if (missingHoursForDay <= 0)
-            {
-                continue;
-            }
-
-            var dayUnit = hoursWorked <= 0
-                ? 1m
-                : hoursWorked >= maxHalfDayHours
-                    ? 0.5m
-                    : 1m;
-
-            foreach (var day in EnumerateDays(overlapStart, overlapEnd))
-            {
-                dayUnits[day] = dayUnits.TryGetValue(day, out var existingDayUnit)
-                    ? Math.Min(1m, Math.Max(existingDayUnit, dayUnit))
-                    : dayUnit;
-                missingHours[day] = missingHours.TryGetValue(day, out var existingMissing)
-                    ? Math.Min(workingHoursPerDay, Math.Max(existingMissing, missingHoursForDay))
-                    : missingHoursForDay;
-            }
-        }
-
-        return new AttendanceAbsenceSummary(dayUnits, missingHours);
-    }
-
-    private static Dictionary<DateOnly, decimal> GetOverlappingLeaveDayUnits(LeaveRequest leave, DateOnly periodStart, DateOnly periodEnd)
-    {
-        var overlapStart = leave.StartDate > periodStart ? leave.StartDate : periodStart;
-        var overlapEnd = leave.EndDate < periodEnd ? leave.EndDate : periodEnd;
-
-        if (overlapEnd < overlapStart)
-        {
-            return new Dictionary<DateOnly, decimal>();
-        }
-
-        var requestedUnits = leave.TotalDays > 0 ? (decimal)leave.TotalDays : overlapEnd.DayNumber - overlapStart.DayNumber + 1;
-
-        if (leave.IsHalfDay == true)
-        {
-            requestedUnits = Math.Min(requestedUnits, 0.5m);
-        }
-
-        var overlapDays = overlapEnd.DayNumber - overlapStart.DayNumber + 1;
-        requestedUnits = Math.Min(requestedUnits, overlapDays);
-
-        var unitsByDay = new Dictionary<DateOnly, decimal>();
-        var remaining = requestedUnits;
-
-        for (var i = 0; i < overlapDays && remaining > 0; i++)
-        {
-            var day = overlapStart.AddDays(i);
-            var allocation = Math.Min(1m, remaining);
-
-            if (leave.IsHalfDay == true && requestedUnits <= 0.5m)
-            {
-                allocation = Math.Min(0.5m, remaining);
-            }
-
-            unitsByDay[day] = allocation;
-            remaining -= allocation;
-        }
-
-        return unitsByDay;
-    }
-
-    private static (DateOnly Start, DateOnly End) GetOverlapRange(LeaveRequest leave, DateOnly periodStart, DateOnly periodEnd)
-    {
-        var overlapStart = leave.StartDate > periodStart ? leave.StartDate : periodStart;
-        var overlapEnd = leave.EndDate < periodEnd ? leave.EndDate : periodEnd;
-
-        return (overlapStart, overlapEnd);
-    }
-
-    private static void ReduceDayUnit(IDictionary<DateOnly, decimal> bucket, DateOnly day, decimal amount)
-    {
-        if (!bucket.TryGetValue(day, out var existing))
-        {
-            return;
-        }
-
-        var remaining = existing - amount;
-        if (remaining <= 0)
-        {
-            bucket.Remove(day);
-        }
-        else
-        {
-            bucket[day] = remaining;
-        }
-    }
-
-    private static IEnumerable<DateOnly> EnumerateDays(DateOnly start, DateOnly end)
-    {
-        for (var day = start; day <= end; day = day.AddDays(1))
-        {
-            yield return day;
-        }
     }
 
     private Task ApplyOvertimeEarningsAsync(PaySlipCalculationContext ctx, PayRun payRun)
@@ -2201,7 +2185,7 @@ cancellationToken);
                     EmployeeCode = paySlip.Employee?.Code,
                     EmployeeName = paySlip.Employee?.FullName,
                     NoPayAmount = paySlip.Deductions
-                        .Where(d => d.Code == "NOPAY" && d.Source == "Attendance")
+                        .Where(d => d.Code == "DED_NO_PAY")
                         .Sum(d => d.Amount)
                 })
                 .Where(summary => summary.NoPayAmount > 0)
@@ -2255,7 +2239,17 @@ cancellationToken);
                 ? null
                 : JsonSerializer.Deserialize<TaxCalculationSummaryDto>(paySlip.TaxCalculationJson),
             Earnings = paySlip.Earnings.Select(e => new EarningDto(e.Id, e.Code, e.Description, e.Amount, e.IsEpfApplicable, e.IsEtfApplicable, e.IsTaxable)).ToList(),
-            Deductions = paySlip.Deductions.Select(d => new DeductionDto(d.Id, d.Code, d.Description, d.Source, d.Amount, d.IsPreTax, d.IsPostTax)).ToList()
+            Deductions = paySlip.Deductions.Select(d => new DeductionDto(
+                d.Id,
+                d.Code,
+                d.Description,
+                d.Source,
+                d.Amount,
+                d.IsPreTax,
+                d.IsPostTax,
+                d.NoPayDays,
+                d.NoPayHours,
+                d.MetadataJson)).ToList()
         };
     }
 
@@ -2764,13 +2758,25 @@ cancellationToken);
         return (validatedCompanyId, validatedBranchId, costCenterId);
     }
 
-    private sealed record AttendanceAbsenceSummary(
-        Dictionary<DateOnly, decimal> DayUnits,
-        Dictionary<DateOnly, decimal> MissingHours);
-
     private sealed record PaySlipGenerationResult(
         List<PaySlip> PaySlips,
         List<PayRunRecurringLine> RecurringLines);
+
+    private sealed class NoPayBreakdown
+    {
+        public decimal NoPayDays { get; set; }
+        public decimal NoPayHours { get; set; }
+        public List<NoPayBreakdownDay> Days { get; set; } = new();
+    }
+
+    private sealed class NoPayBreakdownDay
+    {
+        public DateOnly Date { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public decimal NoPayDays { get; set; }
+        public decimal NoPayHours { get; set; }
+        public List<string> Warnings { get; set; } = new();
+    }
 
     private sealed class PaySlipCalculationContext
     {
@@ -2784,6 +2790,9 @@ cancellationToken);
         public List<EmployeeRecurringPayItem> RecurringPayItems { get; init; } = new();
         public List<RecurringPayItemAssignment> RecurringAssignments { get; init; } = new();
         public List<LeaveRequest> LeaveRequests { get; init; } = new();
+        public IReadOnlyDictionary<LeaveTypeCode, LeaveTypeDefinition> LeaveTypes { get; init; }
+            = new Dictionary<LeaveTypeCode, LeaveTypeDefinition>();
+        public List<LeaveEncashmentRequest> LeaveEncashmentRequests { get; init; } = new();
         public IReadOnlyDictionary<string, AllowanceType> AllowanceTypes { get; init; } = new Dictionary<string, AllowanceType>();
         public IReadOnlyDictionary<string, DeductionType> DeductionTypes { get; init; } = new Dictionary<string, DeductionType>();
         public List<EarningLine> Earnings { get; } = new();

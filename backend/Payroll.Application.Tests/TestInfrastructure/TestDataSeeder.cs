@@ -166,7 +166,7 @@ public static class TestDataSeeder
                 new()
                 {
                     Id = Guid.Parse("44444444-4444-4444-4444-444444444444"),
-                    Code = "NOPAY",
+                    Code = "DED_NO_PAY",
                     Name = "No Pay",
                     Basis = CalculationBasis.FixedAmount,
                     IsPreTax = true,
@@ -175,6 +175,40 @@ public static class TestDataSeeder
                 }
             });
         }
+
+        context.SaveChanges();
+    }
+
+    public static void SeedLeaveTypes(PayrollDbContext context)
+    {
+        if (context.LeaveTypes.Any())
+        {
+            return;
+        }
+
+        context.LeaveTypes.AddRange(new[]
+        {
+            new LeaveTypeDefinition
+            {
+                Code = LeaveTypeCode.Annual,
+                Name = "Annual Leave",
+                IsPaid = true,
+                AllowsHalfDay = true,
+                Encashable = true,
+                EncashmentRateMultiplier = 1m,
+                CreatedBy = "seed"
+            },
+            new LeaveTypeDefinition
+            {
+                Code = LeaveTypeCode.NoPay,
+                Name = "No Pay Leave",
+                IsPaid = false,
+                AllowsHalfDay = true,
+                Encashable = false,
+                EncashmentRateMultiplier = 1m,
+                CreatedBy = "seed"
+            }
+        });
 
         context.SaveChanges();
     }
@@ -337,6 +371,33 @@ public static class TestDataSeeder
         context.SaveChanges();
 
         return leave;
+    }
+
+    public static LeaveEncashmentRequest SeedLeaveEncashmentRequest(
+        PayrollDbContext context,
+        Employee employee,
+        LeaveTypeCode leaveType,
+        decimal days,
+        DateOnly periodStart,
+        DateOnly periodEnd)
+    {
+        var request = new LeaveEncashmentRequest
+        {
+            EmployeeId = employee.Id,
+            LeaveType = leaveType,
+            Days = days,
+            PeriodStart = periodStart,
+            PeriodEnd = periodEnd,
+            Status = LeaveEncashmentStatus.Approved,
+            RequestedAt = DateTimeOffset.UtcNow,
+            ApprovedAt = DateTimeOffset.UtcNow,
+            CreatedBy = "seed"
+        };
+
+        context.LeaveEncashmentRequests.Add(request);
+        context.SaveChanges();
+
+        return request;
     }
 
     public static OTEntry SeedOvertime(PayrollDbContext context, Employee employee, DateOnly date, int rawMinutes, OvertimeType type = OvertimeType.Normal)
