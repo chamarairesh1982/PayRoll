@@ -819,9 +819,12 @@ public class PayrollService : IPayrollService
     }
 
 
-    public async Task<GeneralLedgerExportDto> GenerateGeneralLedgerExportAsync(Guid payRunId, CancellationToken cancellationToken = default)
+    public async Task<GlJournalBatchDetailDto> GenerateGlJournalBatchAsync(
+        Guid payRunId,
+        bool regenerate,
+        CancellationToken cancellationToken = default)
     {
-        EnsureRole("Maker", "generate general ledger exports");
+        EnsureRole("Maker", "generate GL batches");
 
         var payRun = await LoadPayRunWithSlipsForUpdateAsync(payRunId, cancellationToken);
         if (payRun is null)
@@ -829,209 +832,378 @@ public class PayrollService : IPayrollService
             throw new KeyNotFoundException("Pay run not found");
         }
 
-        if (payRun.Status != PayRunStatus.Approved && payRun.Status != PayRunStatus.Locked)
+        if (payRun.Status != PayRunStatus.Locked && !payRun.IsLocked)
         {
-            throw new InvalidOperationException("General ledger exports can only be generated for approved or locked pay runs.");
+            throw new InvalidOperationException("GL batches can only be generated after the pay run is locked.");
         }
 
-        var mappings = await _dbContext.GeneralLedgerAccountMappings.AsNoTracking().ToListAsync(cancellationToken);
+        var existingBatch = await _dbContext.GlJournalBatches
+            .Include(b => b.Lines)
+            .ThenInclude(l => l.Account)
+            .Include(b => b.Lines)
+            .ThenInclude(l => l.CostCenter)
+            .Include(b => b.Lines)
+            .ThenInclude(l => l.Branch)
+            .Where(b => b.PayRunId == payRunId
+                && (b.Status == GlJournalBatchStatus.Generated
+                    || b.Status == GlJournalBatchStatus.Approved
+                    || b.Status == GlJournalBatchStatus.Exported))
+            .OrderByDescending(b => b.GeneratedAtUtc)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (existingBatch is not null && !regenerate)
+        {
+            return MapGlJournalBatch(existingBatch);
+        }
+
+        var mappings = await _dbContext.GlMappings
+            .Include(m => m.DebitAccount)
+            .Include(m => m.CreditAccount)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
         if (!mappings.Any())
         {
-            throw new InvalidOperationException("No general ledger account mappings have been configured.");
+            throw new InvalidOperationException("No GL mappings have been configured.");
         }
 
-        var export = BuildGeneralLedgerExport(payRun, mappings);
+        var allowanceTypes = await _dbContext.AllowanceTypes
+            .AsNoTracking()
+            .ToDictionaryAsync(a => a.Code, a => a.Name, cancellationToken);
+        var deductionTypes = await _dbContext.DeductionTypes
+            .AsNoTracking()
+            .ToDictionaryAsync(d => d.Code, d => d.Name, cancellationToken);
 
-        var beforeSnapshot = CreatePayRunSnapshot(payRun);
-        payRun.GeneralLedgerStatus = GeneralLedgerExportStatus.Generated;
-        payRun.GeneralLedgerExportedAt = null;
-        export.Status = payRun.GeneralLedgerStatus;
+        var components = BuildGlComponentTotals(payRun);
+        var missingMappings = new List<string>();
+        var lines = new List<GlJournalLine>();
 
-        await _auditLogger.LogAsync(
-            nameof(PayRun),
-            payRun.Id.ToString(),
-            "GeneralLedgerGenerated",
-            beforeSnapshot,
-            CreatePayRunSnapshot(payRun),
-            _currentUserService.UserName,
-            cancellationToken);
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        return export;
-    }
-
-    public async Task ReviewGeneralLedgerExportAsync(Guid payRunId, GeneralLedgerActionRequest request, CancellationToken cancellationToken = default)
-    {
-        EnsureRole("Approver", "review general ledger exports");
-
-        var payRun = await _dbContext.PayRuns.FirstOrDefaultAsync(pr => pr.Id == payRunId, cancellationToken);
-        if (payRun is null)
+        foreach (var component in components)
         {
-            throw new KeyNotFoundException("Pay run not found");
+            var mapping = ResolveGlMapping(mappings, component);
+            if (mapping is null || mapping.DebitAccountId is null || mapping.CreditAccountId is null)
+            {
+                missingMappings.Add($"{component.PayComponentCode} ({component.PayComponentType})");
+                continue;
+            }
+
+            var componentName = ResolveComponentName(component, allowanceTypes, deductionTypes);
+            var description = $"{componentName} - {payRun.Code}";
+            var reference = string.IsNullOrWhiteSpace(payRun.Reference)
+                ? payRun.Code
+                : payRun.Reference;
+
+            lines.AddRange(BuildJournalLines(mapping, component, payRun.PeriodEnd, description, reference));
         }
 
-        if (payRun.GeneralLedgerStatus != GeneralLedgerExportStatus.Generated)
+        if (missingMappings.Any())
         {
-            throw new InvalidOperationException("Only generated exports can be moved to review.");
+            throw new InvalidOperationException(
+                $"Missing GL mappings for: {string.Join(", ", missingMappings.OrderBy(x => x))}.");
+        }
+
+        var totals = CalculateTotals(lines);
+        if (totals.TotalDebits != totals.TotalCredits)
+        {
+            throw new InvalidOperationException(
+                $"GL batch is not balanced. Debits {totals.TotalDebits:N0} != Credits {totals.TotalCredits:N0}.");
         }
 
         var actor = GetActor();
-        var beforeSnapshot = CreatePayRunSnapshot(payRun);
-
-        payRun.GeneralLedgerStatus = GeneralLedgerExportStatus.Reviewed;
-        payRun.GeneralLedgerReviewedAt = DateTime.UtcNow;
-        payRun.GeneralLedgerReviewedByUserId = string.IsNullOrWhiteSpace(actor.UserId) ? null : actor.UserId;
-        payRun.GeneralLedgerReviewedByUserName = actor.UserName;
-
-        await _auditLogger.LogAsync(    nameof(PayRun),    payRun.Id.ToString(),
-    "GeneralLedgerReviewed",
-    beforeSnapshot,
-    CreatePayRunSnapshot(payRun),
-    actor.UserName,
-    cancellationToken);
-
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task ApproveGeneralLedgerExportAsync(Guid payRunId, GeneralLedgerActionRequest request, CancellationToken cancellationToken = default)
-    {
-        EnsureRole("Approver", "approve general ledger exports");
-
-        var payRun = await _dbContext.PayRuns.FirstOrDefaultAsync(pr => pr.Id == payRunId, cancellationToken);
-        if (payRun is null)
+        var batch = new GlJournalBatch
         {
-            throw new KeyNotFoundException("Pay run not found");
+            Id = Guid.NewGuid(),
+            PayRunId = payRun.Id,
+            Status = GlJournalBatchStatus.Generated,
+            GeneratedAtUtc = DateTime.UtcNow,
+            GeneratedByUserId = string.IsNullOrWhiteSpace(actor.UserId) ? null : actor.UserId,
+            GeneratedByUserName = actor.UserName,
+            Notes = null,
+            CreatedBy = actor.UserName
+        };
+
+        foreach (var line in lines)
+        {
+            line.BatchId = batch.Id;
+            line.CreatedBy = actor.UserName;
+            batch.Lines.Add(line);
         }
 
-        if (payRun.GeneralLedgerStatus != GeneralLedgerExportStatus.Reviewed)
+        await _dbContext.GlJournalBatches.AddAsync(batch, cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var savedBatch = await _dbContext.GlJournalBatches
+            .Include(b => b.Lines)
+                .ThenInclude(l => l.Account)
+            .Include(b => b.Lines)
+                .ThenInclude(l => l.CostCenter)
+            .Include(b => b.Lines)
+                .ThenInclude(l => l.Branch)
+            .AsNoTracking()
+            .FirstAsync(b => b.Id == batch.Id, cancellationToken);
+
+        return MapGlJournalBatch(savedBatch);
+    }
+
+    public async Task<List<GlJournalBatchSummaryDto>> GetGlJournalBatchesAsync(Guid payRunId, CancellationToken cancellationToken = default)
+    {
+        var batches = await _dbContext.GlJournalBatches
+            .Include(b => b.Lines)
+            .Where(b => b.PayRunId == payRunId)
+            .OrderByDescending(b => b.GeneratedAtUtc)
+            .ToListAsync(cancellationToken);
+
+        return batches.Select(MapGlJournalBatchSummary).ToList();
+    }
+
+    public async Task<GlJournalBatchDetailDto?> GetGlJournalBatchAsync(Guid batchId, CancellationToken cancellationToken = default)
+    {
+        var batch = await _dbContext.GlJournalBatches
+            .Include(b => b.Lines)
+                .ThenInclude(l => l.Account)
+            .Include(b => b.Lines)
+                .ThenInclude(l => l.CostCenter)
+            .Include(b => b.Lines)
+                .ThenInclude(l => l.Branch)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(b => b.Id == batchId, cancellationToken);
+
+        return batch is null ? null : MapGlJournalBatch(batch);
+    }
+
+    public async Task<GlJournalBatchDetailDto> ApproveGlJournalBatchAsync(
+        Guid batchId,
+        GlJournalBatchActionRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureRole("Finance", "approve GL batches");
+
+        var batch = await _dbContext.GlJournalBatches
+            .Include(b => b.Lines)
+            .FirstOrDefaultAsync(b => b.Id == batchId, cancellationToken);
+        if (batch is null)
         {
-            throw new InvalidOperationException("General ledger exports must be reviewed before approval.");
+            throw new KeyNotFoundException("GL batch not found");
+        }
+
+        if (batch.Status != GlJournalBatchStatus.Draft && batch.Status != GlJournalBatchStatus.Generated)
+        {
+            throw new InvalidOperationException("Only draft or generated batches can be approved.");
         }
 
         var actor = GetActor();
-        var beforeSnapshot = CreatePayRunSnapshot(payRun);
-
-        payRun.GeneralLedgerStatus = GeneralLedgerExportStatus.Approved;
-        payRun.GeneralLedgerApprovedAt = DateTime.UtcNow;
-        payRun.GeneralLedgerApprovedByUserId = string.IsNullOrWhiteSpace(actor.UserId) ? null : actor.UserId;
-        payRun.GeneralLedgerApprovedByUserName = actor.UserName;
-
-        await _auditLogger.LogAsync(nameof(PayRun), payRun.Id.ToString(),
-"GeneralLedgerReviewed",
-beforeSnapshot,
-CreatePayRunSnapshot(payRun),
-actor.UserName,
-cancellationToken);
+        batch.Status = GlJournalBatchStatus.Approved;
+        batch.ApprovedAtUtc = DateTime.UtcNow;
+        batch.ApprovedByUserId = string.IsNullOrWhiteSpace(actor.UserId) ? null : actor.UserId;
+        batch.ApprovedByUserName = actor.UserName;
+        batch.Notes = string.IsNullOrWhiteSpace(request.Comment) ? batch.Notes : request.Comment.Trim();
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var refreshed = await _dbContext.GlJournalBatches
+            .Include(b => b.Lines)
+                .ThenInclude(l => l.Account)
+            .Include(b => b.Lines)
+                .ThenInclude(l => l.CostCenter)
+            .Include(b => b.Lines)
+                .ThenInclude(l => l.Branch)
+            .AsNoTracking()
+            .FirstAsync(b => b.Id == batch.Id, cancellationToken);
+
+        return MapGlJournalBatch(refreshed);
     }
 
-    public async Task<FileExportResultDto?> ExportGeneralLedgerAsync(Guid payRunId, CancellationToken cancellationToken = default)
+    public async Task<FileExportResultDto?> ExportGlJournalBatchAsync(
+        Guid batchId,
+        string format,
+        CancellationToken cancellationToken = default)
     {
-        EnsureRole("Approver", "export general ledger postings");
+        EnsureRole("Finance", "export GL batches");
 
-        var payRun = await LoadPayRunWithSlipsForUpdateAsync(payRunId, cancellationToken);
-        if (payRun is null)
+        var batch = await _dbContext.GlJournalBatches
+            .Include(b => b.Lines)
+                .ThenInclude(l => l.Account)
+            .Include(b => b.Lines)
+                .ThenInclude(l => l.CostCenter)
+            .Include(b => b.Lines)
+                .ThenInclude(l => l.Branch)
+            .FirstOrDefaultAsync(b => b.Id == batchId, cancellationToken);
+
+        if (batch is null)
         {
             return null;
         }
 
-        if (payRun.GeneralLedgerStatus != GeneralLedgerExportStatus.Approved)
+        if (batch.Status != GlJournalBatchStatus.Approved)
         {
-            throw new InvalidOperationException("General ledger exports can only be generated after approval.");
+            throw new InvalidOperationException("GL batches must be approved before export.");
         }
 
-        var mappings = await _dbContext.GeneralLedgerAccountMappings.AsNoTracking().ToListAsync(cancellationToken);
-        if (!mappings.Any())
+        if (!string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException("No general ledger account mappings have been configured.");
+            throw new InvalidOperationException("Only CSV export is supported for GL batches.");
         }
 
-        var export = BuildGeneralLedgerExport(payRun, mappings);
-        var builder = new StringBuilder();
-        builder.AppendLine("DebitAccount,CreditAccount,Amount,Narrative");
-        foreach (var entry in export.Entries)
-        {
-            builder.AppendLine($"{entry.DebitAccount},{entry.CreditAccount},{entry.Amount:N2},\"{entry.Narrative.Replace("\"", "''")}\"");
-        }
+        var csv = BuildGlBatchCsv(batch);
 
-        var beforeSnapshot = CreatePayRunSnapshot(payRun);
-        payRun.GeneralLedgerStatus = GeneralLedgerExportStatus.Exported;
-        payRun.GeneralLedgerExportedAt = DateTime.UtcNow;
-
-        await _auditLogger.LogAsync(
-            nameof(PayRun),
-            payRun.Id.ToString(),
-            "GeneralLedgerExported",
-            beforeSnapshot,
-            CreatePayRunSnapshot(payRun),
-            _currentUserService.UserName,
-            cancellationToken);
+        var actor = GetActor();
+        batch.Status = GlJournalBatchStatus.Exported;
+        batch.ExportedAtUtc = DateTime.UtcNow;
+        batch.ExportedByUserId = string.IsNullOrWhiteSpace(actor.UserId) ? null : actor.UserId;
+        batch.ExportedByUserName = actor.UserName;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return new FileExportResultDto
         {
-            FileName = $"GL-{payRun.Code}-{DateTime.UtcNow:yyyyMMddHHmmss}.csv",
+            FileName = $"GL-{batch.PayRunId}-{DateTime.UtcNow:yyyyMMddHHmmss}.csv",
             ContentType = "text/csv",
-            ContentBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(builder.ToString()))
+            ContentBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(csv))
         };
     }
 
-    public async Task<List<GeneralLedgerAccountMappingDto>> GetGeneralLedgerAccountMappingsAsync(CancellationToken cancellationToken = default)
+    public async Task<List<GlAccountDto>> GetGlAccountsAsync(CancellationToken cancellationToken = default)
     {
-        var mappings = await _dbContext.GeneralLedgerAccountMappings
-            .AsNoTracking()
-            .OrderBy(m => m.MappingType)
-            .ThenBy(m => m.Code)
-            .ToListAsync(cancellationToken);
-
-        return mappings.Select(MapToDto).ToList();
+        var accounts = await _dbContext.GlAccounts.AsNoTracking().OrderBy(a => a.Code).ToListAsync(cancellationToken);
+        return accounts.Select(MapGlAccount).ToList();
     }
 
-    public async Task<GeneralLedgerAccountMappingDto> UpsertGeneralLedgerAccountMappingAsync(UpsertGeneralLedgerAccountMappingRequest request, CancellationToken cancellationToken = default)
+    public async Task<GlAccountDto> UpsertGlAccountAsync(UpsertGlAccountRequest request, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.Code))
-        {
-            throw new ValidationException("Mapping code is required.");
-        }
+        EnsureRole("Finance", "manage GL accounts");
 
-        if (string.IsNullOrWhiteSpace(request.DebitAccount) || string.IsNullOrWhiteSpace(request.CreditAccount))
-        {
-            throw new ValidationException("Both debit and credit accounts must be provided.");
-        }
-
-        GeneralLedgerAccountMapping mapping;
+        GlAccount account;
         if (request.Id.HasValue)
         {
-            mapping = await _dbContext.GeneralLedgerAccountMappings.FirstOrDefaultAsync(m => m.Id == request.Id.Value, cancellationToken)
-                ?? throw new KeyNotFoundException("Mapping not found");
+            account = await _dbContext.GlAccounts.FirstOrDefaultAsync(a => a.Id == request.Id.Value, cancellationToken)
+                ?? throw new KeyNotFoundException("GL account not found");
         }
         else
         {
-            mapping = new GeneralLedgerAccountMapping
+            account = new GlAccount
             {
                 Id = Guid.NewGuid(),
-                CreatedAt = DateTime.UtcNow,
                 CreatedBy = _currentUserService.UserName ?? "System"
             };
-            await _dbContext.GeneralLedgerAccountMappings.AddAsync(mapping, cancellationToken);
+            await _dbContext.GlAccounts.AddAsync(account, cancellationToken);
         }
 
-        mapping.Code = request.Code.Trim();
-        mapping.Name = request.Name.Trim();
-        mapping.MappingType = request.MappingType;
-        mapping.DebitAccount = request.DebitAccount.Trim();
-        mapping.CreditAccount = request.CreditAccount.Trim();
-        mapping.Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
-        mapping.ModifiedAt = DateTime.UtcNow;
-        mapping.ModifiedBy = _currentUserService.UserName;
+        account.Code = request.Code.Trim();
+        account.Name = request.Name.Trim();
+        account.Type = request.Type;
+        account.IsActive = request.IsActive;
+        account.ModifiedBy = _currentUserService.UserName ?? "System";
+        account.ModifiedAt = DateTime.UtcNow;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return MapToDto(mapping);
+        return MapGlAccount(account);
+    }
+
+    public async Task DeleteGlAccountAsync(Guid accountId, CancellationToken cancellationToken = default)
+    {
+        EnsureRole("Finance", "delete GL accounts");
+
+        var account = await _dbContext.GlAccounts.FirstOrDefaultAsync(a => a.Id == accountId, cancellationToken);
+        if (account is null)
+        {
+            return;
+        }
+
+        _dbContext.GlAccounts.Remove(account);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<List<GlMappingDto>> GetGlMappingsAsync(CancellationToken cancellationToken = default)
+    {
+        var mappings = await _dbContext.GlMappings
+            .Include(m => m.DebitAccount)
+            .Include(m => m.CreditAccount)
+            .Include(m => m.CostCenter)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var allowanceTypes = await _dbContext.AllowanceTypes.AsNoTracking().ToListAsync(cancellationToken);
+        var deductionTypes = await _dbContext.DeductionTypes.AsNoTracking().ToListAsync(cancellationToken);
+        var employerContributionCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "EPF_EMPLOYER",
+            "ETF_EMPLOYER"
+        };
+
+        var entries = new List<GlMappingDto>();
+
+        entries.AddRange(allowanceTypes.Select(a => MapGlMapping(a.Code, a.Name, GlPayComponentType.Earning, mappings)));
+        entries.AddRange(deductionTypes
+            .Where(d => !employerContributionCodes.Contains(d.Code))
+            .Select(d => MapGlMapping(d.Code, d.Name, GlPayComponentType.Deduction, mappings)));
+
+        foreach (var code in employerContributionCodes)
+        {
+            var name = deductionTypes.FirstOrDefault(d => d.Code == code)?.Name ?? code;
+            entries.AddRange(MapGlMapping(code, name, GlPayComponentType.EmployerContribution, mappings));
+        }
+
+        return entries.OrderBy(e => e.PayComponentType).ThenBy(e => e.PayComponentCode).ToList();
+    }
+
+    public async Task<GlMappingDto> UpsertGlMappingAsync(UpsertGlMappingRequest request, CancellationToken cancellationToken = default)
+    {
+        EnsureRole("Finance", "manage GL mappings");
+
+        GlMapping mapping;
+        if (request.Id.HasValue)
+        {
+            mapping = await _dbContext.GlMappings.FirstOrDefaultAsync(m => m.Id == request.Id.Value, cancellationToken)
+                ?? throw new KeyNotFoundException("GL mapping not found");
+        }
+        else
+        {
+            mapping = await _dbContext.GlMappings.FirstOrDefaultAsync(
+                m => m.PayComponentCode == request.PayComponentCode
+                    && m.PayComponentType == request.PayComponentType
+                    && m.CostCenterId == request.CostCenterId,
+                cancellationToken);
+
+            if (mapping is null)
+            {
+                mapping = new GlMapping
+                {
+                    Id = Guid.NewGuid(),
+                    PayComponentCode = request.PayComponentCode,
+                    PayComponentType = request.PayComponentType,
+                    CostCenterId = request.CostCenterId,
+                    CreatedBy = _currentUserService.UserName ?? "System"
+                };
+                await _dbContext.GlMappings.AddAsync(mapping, cancellationToken);
+            }
+        }
+
+        mapping.PayComponentCode = request.PayComponentCode.Trim();
+        mapping.PayComponentType = request.PayComponentType;
+        mapping.DebitAccountId = request.DebitAccountId;
+        mapping.CreditAccountId = request.CreditAccountId;
+        mapping.PostingSideRule = request.PostingSideRule;
+        mapping.CostCenterId = request.CostCenterId;
+        mapping.Notes = request.Notes;
+        mapping.ModifiedBy = _currentUserService.UserName ?? "System";
+        mapping.ModifiedAt = DateTime.UtcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var mappings = await _dbContext.GlMappings
+            .Include(m => m.DebitAccount)
+            .Include(m => m.CreditAccount)
+            .Include(m => m.CostCenter)
+            .AsNoTracking()
+            .Where(m => m.Id == mapping.Id)
+            .ToListAsync(cancellationToken);
+
+        var refreshed = mappings.Single();
+        var componentName = await ResolvePayComponentNameAsync(refreshed.PayComponentType, refreshed.PayComponentCode, cancellationToken);
+        var dto = MapGlMapping(refreshed);
+        dto.PayComponentName = componentName;
+        return dto;
     }
 
     public async Task<ApitReportDto?> GetApitReportAsync(Guid payRunId, CancellationToken cancellationToken = default)
@@ -1338,6 +1510,8 @@ cancellationToken);
                 .ThenInclude(ps => ps.Earnings)
             .Include(pr => pr.PaySlips)
                 .ThenInclude(ps => ps.Deductions)
+            .Include(pr => pr.PaySlips)
+                .ThenInclude(ps => ps.Employee)
             .FirstOrDefaultAsync(pr => pr.Id == payRunId, cancellationToken);
     }
 
@@ -2253,143 +2427,343 @@ cancellationToken);
         };
     }
 
-    private static GeneralLedgerAccountMappingDto MapToDto(GeneralLedgerAccountMapping mapping)
+    private sealed record GlComponentTotal(
+        string PayComponentCode,
+        GlPayComponentType PayComponentType,
+        decimal Amount,
+        Guid? CostCenterId,
+        Guid? BranchId);
+
+    private static List<GlComponentTotal> BuildGlComponentTotals(PayRun payRun)
     {
-        return new GeneralLedgerAccountMappingDto
+        var totals = new Dictionary<(string Code, GlPayComponentType Type, Guid? CostCenterId, Guid? BranchId), decimal>();
+
+        foreach (var paySlip in payRun.PaySlips)
         {
-            Id = mapping.Id,
-            Code = mapping.Code,
-            Name = mapping.Name,
-            MappingType = mapping.MappingType,
-            DebitAccount = mapping.DebitAccount,
-            CreditAccount = mapping.CreditAccount,
-            Notes = mapping.Notes
-        };
-    }
+            var costCenterId = paySlip.Employee?.CostCenterId;
+            var branchId = paySlip.Employee?.BranchId;
 
-    private sealed class JournalKeyComparer : IEqualityComparer<(string Debit, string Credit, string Narrative)>
-    {
-        private static readonly StringComparer Comparer = StringComparer.OrdinalIgnoreCase;
+            foreach (var earning in paySlip.Earnings)
+            {
+                AddTotal(earning.Code, GlPayComponentType.Earning, earning.Amount, costCenterId, branchId);
+            }
 
-        public bool Equals((string Debit, string Credit, string Narrative) x,
-                           (string Debit, string Credit, string Narrative) y)
-            => Comparer.Equals(x.Debit, y.Debit)
-               && Comparer.Equals(x.Credit, y.Credit)
-               && Comparer.Equals(x.Narrative, y.Narrative);
+            foreach (var deduction in paySlip.Deductions)
+            {
+                AddTotal(deduction.Code, GlPayComponentType.Deduction, deduction.Amount, costCenterId, branchId);
+            }
 
-        public int GetHashCode((string Debit, string Credit, string Narrative) obj)
-            => HashCode.Combine(
-                Comparer.GetHashCode(obj.Debit ?? string.Empty),
-                Comparer.GetHashCode(obj.Credit ?? string.Empty),
-                Comparer.GetHashCode(obj.Narrative ?? string.Empty));
-    }
+            if (paySlip.EmployerEpf > 0)
+            {
+                AddTotal("EPF_EMPLOYER", GlPayComponentType.EmployerContribution, paySlip.EmployerEpf, costCenterId, branchId);
+            }
 
+            if (paySlip.EmployerEtf > 0)
+            {
+                AddTotal("ETF_EMPLOYER", GlPayComponentType.EmployerContribution, paySlip.EmployerEtf, costCenterId, branchId);
+            }
+        }
 
-    private GeneralLedgerExportDto BuildGeneralLedgerExport(PayRun payRun, List<GeneralLedgerAccountMapping> mappings)
-    {
-        //var journal = new Dictionary<(string Debit, string Credit, string Narrative), decimal>(StringComparer.OrdinalIgnoreCase);
-        var journal = new Dictionary<(string Debit, string Credit, string Narrative), decimal>(new JournalKeyComparer());
+        return totals
+            .Select(kvp => new GlComponentTotal(kvp.Key.Code, kvp.Key.Type, kvp.Value, kvp.Key.CostCenterId, kvp.Key.BranchId))
+            .OrderBy(t => t.PayComponentType)
+            .ThenBy(t => t.PayComponentCode)
+            .ToList();
 
-        void AddEntry(GeneralLedgerAccountMapping mapping, decimal amount, string narrative)
+        void AddTotal(string code, GlPayComponentType type, decimal amount, Guid? costCenterId, Guid? branchId)
         {
             if (amount == 0)
             {
                 return;
             }
 
-            var key = (mapping.DebitAccount, mapping.CreditAccount, narrative);
-            journal[key] = journal.TryGetValue(key, out var existing)
-                ? existing + amount
-                : amount;
+            var key = (code, type, costCenterId, branchId);
+            totals[key] = totals.TryGetValue(key, out var existing) ? existing + amount : amount;
         }
-
-        foreach (var paySlip in payRun.PaySlips)
-        {
-            foreach (var earning in paySlip.Earnings)
-            {
-                var mapping = ResolveMapping(mappings, earning.Code, GeneralLedgerMappingType.Earning);
-                AddEntry(mapping, earning.Amount, earning.Description);
-            }
-
-            foreach (var deduction in paySlip.Deductions)
-            {
-                var mapping = ResolveMapping(mappings, deduction.Code, GeneralLedgerMappingType.Deduction);
-                AddEntry(mapping, deduction.Amount, deduction.Description);
-            }
-
-            if (paySlip.EmployerEpf > 0)
-            {
-                var mapping = TryResolveMapping(mappings, "EPF_ER", GeneralLedgerMappingType.EmployerContribution);
-                if (mapping is not null)
-                {
-                    AddEntry(mapping, paySlip.EmployerEpf, "Employer EPF");
-                }
-            }
-
-            if (paySlip.EmployerEtf > 0)
-            {
-                var mapping = TryResolveMapping(mappings, "ETF_ER", GeneralLedgerMappingType.EmployerContribution);
-                if (mapping is not null)
-                {
-                    AddEntry(mapping, paySlip.EmployerEtf, "Employer ETF");
-                }
-            }
-        }
-
-        var netPayTotal = payRun.PaySlips.Sum(ps => ps.NetPay);
-        var netPayMapping = TryResolveMapping(mappings, "NET_PAY", GeneralLedgerMappingType.NetPayClearing);
-        if (netPayMapping is not null)
-        {
-            AddEntry(netPayMapping, netPayTotal, "Net pay clearing");
-        }
-
-        var entries = journal
-            .Select(kvp => new GeneralLedgerJournalEntryDto
-            {
-                DebitAccount = kvp.Key.Debit,
-                CreditAccount = kvp.Key.Credit,
-                Narrative = kvp.Key.Narrative,
-                Amount = RoundCurrency(kvp.Value)
-            })
-            .OrderBy(e => e.DebitAccount)
-            .ThenBy(e => e.CreditAccount)
-            .ThenBy(e => e.Narrative)
-            .ToList();
-
-        var total = entries.Sum(e => e.Amount);
-
-        return new GeneralLedgerExportDto
-        {
-            PayRunId = payRun.Id,
-            Status = payRun.GeneralLedgerStatus,
-            Entries = entries,
-            TotalDebits = total,
-            TotalCredits = total,
-            IsBalanced = true,
-            GeneratedAt = DateTime.UtcNow
-        };
     }
 
-    private static GeneralLedgerAccountMapping ResolveMapping(IEnumerable<GeneralLedgerAccountMapping> mappings, string code, GeneralLedgerMappingType type)
+    private static GlMapping? ResolveGlMapping(IEnumerable<GlMapping> mappings, GlComponentTotal component)
     {
-        var mapping = TryResolveMapping(mappings, code, type);
-        if (mapping is null)
-        {
-            throw new InvalidOperationException($"No general ledger mapping configured for {code} ({type}).");
-        }
+        var direct = mappings.FirstOrDefault(m =>
+            m.PayComponentType == component.PayComponentType
+            && string.Equals(m.PayComponentCode, component.PayComponentCode, StringComparison.OrdinalIgnoreCase)
+            && m.CostCenterId == component.CostCenterId);
 
-        return mapping;
-    }
-
-    private static GeneralLedgerAccountMapping? TryResolveMapping(IEnumerable<GeneralLedgerAccountMapping> mappings, string code, GeneralLedgerMappingType type)
-    {
-        var direct = mappings.FirstOrDefault(m => m.MappingType == type && string.Equals(m.Code, code, StringComparison.OrdinalIgnoreCase));
         if (direct is not null)
         {
             return direct;
         }
 
-        return mappings.FirstOrDefault(m => m.MappingType == type && m.Code == "*");
+        return mappings.FirstOrDefault(m =>
+            m.PayComponentType == component.PayComponentType
+            && string.Equals(m.PayComponentCode, component.PayComponentCode, StringComparison.OrdinalIgnoreCase)
+            && m.CostCenterId == null);
+    }
+
+    private static IEnumerable<GlJournalLine> BuildJournalLines(
+        GlMapping mapping,
+        GlComponentTotal component,
+        DateTime postingDate,
+        string description,
+        string reference)
+    {
+        var amount = RoundGlAmount(component.Amount);
+        if (amount == 0)
+        {
+            return Array.Empty<GlJournalLine>();
+        }
+
+        var debitAccountId = mapping.DebitAccountId!.Value;
+        var creditAccountId = mapping.CreditAccountId!.Value;
+
+        if (mapping.PostingSideRule == GlPostingSideRule.CreditWhenPositive)
+        {
+            (debitAccountId, creditAccountId) = (creditAccountId, debitAccountId);
+        }
+
+        if (component.Amount < 0)
+        {
+            (debitAccountId, creditAccountId) = (creditAccountId, debitAccountId);
+        }
+
+        return new[]
+        {
+            new GlJournalLine
+            {
+                Id = Guid.NewGuid(),
+                PostingDate = postingDate,
+                AccountId = debitAccountId,
+                Description = description,
+                DebitAmount = amount,
+                CreditAmount = 0,
+                PayComponentCode = component.PayComponentCode,
+                PayComponentType = component.PayComponentType,
+                CostCenterId = component.CostCenterId,
+                BranchId = component.BranchId,
+                Reference = reference
+            },
+            new GlJournalLine
+            {
+                Id = Guid.NewGuid(),
+                PostingDate = postingDate,
+                AccountId = creditAccountId,
+                Description = description,
+                DebitAmount = 0,
+                CreditAmount = amount,
+                PayComponentCode = component.PayComponentCode,
+                PayComponentType = component.PayComponentType,
+                CostCenterId = component.CostCenterId,
+                BranchId = component.BranchId,
+                Reference = reference
+            }
+        };
+    }
+
+    private static (decimal TotalDebits, decimal TotalCredits) CalculateTotals(IEnumerable<GlJournalLine> lines)
+    {
+        var totalDebits = lines.Sum(l => l.DebitAmount);
+        var totalCredits = lines.Sum(l => l.CreditAmount);
+        return (totalDebits, totalCredits);
+    }
+
+    private static decimal RoundGlAmount(decimal value)
+        => Math.Round(Math.Abs(value), 0, MidpointRounding.AwayFromZero);
+
+    private static string ResolveComponentName(
+        GlComponentTotal component,
+        IReadOnlyDictionary<string, string> allowances,
+        IReadOnlyDictionary<string, string> deductions)
+    {
+        return component.PayComponentType switch
+        {
+            GlPayComponentType.Earning => allowances.TryGetValue(component.PayComponentCode, out var name) ? name : component.PayComponentCode,
+            GlPayComponentType.Deduction => deductions.TryGetValue(component.PayComponentCode, out var name) ? name : component.PayComponentCode,
+            GlPayComponentType.EmployerContribution => deductions.TryGetValue(component.PayComponentCode, out var name) ? name : component.PayComponentCode,
+            _ => component.PayComponentCode
+        };
+    }
+
+    private static string BuildGlBatchCsv(GlJournalBatch batch)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine("PostingDate,AccountCode,AccountName,Description,Debit,Credit,CostCenter,Reference");
+
+        foreach (var line in batch.Lines.OrderBy(l => l.PostingDate).ThenBy(l => l.Account?.Code))
+        {
+            var costCenter = line.CostCenter?.Code ?? string.Empty;
+            builder.AppendLine(
+                $"{line.PostingDate:yyyy-MM-dd}," +
+                $"{line.Account?.Code}," +
+                $"{EscapeCsv(line.Account?.Name)}," +
+                $"{EscapeCsv(line.Description)}," +
+                $"{line.DebitAmount:N0}," +
+                $"{line.CreditAmount:N0}," +
+                $"{costCenter}," +
+                $"{EscapeCsv(line.Reference)}");
+        }
+
+        return builder.ToString();
+    }
+
+    private static string EscapeCsv(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var sanitized = value.Replace("\"", "\"\"");
+        return $"\"{sanitized}\"";
+    }
+
+    private static GlAccountDto MapGlAccount(GlAccount account)
+        => new()
+        {
+            Id = account.Id,
+            Code = account.Code,
+            Name = account.Name,
+            Type = account.Type,
+            IsActive = account.IsActive
+        };
+
+    private static GlMappingDto MapGlMapping(GlMapping mapping)
+        => new()
+        {
+            Id = mapping.Id,
+            PayComponentCode = mapping.PayComponentCode,
+            PayComponentName = mapping.PayComponentCode,
+            PayComponentType = mapping.PayComponentType,
+            DebitAccountId = mapping.DebitAccountId,
+            DebitAccountCode = mapping.DebitAccount?.Code,
+            DebitAccountName = mapping.DebitAccount?.Name,
+            CreditAccountId = mapping.CreditAccountId,
+            CreditAccountCode = mapping.CreditAccount?.Code,
+            CreditAccountName = mapping.CreditAccount?.Name,
+            PostingSideRule = mapping.PostingSideRule,
+            CostCenterId = mapping.CostCenterId,
+            CostCenterCode = mapping.CostCenter?.Code,
+            CostCenterName = mapping.CostCenter?.Name,
+            Notes = mapping.Notes
+        };
+
+    private static GlMappingDto MapGlMapping(string code, string name, GlPayComponentType type, GlMapping? mapping)
+        => new()
+        {
+            Id = mapping?.Id,
+            PayComponentCode = code,
+            PayComponentName = name,
+            PayComponentType = type,
+            DebitAccountId = mapping?.DebitAccountId,
+            DebitAccountCode = mapping?.DebitAccount?.Code,
+            DebitAccountName = mapping?.DebitAccount?.Name,
+            CreditAccountId = mapping?.CreditAccountId,
+            CreditAccountCode = mapping?.CreditAccount?.Code,
+            CreditAccountName = mapping?.CreditAccount?.Name,
+            PostingSideRule = mapping?.PostingSideRule ?? GlPostingSideRule.DebitWhenPositive,
+            CostCenterId = mapping?.CostCenterId,
+            CostCenterCode = mapping?.CostCenter?.Code,
+            CostCenterName = mapping?.CostCenter?.Name,
+            Notes = mapping?.Notes
+        };
+
+    private static IEnumerable<GlMappingDto> MapGlMapping(string code, string name, GlPayComponentType type, List<GlMapping> mappings)
+    {
+        var matches = mappings
+            .Where(m => m.PayComponentType == type && string.Equals(m.PayComponentCode, code, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (!matches.Any())
+        {
+            return new[] { MapGlMapping(code, name, type, null) };
+        }
+
+        return matches.Select(m =>
+        {
+            var dto = MapGlMapping(code, name, type, m);
+            return dto;
+        });
+    }
+
+    private static GlJournalBatchSummaryDto MapGlJournalBatchSummary(GlJournalBatch batch)
+    {
+        var totals = CalculateTotals(batch.Lines);
+        return new GlJournalBatchSummaryDto
+        {
+            Id = batch.Id,
+            PayRunId = batch.PayRunId,
+            Status = batch.Status,
+            GeneratedAtUtc = batch.GeneratedAtUtc,
+            GeneratedByUserName = batch.GeneratedByUserName,
+            ApprovedAtUtc = batch.ApprovedAtUtc,
+            ApprovedByUserName = batch.ApprovedByUserName,
+            ExportedAtUtc = batch.ExportedAtUtc,
+            ExportedByUserName = batch.ExportedByUserName,
+            Notes = batch.Notes,
+            TotalDebits = totals.TotalDebits,
+            TotalCredits = totals.TotalCredits,
+            IsBalanced = totals.TotalDebits == totals.TotalCredits
+        };
+    }
+
+    private static GlJournalBatchDetailDto MapGlJournalBatch(GlJournalBatch batch)
+    {
+        var summary = MapGlJournalBatchSummary(batch);
+        return new GlJournalBatchDetailDto
+        {
+            Id = summary.Id,
+            PayRunId = summary.PayRunId,
+            Status = summary.Status,
+            GeneratedAtUtc = summary.GeneratedAtUtc,
+            GeneratedByUserName = summary.GeneratedByUserName,
+            ApprovedAtUtc = summary.ApprovedAtUtc,
+            ApprovedByUserName = summary.ApprovedByUserName,
+            ExportedAtUtc = summary.ExportedAtUtc,
+            ExportedByUserName = summary.ExportedByUserName,
+            Notes = summary.Notes,
+            TotalDebits = summary.TotalDebits,
+            TotalCredits = summary.TotalCredits,
+            IsBalanced = summary.IsBalanced,
+            Lines = batch.Lines.Select(line => new GlJournalLineDto
+            {
+                Id = line.Id,
+                PostingDate = line.PostingDate,
+                AccountId = line.AccountId,
+                AccountCode = line.Account?.Code ?? string.Empty,
+                AccountName = line.Account?.Name ?? string.Empty,
+                Description = line.Description,
+                DebitAmount = line.DebitAmount,
+                CreditAmount = line.CreditAmount,
+                EmployeeId = line.EmployeeId,
+                PayComponentCode = line.PayComponentCode,
+                PayComponentType = line.PayComponentType,
+                CostCenterId = line.CostCenterId,
+                CostCenterCode = line.CostCenter?.Code,
+                BranchId = line.BranchId,
+                BranchCode = line.Branch?.Code,
+                Reference = line.Reference
+            }).OrderBy(l => l.PostingDate).ThenBy(l => l.AccountCode).ToList()
+        };
+    }
+
+    private async Task<string> ResolvePayComponentNameAsync(
+        GlPayComponentType type,
+        string code,
+        CancellationToken cancellationToken)
+    {
+        if (type == GlPayComponentType.Earning)
+        {
+            return await _dbContext.AllowanceTypes
+                       .Where(a => a.Code == code)
+                       .Select(a => a.Name)
+                       .FirstOrDefaultAsync(cancellationToken)
+                   ?? code;
+        }
+
+        return await _dbContext.DeductionTypes
+                   .Where(d => d.Code == code)
+                   .Select(d => d.Name)
+                   .FirstOrDefaultAsync(cancellationToken)
+               ?? code;
     }
 
     private static string BuildPayslipHash(PayRun payRun, PaySlip paySlip)

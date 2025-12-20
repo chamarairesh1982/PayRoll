@@ -52,6 +52,10 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public DbSet<PayrollSettings> PayrollSettings => Set<PayrollSettings>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
     public DbSet<GeneralLedgerAccountMapping> GeneralLedgerAccountMappings => Set<GeneralLedgerAccountMapping>();
+    public DbSet<GlAccount> GlAccounts => Set<GlAccount>();
+    public DbSet<GlMapping> GlMappings => Set<GlMapping>();
+    public DbSet<GlJournalBatch> GlJournalBatches => Set<GlJournalBatch>();
+    public DbSet<GlJournalLine> GlJournalLines => Set<GlJournalLine>();
     public DbSet<Company> Companies => Set<Company>();
     public DbSet<Branch> Branches => Set<Branch>();
     public DbSet<CostCenter> CostCenters => Set<CostCenter>();

@@ -8,6 +8,7 @@ using Payroll.Domain.Organizations;
 using Payroll.Domain.Overtime;
 using Payroll.Domain.Payroll;
 using Payroll.Domain.PayrollConfig;
+using Payroll.Domain.GeneralLedger;
 using Payroll.Domain.ValueObjects;
 using Payroll.Infrastructure.Persistence;
 
@@ -56,6 +57,8 @@ public sealed class PayrollSeeder
         EnsureBankExportTemplate("Commercial", BankExportFormat.Csv, ",", 1);
         EnsureBankExportTemplate("Sampath", BankExportFormat.Csv, ",", 1);
         EnsureBankExportTemplate("DFCC", BankExportFormat.Csv, ",", 1);
+        EnsureGlAccounts();
+        EnsureGlMappings();
     }
 
     public void SeedScenarioData()
@@ -923,6 +926,72 @@ public sealed class PayrollSeeder
             Delimiter = delimiter,
             HeaderRowCount = headerRowCount,
             IsActive = true,
+            CreatedBy = SeedUser
+        });
+
+        _context.SaveChanges();
+    }
+
+    private void EnsureGlAccounts()
+    {
+        var accounts = new[]
+        {
+            new GlAccount { Code = "SAL_EXP", Name = "Salary Expense", Type = GlAccountType.Expense, IsActive = true, CreatedBy = SeedUser },
+            new GlAccount { Code = "EPF_EXP", Name = "Employer EPF Expense", Type = GlAccountType.Expense, IsActive = true, CreatedBy = SeedUser },
+            new GlAccount { Code = "ETF_EXP", Name = "Employer ETF Expense", Type = GlAccountType.Expense, IsActive = true, CreatedBy = SeedUser },
+            new GlAccount { Code = "PAYROLL_PAYABLE", Name = "Payroll Payable", Type = GlAccountType.Liability, IsActive = true, CreatedBy = SeedUser },
+            new GlAccount { Code = "PAYE_PAYABLE", Name = "PAYE Payable", Type = GlAccountType.Liability, IsActive = true, CreatedBy = SeedUser },
+            new GlAccount { Code = "EPF_PAYABLE", Name = "EPF Payable", Type = GlAccountType.Liability, IsActive = true, CreatedBy = SeedUser },
+            new GlAccount { Code = "CASH_BANK", Name = "Bank/Cash", Type = GlAccountType.Asset, IsActive = true, CreatedBy = SeedUser }
+        };
+
+        foreach (var account in accounts)
+        {
+            if (_context.GlAccounts.Any(a => a.Code == account.Code))
+            {
+                continue;
+            }
+
+            _context.GlAccounts.Add(account);
+        }
+
+        _context.SaveChanges();
+    }
+
+    private void EnsureGlMappings()
+    {
+        var accounts = _context.GlAccounts.AsNoTracking().ToDictionary(a => a.Code, a => a);
+        if (!accounts.Any())
+        {
+            return;
+        }
+
+        EnsureGlMapping("BASIC", GlPayComponentType.Earning, accounts["SAL_EXP"].Id, accounts["PAYROLL_PAYABLE"].Id);
+        EnsureGlMapping("OT", GlPayComponentType.Earning, accounts["SAL_EXP"].Id, accounts["PAYROLL_PAYABLE"].Id);
+        EnsureGlMapping("ALLOW_TRANSPORT", GlPayComponentType.Earning, accounts["SAL_EXP"].Id, accounts["PAYROLL_PAYABLE"].Id);
+
+        EnsureGlMapping("DED_NO_PAY", GlPayComponentType.Deduction, accounts["PAYROLL_PAYABLE"].Id, accounts["SAL_EXP"].Id);
+        EnsureGlMapping("PAYE", GlPayComponentType.Deduction, accounts["PAYROLL_PAYABLE"].Id, accounts["PAYE_PAYABLE"].Id);
+        EnsureGlMapping("EPF_EMPLOYEE", GlPayComponentType.Deduction, accounts["PAYROLL_PAYABLE"].Id, accounts["EPF_PAYABLE"].Id);
+
+        EnsureGlMapping("EPF_EMPLOYER", GlPayComponentType.EmployerContribution, accounts["EPF_EXP"].Id, accounts["EPF_PAYABLE"].Id);
+        EnsureGlMapping("ETF_EMPLOYER", GlPayComponentType.EmployerContribution, accounts["ETF_EXP"].Id, accounts["EPF_PAYABLE"].Id);
+    }
+
+    private void EnsureGlMapping(string code, GlPayComponentType type, Guid debitAccountId, Guid creditAccountId)
+    {
+        if (_context.GlMappings.Any(m => m.PayComponentCode == code && m.PayComponentType == type && m.CostCenterId == null))
+        {
+            return;
+        }
+
+        _context.GlMappings.Add(new GlMapping
+        {
+            PayComponentCode = code,
+            PayComponentType = type,
+            DebitAccountId = debitAccountId,
+            CreditAccountId = creditAccountId,
+            PostingSideRule = GlPostingSideRule.DebitWhenPositive,
             CreatedBy = SeedUser
         });
 

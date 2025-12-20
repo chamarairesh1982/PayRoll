@@ -1,0 +1,114 @@
+<div class="gl-settings-page">
+  <h1>General Ledger Setup</h1>
+  <div class="muted">Maintain the chart of accounts and mappings used for payroll postings.</div>
+
+  <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+
+  <section class="gl-section">
+    <h2>GL Accounts</h2>
+    <div class="account-form">
+      <label>
+        Code
+        <input type="text" [(ngModel)]="accountForm.code" />
+      </label>
+      <label>
+        Name
+        <input type="text" [(ngModel)]="accountForm.name" />
+      </label>
+      <label>
+        Type
+        <select [(ngModel)]="accountForm.type">
+          <option *ngFor="let type of accountTypes" [value]="type">{{ type }}</option>
+        </select>
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" [(ngModel)]="accountForm.isActive" />
+        Active
+      </label>
+      <div class="form-actions">
+        <button type="button" (click)="saveAccount()">Save</button>
+        <button type="button" (click)="resetAccountForm()">Clear</button>
+      </div>
+    </div>
+
+    <div *ngIf="isLoadingAccounts" class="muted">Loading accounts...</div>
+    <table class="table" *ngIf="accounts.length; else noAccounts">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Active</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let account of accounts">
+          <td>{{ account.code }}</td>
+          <td>{{ account.name }}</td>
+          <td>{{ account.type }}</td>
+          <td>{{ account.isActive ? 'Yes' : 'No' }}</td>
+          <td>
+            <button type="button" (click)="editAccount(account)">Edit</button>
+            <button type="button" (click)="deleteAccount(account)">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <ng-template #noAccounts>
+      <div class="muted">No GL accounts configured yet.</div>
+    </ng-template>
+  </section>
+
+  <section class="gl-section">
+    <h2>GL Mappings</h2>
+    <div *ngIf="isLoadingMappings" class="muted">Loading mappings...</div>
+    <table class="table" *ngIf="mappings.length; else noMappings">
+      <thead>
+        <tr>
+          <th>Component</th>
+          <th>Type</th>
+          <th>Cost Center</th>
+          <th>Debit Account</th>
+          <th>Credit Account</th>
+          <th>Posting Rule</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let mapping of mappings">
+          <td>{{ mapping.payComponentName }} ({{ mapping.payComponentCode }})</td>
+          <td>{{ mapping.payComponentType }}</td>
+          <td>{{ mapping.costCenterName || 'All' }}</td>
+          <td>
+            <select [(ngModel)]="mapping.debitAccountId">
+              <option [ngValue]="null">Select</option>
+              <option *ngFor="let account of accounts" [ngValue]="account.id">
+                {{ account.code }} - {{ account.name }}
+              </option>
+            </select>
+          </td>
+          <td>
+            <select [(ngModel)]="mapping.creditAccountId">
+              <option [ngValue]="null">Select</option>
+              <option *ngFor="let account of accounts" [ngValue]="account.id">
+                {{ account.code }} - {{ account.name }}
+              </option>
+            </select>
+          </td>
+          <td>
+            <select [(ngModel)]="mapping.postingSideRule">
+              <option *ngFor="let rule of postingRules" [value]="rule">{{ rule }}</option>
+            </select>
+          </td>
+          <td>
+            <button type="button" (click)="saveMapping(mapping)">Save</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <ng-template #noMappings>
+      <div class="muted">No GL mappings available yet.</div>
+    </ng-template>
+  </section>
+</div>
