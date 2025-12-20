@@ -568,6 +568,10 @@ export class PayRunDetailPageComponent implements OnInit {
     return slip?.earnings?.filter(e => e.code === 'OT') ?? [];
   }
 
+  hasOvertimeEarnings(): boolean {
+    return this.payRun?.paySlips.some(slip => this.getOvertimeEarningsForSlip(slip.id).length > 0) ?? false;
+  }
+
   getNoPayAmount(employeeId: string): number {
     const slip = this.payRun?.paySlips.find(ps => ps.employeeId === employeeId);
     return slip?.deductions?.filter(d => d.code === 'DED_NO_PAY').reduce((sum, line) => sum + line.amount, 0) ?? 0;

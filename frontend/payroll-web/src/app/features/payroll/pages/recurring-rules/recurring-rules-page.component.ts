@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { map } from 'rxjs';
 import { Employee, PaginatedResult } from '../../../employees/models/employee.model';
 import { EmployeesApiService } from '../../../employees/services/employees-api.service';
 import { AllowanceType } from '../../../payroll-config/models/allowance-type.model';
@@ -135,7 +136,7 @@ export class RecurringRulesPageComponent implements OnInit {
 
     const request$ = this.selectedRuleId
       ? this.recurringPayItemsApi.updateRule(this.selectedRuleId, payload)
-      : this.recurringPayItemsApi.createRule(payload);
+      : this.recurringPayItemsApi.createRule(payload).pipe(map(() => undefined));
 
     request$.subscribe({
       next: () => {
