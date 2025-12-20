@@ -79,6 +79,26 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "BankExportTemplates",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Format = table.Column<int>(type: "int", nullable: false),
+                    Delimiter = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
+                    HeaderRowCount = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ModifiedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BankExportTemplates", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Companies",
                 columns: table => new
                 {
@@ -193,6 +213,51 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "GlAccounts",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Type = table.Column<int>(type: "int", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GlAccounts", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "LeaveEncashmentRequests",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    EmployeeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    LeaveType = table.Column<int>(type: "int", nullable: false),
+                    Days = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
+                    PeriodStart = table.Column<DateOnly>(type: "date", nullable: false),
+                    PeriodEnd = table.Column<DateOnly>(type: "date", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    RequestedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    ApprovedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    ApprovedById = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LeaveEncashmentRequests", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "LeaveRequests",
                 columns: table => new
                 {
@@ -218,6 +283,30 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_LeaveRequests", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "LeaveTypes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Code = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    IsPaid = table.Column<bool>(type: "bit", nullable: false),
+                    AllowsHalfDay = table.Column<bool>(type: "bit", nullable: false),
+                    Encashable = table.Column<bool>(type: "bit", nullable: false),
+                    EncashmentRateMultiplier = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
+                    EffectiveFrom = table.Column<DateOnly>(type: "date", nullable: true),
+                    EffectiveTo = table.Column<DateOnly>(type: "date", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LeaveTypes", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -248,15 +337,14 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    WeekdayMultiplier = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    WeekendMultiplier = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    HolidayMultiplier = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    RoundingMinutes = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    DailyCapHours = table.Column<double>(type: "float", nullable: false, defaultValue: 0.0),
-                    PayRunCapHours = table.Column<double>(type: "float", nullable: false, defaultValue: 0.0),
-                    AppliesOnWeekend = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                    AppliesOnHoliday = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    Type = table.Column<int>(type: "int", nullable: false),
+                    Multiplier = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    RoundToMinutes = table.Column<int>(type: "int", nullable: false, defaultValue: 15),
+                    RoundingMode = table.Column<int>(type: "int", nullable: false, defaultValue: 2),
+                    DailyHoursCap = table.Column<double>(type: "float", nullable: true),
+                    MonthlyHoursCap = table.Column<double>(type: "float", nullable: true),
+                    EffectiveFrom = table.Column<DateOnly>(type: "date", nullable: false),
+                    EffectiveTo = table.Column<DateOnly>(type: "date", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -275,12 +363,13 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     EmployeeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Date = table.Column<DateOnly>(type: "date", nullable: false),
-                    Hours = table.Column<double>(type: "float", nullable: false),
+                    RawMinutes = table.Column<int>(type: "int", nullable: false),
                     Type = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false, defaultValue: 1),
-                    Reason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    ApprovedById = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ApprovedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    Comment = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    CreatedByUserId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    ApprovedByUserId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    ApprovedAtUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     PayRunId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsLockedForPayroll = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -329,6 +418,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     YearOfAssessment = table.Column<int>(type: "int", nullable: false),
                     EffectiveFrom = table.Column<DateOnly>(type: "date", nullable: false),
                     EffectiveTo = table.Column<DateOnly>(type: "date", nullable: true),
+                    Frequency = table.Column<int>(type: "int", nullable: false, defaultValue: 1),
                     IsDefault = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
@@ -461,7 +551,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     TaxRuleSetId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     FromAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ToAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    RatePercent = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
+                    Rate = table.Column<decimal>(type: "decimal(5,4)", nullable: false),
                     Order = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
@@ -531,6 +621,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     ProbationEndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ConfirmationDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     BaseSalary = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    HourlyRate = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     BankName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     BankCode = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     BranchCode = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -563,6 +654,47 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         name: "FK_Employees_CostCenters_CostCenterId",
                         column: x => x.CostCenterId,
                         principalTable: "CostCenters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "GlMappings",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PayComponentCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    PayComponentType = table.Column<int>(type: "int", nullable: false),
+                    CostCenterId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    DebitAccountId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CreditAccountId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    PostingSideRule = table.Column<int>(type: "int", nullable: false),
+                    Notes = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GlMappings", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_GlMappings_CostCenters_CostCenterId",
+                        column: x => x.CostCenterId,
+                        principalTable: "CostCenters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_GlMappings_GlAccounts_CreditAccountId",
+                        column: x => x.CreditAccountId,
+                        principalTable: "GlAccounts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_GlMappings_GlAccounts_DebitAccountId",
+                        column: x => x.DebitAccountId,
+                        principalTable: "GlAccounts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -682,6 +814,95 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "EmployeeTaxProfiles",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    EmployeeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IsTaxExempt = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    SlabSetOverrideId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ModifiedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EmployeeTaxProfiles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_EmployeeTaxProfiles_Employees_EmployeeId",
+                        column: x => x.EmployeeId,
+                        principalTable: "Employees",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_EmployeeTaxProfiles_TaxRuleSets_SlabSetOverrideId",
+                        column: x => x.SlabSetOverrideId,
+                        principalTable: "TaxRuleSets",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "GeneratedTaxDocuments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Type = table.Column<int>(type: "int", nullable: false),
+                    PeriodStart = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PeriodEnd = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Year = table.Column<int>(type: "int", nullable: true),
+                    EmployeeId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CompanyId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    BranchId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CostCenterId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    GeneratedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    GeneratedByUserId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    GeneratedByUserName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    FileName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    FilePath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    ContentType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    ChecksumSha256 = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
+                    MetadataJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ErrorSummary = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GeneratedTaxDocuments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_GeneratedTaxDocuments_Branches_BranchId",
+                        column: x => x.BranchId,
+                        principalTable: "Branches",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_GeneratedTaxDocuments_Companies_CompanyId",
+                        column: x => x.CompanyId,
+                        principalTable: "Companies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_GeneratedTaxDocuments_CostCenters_CostCenterId",
+                        column: x => x.CostCenterId,
+                        principalTable: "CostCenters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_GeneratedTaxDocuments_Employees_EmployeeId",
+                        column: x => x.EmployeeId,
+                        principalTable: "Employees",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "RecurringPayItemAssignments",
                 columns: table => new
                 {
@@ -743,6 +964,82 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         name: "FK_RecurringRules_Employees_EmployeeId",
                         column: x => x.EmployeeId,
                         principalTable: "Employees",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "GlJournalBatches",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PayRunId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    GeneratedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    GeneratedByUserId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    GeneratedByUserName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ApprovedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ApprovedByUserId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ApprovedByUserName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ExportedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ExportedByUserId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ExportedByUserName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    ChecksumSha256 = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GlJournalBatches", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_GlJournalBatches_PayRuns_PayRunId",
+                        column: x => x.PayRunId,
+                        principalTable: "PayRuns",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PayRunBankExports",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PayRunId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TemplateId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    GeneratedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    GeneratedByUserId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    GeneratedByUserName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    DownloadedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DownloadedByUserId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    DownloadedByUserName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    FileName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    FilePath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    ChecksumSha256 = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    ErrorSummary = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ModifiedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PayRunBankExports", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PayRunBankExports_BankExportTemplates_TemplateId",
+                        column: x => x.TemplateId,
+                        principalTable: "BankExportTemplates",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PayRunBankExports_PayRuns_PayRunId",
+                        column: x => x.PayRunId,
+                        principalTable: "PayRuns",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -818,6 +1115,44 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PayslipDocuments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PayRunId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    EmployeeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    GeneratedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    GeneratedByUserId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    GeneratedByUserName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    FileName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    FilePath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    ChecksumSha256 = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    ErrorSummary = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ModifiedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PayslipDocuments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PayslipDocuments_Employees_EmployeeId",
+                        column: x => x.EmployeeId,
+                        principalTable: "Employees",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PayslipDocuments_PayRuns_PayRunId",
+                        column: x => x.PayRunId,
+                        principalTable: "PayRuns",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PaySlips",
                 columns: table => new
                 {
@@ -832,6 +1167,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     EmployerEpf = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     EmployerEtf = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     PayeTax = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TaxCalculationJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -893,6 +1229,91 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "GlJournalLines",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    BatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PostingDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    AccountId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    DebitAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    CreditAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    EmployeeId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    PayComponentCode = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PayComponentType = table.Column<int>(type: "int", nullable: true),
+                    CostCenterId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    BranchId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Reference = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GlJournalLines", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_GlJournalLines_Branches_BranchId",
+                        column: x => x.BranchId,
+                        principalTable: "Branches",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_GlJournalLines_CostCenters_CostCenterId",
+                        column: x => x.CostCenterId,
+                        principalTable: "CostCenters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_GlJournalLines_Employees_EmployeeId",
+                        column: x => x.EmployeeId,
+                        principalTable: "Employees",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_GlJournalLines_GlAccounts_AccountId",
+                        column: x => x.AccountId,
+                        principalTable: "GlAccounts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_GlJournalLines_GlJournalBatches_BatchId",
+                        column: x => x.BatchId,
+                        principalTable: "GlJournalBatches",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PayRunBankExportErrors",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PayRunBankExportId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    EmployeeId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    EmployeeCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Field = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Message = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ModifiedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PayRunBankExportErrors", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PayRunBankExportErrors_PayRunBankExports_PayRunBankExportId",
+                        column: x => x.PayRunBankExportId,
+                        principalTable: "PayRunBankExports",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "DeductionLines",
                 columns: table => new
                 {
@@ -903,7 +1324,10 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     Source = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: ""),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     IsPreTax = table.Column<bool>(type: "bit", nullable: false),
-                    IsPostTax = table.Column<bool>(type: "bit", nullable: false)
+                    IsPostTax = table.Column<bool>(type: "bit", nullable: false),
+                    NoPayDays = table.Column<decimal>(type: "decimal(5,2)", nullable: true),
+                    NoPayHours = table.Column<decimal>(type: "decimal(7,2)", nullable: true),
+                    MetadataJson = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -957,7 +1381,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                 {
                     { new Guid("44444444-4444-4444-4444-444444444444"), 1, "EPF_EE", new DateTime(2020, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "system", null, true, false, true, null, null, "Employee EPF" },
                     { new Guid("55555555-5555-5555-5555-555555555555"), 1, "LOAN", new DateTime(2020, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "system", null, true, false, true, null, null, "Loan Installment" },
-                    { new Guid("66666666-6666-6666-6666-666666666666"), 1, "NOPAY", new DateTime(2020, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "system", null, true, false, true, null, null, "No Pay Deduction" },
+                    { new Guid("66666666-6666-6666-6666-666666666666"), 1, "DED_NO_PAY", new DateTime(2020, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "system", null, true, false, true, null, null, "No Pay" },
                     { new Guid("77777777-7777-7777-7777-777777777777"), 1, "PAYE", new DateTime(2020, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "system", null, true, true, false, null, null, "PAYE Tax" }
                 });
 
@@ -968,18 +1392,18 @@ namespace Payroll.Infrastructure.Persistence.Migrations
 
             migrationBuilder.InsertData(
                 table: "TaxRuleSets",
-                columns: new[] { "Id", "CreatedAt", "CreatedBy", "EffectiveFrom", "EffectiveTo", "IsActive", "IsDefault", "ModifiedAt", "ModifiedBy", "Name", "YearOfAssessment" },
-                values: new object[] { new Guid("99999999-9999-9999-9999-999999999999"), new DateTime(2020, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "system", new DateOnly(2025, 4, 1), null, true, true, null, null, "Sri Lanka PAYE YA 2025/26", 2025 });
+                columns: new[] { "Id", "CreatedAt", "CreatedBy", "EffectiveFrom", "EffectiveTo", "Frequency", "IsActive", "IsDefault", "ModifiedAt", "ModifiedBy", "Name", "YearOfAssessment" },
+                values: new object[] { new Guid("99999999-9999-9999-9999-999999999999"), new DateTime(2020, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "system", new DateOnly(2025, 4, 1), null, 1, true, true, null, null, "Sri Lanka PAYE YA 2025/26", 2025 });
 
             migrationBuilder.InsertData(
                 table: "TaxSlabs",
-                columns: new[] { "Id", "CreatedAt", "CreatedBy", "FromAmount", "IsActive", "ModifiedAt", "ModifiedBy", "Order", "RatePercent", "TaxRuleSetId", "ToAmount" },
+                columns: new[] { "Id", "CreatedAt", "CreatedBy", "FromAmount", "IsActive", "ModifiedAt", "ModifiedBy", "Order", "Rate", "TaxRuleSetId", "ToAmount" },
                 values: new object[,]
                 {
                     { new Guid("aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaa1"), new DateTime(2020, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "system", 0m, true, null, null, 1, 0m, new Guid("99999999-9999-9999-9999-999999999999"), 100000m },
-                    { new Guid("aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaa2"), new DateTime(2020, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "system", 100000m, true, null, null, 2, 6m, new Guid("99999999-9999-9999-9999-999999999999"), 141667m },
-                    { new Guid("aaaaaaa3-aaaa-aaaa-aaaa-aaaaaaaaaaa3"), new DateTime(2020, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "system", 141667m, true, null, null, 3, 12m, new Guid("99999999-9999-9999-9999-999999999999"), 183333m },
-                    { new Guid("aaaaaaa4-aaaa-aaaa-aaaa-aaaaaaaaaaa4"), new DateTime(2020, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "system", 183333m, true, null, null, 4, 18m, new Guid("99999999-9999-9999-9999-999999999999"), null }
+                    { new Guid("aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaa2"), new DateTime(2020, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "system", 100000m, true, null, null, 2, 0.06m, new Guid("99999999-9999-9999-9999-999999999999"), 141667m },
+                    { new Guid("aaaaaaa3-aaaa-aaaa-aaaa-aaaaaaaaaaa3"), new DateTime(2020, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "system", 141667m, true, null, null, 3, 0.12m, new Guid("99999999-9999-9999-9999-999999999999"), 183333m },
+                    { new Guid("aaaaaaa4-aaaa-aaaa-aaaa-aaaaaaaaaaa4"), new DateTime(2020, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "system", 183333m, true, null, null, 4, 0.18m, new Guid("99999999-9999-9999-9999-999999999999"), null }
                 });
 
             migrationBuilder.CreateIndex(
@@ -1105,6 +1529,17 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_EmployeeTaxProfiles_EmployeeId",
+                table: "EmployeeTaxProfiles",
+                column: "EmployeeId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeeTaxProfiles_SlabSetOverrideId",
+                table: "EmployeeTaxProfiles",
+                column: "SlabSetOverrideId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_EpfEtfRuleSets_EffectiveFrom_IsActive_IsDefault",
                 table: "EpfEtfRuleSets",
                 columns: new[] { "EffectiveFrom", "IsActive", "IsDefault" });
@@ -1114,6 +1549,89 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                 table: "GeneralLedgerAccountMappings",
                 columns: new[] { "Code", "MappingType" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GeneratedTaxDocuments_BranchId",
+                table: "GeneratedTaxDocuments",
+                column: "BranchId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GeneratedTaxDocuments_CompanyId",
+                table: "GeneratedTaxDocuments",
+                column: "CompanyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GeneratedTaxDocuments_CostCenterId",
+                table: "GeneratedTaxDocuments",
+                column: "CostCenterId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GeneratedTaxDocuments_EmployeeId",
+                table: "GeneratedTaxDocuments",
+                column: "EmployeeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GeneratedTaxDocuments_Type_Year_PeriodStart_PeriodEnd_EmployeeId_CompanyId_BranchId_CostCenterId",
+                table: "GeneratedTaxDocuments",
+                columns: new[] { "Type", "Year", "PeriodStart", "PeriodEnd", "EmployeeId", "CompanyId", "BranchId", "CostCenterId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GlAccounts_Code",
+                table: "GlAccounts",
+                column: "Code",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GlJournalBatches_PayRunId",
+                table: "GlJournalBatches",
+                column: "PayRunId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GlJournalLines_AccountId",
+                table: "GlJournalLines",
+                column: "AccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GlJournalLines_BatchId",
+                table: "GlJournalLines",
+                column: "BatchId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GlJournalLines_BranchId",
+                table: "GlJournalLines",
+                column: "BranchId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GlJournalLines_CostCenterId",
+                table: "GlJournalLines",
+                column: "CostCenterId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GlJournalLines_EmployeeId",
+                table: "GlJournalLines",
+                column: "EmployeeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GlMappings_CostCenterId",
+                table: "GlMappings",
+                column: "CostCenterId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GlMappings_CreditAccountId",
+                table: "GlMappings",
+                column: "CreditAccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GlMappings_DebitAccountId",
+                table: "GlMappings",
+                column: "DebitAccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GlMappings_PayComponentCode_PayComponentType_CostCenterId",
+                table: "GlMappings",
+                columns: new[] { "PayComponentCode", "PayComponentType", "CostCenterId" },
+                unique: true,
+                filter: "[CostCenterId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_LeaveRequests_EmployeeId_StartDate",
@@ -1134,6 +1652,21 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                 name: "IX_OvertimeRecords_EmployeeId_Date",
                 table: "OvertimeRecords",
                 columns: new[] { "EmployeeId", "Date" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PayRunBankExportErrors_PayRunBankExportId",
+                table: "PayRunBankExportErrors",
+                column: "PayRunBankExportId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PayRunBankExports_PayRunId_TemplateId",
+                table: "PayRunBankExports",
+                columns: new[] { "PayRunId", "TemplateId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PayRunBankExports_TemplateId",
+                table: "PayRunBankExports",
+                column: "TemplateId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PayRunRecurringLines_EmployeeId",
@@ -1182,6 +1715,16 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                 name: "IX_PayRunStatusHistory_PayRunId",
                 table: "PayRunStatusHistory",
                 column: "PayRunId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PayslipDocuments_EmployeeId",
+                table: "PayslipDocuments",
+                column: "EmployeeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PayslipDocuments_PayRunId_EmployeeId",
+                table: "PayslipDocuments",
+                columns: new[] { "PayRunId", "EmployeeId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_PaySlips_EmployeeId",
@@ -1266,13 +1809,31 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                 name: "EmployeeRecurringPayItems");
 
             migrationBuilder.DropTable(
+                name: "EmployeeTaxProfiles");
+
+            migrationBuilder.DropTable(
                 name: "EpfEtfRuleSets");
 
             migrationBuilder.DropTable(
                 name: "GeneralLedgerAccountMappings");
 
             migrationBuilder.DropTable(
+                name: "GeneratedTaxDocuments");
+
+            migrationBuilder.DropTable(
+                name: "GlJournalLines");
+
+            migrationBuilder.DropTable(
+                name: "GlMappings");
+
+            migrationBuilder.DropTable(
+                name: "LeaveEncashmentRequests");
+
+            migrationBuilder.DropTable(
                 name: "LeaveRequests");
+
+            migrationBuilder.DropTable(
+                name: "LeaveTypes");
 
             migrationBuilder.DropTable(
                 name: "LoanRepayments");
@@ -1287,10 +1848,16 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                 name: "PayrollSettings");
 
             migrationBuilder.DropTable(
+                name: "PayRunBankExportErrors");
+
+            migrationBuilder.DropTable(
                 name: "PayRunRecurringLines");
 
             migrationBuilder.DropTable(
                 name: "PayRunStatusHistory");
+
+            migrationBuilder.DropTable(
+                name: "PayslipDocuments");
 
             migrationBuilder.DropTable(
                 name: "RecurringPayItemAssignments");
@@ -1311,7 +1878,16 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                 name: "PaySlips");
 
             migrationBuilder.DropTable(
+                name: "GlJournalBatches");
+
+            migrationBuilder.DropTable(
+                name: "GlAccounts");
+
+            migrationBuilder.DropTable(
                 name: "Loans");
+
+            migrationBuilder.DropTable(
+                name: "PayRunBankExports");
 
             migrationBuilder.DropTable(
                 name: "RecurringPayItemRules");
@@ -1321,6 +1897,9 @@ namespace Payroll.Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "Employees");
+
+            migrationBuilder.DropTable(
+                name: "BankExportTemplates");
 
             migrationBuilder.DropTable(
                 name: "PayRuns");
