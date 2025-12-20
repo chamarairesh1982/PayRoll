@@ -477,7 +477,7 @@
 
   <div class="overtime-review" *ngIf="payRun?.paySlips?.length">
     <h2>Overtime earnings</h2>
-    <table class="table" *ngIf="payRun.paySlips.some(slip => getOvertimeEarningsForSlip(slip.id).length); else noOvertime">
+    <table class="table" *ngIf="hasOvertimeEarnings(); else noOvertime">
       <thead>
         <tr>
           <th>Employee</th>
