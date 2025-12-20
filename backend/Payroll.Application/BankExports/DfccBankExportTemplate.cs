@@ -2,9 +2,9 @@ using System.Text;
 
 namespace Payroll.Application.BankExports;
 
-public class HnbBankExportTemplate : IBankExportTemplate
+public class DfccBankExportTemplate : IBankExportTemplate
 {
-    public string TemplateName => "HNB";
+    public string TemplateName => "DFCC";
     public string FileExtension => "csv";
     public string ContentType => "text/csv";
 

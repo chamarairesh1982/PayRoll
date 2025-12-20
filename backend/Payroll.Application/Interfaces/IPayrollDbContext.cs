@@ -24,6 +24,9 @@ public interface IPayrollDbContext
     DbSet<PayRun> PayRuns { get; }
     DbSet<PaySlip> PaySlips { get; }
     DbSet<PayRunStatusHistory> PayRunStatusHistories { get; }
+    DbSet<BankExportTemplate> BankExportTemplates { get; }
+    DbSet<PayRunBankExport> PayRunBankExports { get; }
+    DbSet<PayRunBankExportError> PayRunBankExportErrors { get; }
     DbSet<StatutoryReport> StatutoryReports { get; }
     DbSet<RecurringRule> RecurringRules { get; }
     DbSet<RecurringPayItemRule> RecurringPayItemRules { get; }

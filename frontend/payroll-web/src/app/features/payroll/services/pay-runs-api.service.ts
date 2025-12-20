@@ -3,8 +3,13 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { PaginatedResult } from '../../employees/models/employee.model';
-import { BankExportResult, PayPeriodType, PayRunDetail, PayRunStatus, PayRunSummary } from '../models/pay-run.model';
 import { ApitReport, FileExportResult } from '../models/apit-report.model';
+import {
+  BankExportGenerateResult,
+  BankExportTemplate,
+  PayRunBankExport,
+} from '../models/bank-export.model';
+import { PayPeriodType, PayRunDetail, PayRunStatus, PayRunSummary } from '../models/pay-run.model';
 import { PaySlip } from '../models/payslip.model';
 
 export interface PayRunActionRequest {
@@ -14,6 +19,7 @@ export interface PayRunActionRequest {
 @Injectable({ providedIn: 'root' })
 export class PayRunsApiService {
   private baseUrl = `${environment.apiBaseUrl}/payruns`;
+  private bankExportUrl = `${environment.apiBaseUrl}/bank-exports`;
 
   constructor(private http: HttpClient) {}
 
@@ -111,12 +117,33 @@ export class PayRunsApiService {
     return this.http.post<void>(`${this.baseUrl}/${id}/unlock`, payload ?? {});
   }
 
-  generateBankExport(id: string, bank: string): Observable<BankExportResult> {
-    return this.http.post<BankExportResult>(`${this.baseUrl}/${id}/bank-export`, { bank });
+  getBankExportTemplates(): Observable<BankExportTemplate[]> {
+    return this.http.get<BankExportTemplate[]>(`${this.bankExportUrl}/templates`);
   }
 
-  markBankExportDownloaded(id: string): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/${id}/bank-export/downloaded`, {});
+  getPayRunBankExports(payRunId: string): Observable<PayRunBankExport[]> {
+    return this.http.get<PayRunBankExport[]>(`${this.baseUrl}/${payRunId}/bank-exports`);
+  }
+
+  generateBankExport(
+    payRunId: string,
+    templateId: string,
+    regenerate = false,
+  ): Observable<BankExportGenerateResult> {
+    const params = regenerate ? new HttpParams().set('regenerate', 'true') : undefined;
+    return this.http.post<BankExportGenerateResult>(
+      `${this.baseUrl}/${payRunId}/bank-exports`,
+      { templateId },
+      { params },
+    );
+  }
+
+  downloadBankExport(exportId: string): Observable<FileExportResult> {
+    return this.http.get<FileExportResult>(`${this.bankExportUrl}/${exportId}/download`);
+  }
+
+  downloadBankExportErrors(exportId: string): Observable<FileExportResult> {
+    return this.http.get<FileExportResult>(`${this.bankExportUrl}/${exportId}/errors`);
   }
 
   getPaySlip(payRunId: string, paySlipId: string): Observable<PaySlip> {

@@ -12,34 +12,62 @@ public class BankExportTemplateTests
         var template = new HnbBankExportTemplate();
         var content = template.Render(new[]
         {
-            new BankExportRow("EMP1", "Alice", "123456", "001", 1500.50m)
-        }, "PR001");
+            new BankExportRow(1, "Alice", "12345678", 1500.50m, "PR001", "EMP1")
+        });
 
-        content.Should().Contain("AccountNumber,Amount,Name,Reference");
-        content.Should().Contain("123456,1500.50,\"Alice\",PR001");
+        content.Should().Contain("RowNo,BeneficiaryName,AccountNumber,Amount,Reference,EmployeeCode");
+        content.Should().Contain("1,\"Alice\",12345678,1500.50,PR001,EMP1");
     }
 
     [Fact]
-    public void BocTemplate_Should_Pipe_Separate_Columns()
+    public void BocTemplate_Should_Render_Header_And_Row()
     {
         var template = new BocBankExportTemplate();
         var content = template.Render(new[]
         {
-            new BankExportRow("EMP2", "Bob", "7890", "BR01", 999.99m)
-        }, "PR002");
+            new BankExportRow(1, "Bob", "78901234", 999.99m, "PR002", "EMP2")
+        });
 
-        content.Trim().Should().Be("BR01|7890|Bob|999.99|PR002");
+        content.Should().Contain("RowNo,BeneficiaryName,AccountNumber,Amount,Reference,EmployeeCode");
+        content.Should().Contain("1,\"Bob\",78901234,999.99,PR002,EMP2");
     }
 
     [Fact]
-    public void CommercialTemplate_Should_Combine_Code_And_Name()
+    public void CommercialTemplate_Should_Render_Header_And_Row()
     {
         var template = new CommercialBankExportTemplate();
         var content = template.Render(new[]
         {
-            new BankExportRow("EMP3", "Chloe", "55555", "CMB1", 100m)
-        }, "PR003");
+            new BankExportRow(1, "Chloe", "55555123", 100m, "PR003", "EMP3")
+        });
 
-        content.Should().Contain("CMB1,55555,100.00,EMP3-Chloe,PR003");
+        content.Should().Contain("RowNo,BeneficiaryName,AccountNumber,Amount,Reference,EmployeeCode");
+        content.Should().Contain("1,\"Chloe\",55555123,100.00,PR003,EMP3");
+    }
+
+    [Fact]
+    public void SampathTemplate_Should_Render_Header_And_Row()
+    {
+        var template = new SampathBankExportTemplate();
+        var content = template.Render(new[]
+        {
+            new BankExportRow(1, "Dana", "12344321", 250.75m, "PR004", "EMP4")
+        });
+
+        content.Should().Contain("RowNo,BeneficiaryName,AccountNumber,Amount,Reference,EmployeeCode");
+        content.Should().Contain("1,\"Dana\",12344321,250.75,PR004,EMP4");
+    }
+
+    [Fact]
+    public void DfccTemplate_Should_Render_Header_And_Row()
+    {
+        var template = new DfccBankExportTemplate();
+        var content = template.Render(new[]
+        {
+            new BankExportRow(1, "Evan", "77778888", 333.33m, "PR005", "EMP5")
+        });
+
+        content.Should().Contain("RowNo,BeneficiaryName,AccountNumber,Amount,Reference,EmployeeCode");
+        content.Should().Contain("1,\"Evan\",77778888,333.33,PR005,EMP5");
     }
 }

@@ -159,6 +159,16 @@
   padding-left: 1.5rem;
 }
 
+.export-history {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.export-history .table {
+  width: 100%;
+}
+
 .apit-report {
   border: 1px solid #e5e7eb;
   border-radius: 8px;

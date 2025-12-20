@@ -1,8 +1,9 @@
 namespace Payroll.Application.BankExports;
 
 public record BankExportRow(
-    string EmployeeCode,
-    string EmployeeName,
+    int RowNo,
+    string BeneficiaryName,
     string AccountNumber,
-    string BranchCode,
-    decimal Amount);
+    decimal Amount,
+    string Reference,
+    string EmployeeCode);

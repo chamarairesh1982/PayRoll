@@ -56,6 +56,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEpfEtfRuleSetService, EpfEtfRuleSetService>();
         services.AddScoped<ITaxRuleSetService, TaxRuleSetService>();
         services.AddScoped<IOvertimeRuleService, OvertimeRuleService>();
+        services.AddScoped<IBankExportService, BankExportService>();
         services.AddScoped<IAuditLogger, AuditLogger>();
         services.AddScoped<IAuditLogQueryService, AuditLogQueryService>();
         services.AddScoped<ICurrentUserService, SimpleCurrentUserService>();
@@ -66,6 +67,7 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
+        services.Configure<BankExportStorageOptions>(configuration.GetSection("BankExportStorage"));
         services.Configure<ReportStorageOptions>(configuration.GetSection("ReportStorage"));
         var databaseOptions = new DatabaseOptions();
         configuration.GetSection("Database").Bind(databaseOptions);
@@ -78,6 +80,7 @@ public static class ServiceCollectionExtensions
         services.AddDbContext<PayrollDbContext>(options => options.UseSqlServer(connectionString));
         services.AddScoped<IPayrollDbContext>(provider => provider.GetRequiredService<PayrollDbContext>());
         services.AddScoped<IStatutoryReportStorage, FileSystemStatutoryReportStorage>();
+        services.AddScoped<IBankExportStorage, FileSystemBankExportStorage>();
         services.AddIdentityLayer();
         services.AddStructuredLogging(configuration);
         return services;

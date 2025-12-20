@@ -530,6 +530,30 @@ public static class TestDataSeeder
 
         return assignment;
     }
+
+    public static BankExportTemplate SeedBankExportTemplate(PayrollDbContext context, string name = "HNB")
+    {
+        var existing = context.BankExportTemplates.FirstOrDefault(template => template.Name == name);
+        if (existing != null)
+        {
+            return existing;
+        }
+
+        var template = new BankExportTemplate
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            Format = BankExportFormat.Csv,
+            Delimiter = ",",
+            HeaderRowCount = 1,
+            IsActive = true,
+            CreatedBy = "seed"
+        };
+
+        context.BankExportTemplates.Add(template);
+        context.SaveChanges();
+        return template;
+    }
 }
 
 public class TestCurrentUserService : ICurrentUserService

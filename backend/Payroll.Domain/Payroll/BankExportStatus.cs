@@ -4,5 +4,6 @@ public enum BankExportStatus
 {
     Pending = 0,
     Generated = 1,
-    Downloaded = 2
+    Downloaded = 2,
+    Failed = 3
 }

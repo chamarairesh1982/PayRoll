@@ -616,48 +616,6 @@ public class PayrollServiceTests
         preview.Breakdown.Should().NotBeEmpty();
     }
 
-    [Fact]
-    public async Task GenerateBankExport_Should_Return_Failures_When_Bank_Details_Missing()
-    {
-        using var context = new TestContext();
-        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP100", "Una", 120_000m);
-        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
-        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
-
-        var payrollService = CreatePayrollService(context);
-        var payRun = await payrollService.CreatePayRunAsync(BuildDefaultRequest(employee.Id));
-
-        var result = await payrollService.GenerateBankExportAsync(payRun.Id, new BankExportRequest { Bank = "HNB" });
-
-        result.Failures.Should().ContainSingle(f => f.EmployeeId == employee.Id);
-        result.Status.Should().Be(BankExportStatus.Pending);
-    }
-
-    [Fact]
-    public async Task GenerateBankExport_Should_Create_File_And_Update_Status()
-    {
-        using var context = new TestContext();
-        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP101", "Vera", 150_000m);
-        employee.UpdateBankDetails("HNB", "7080", "001", "1234567890");
-        context.DbContext.SaveChanges();
-        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
-        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
-
-        var payrollService = CreatePayrollService(context);
-        var payRun = await payrollService.CreatePayRunAsync(BuildDefaultRequest(employee.Id));
-
-        var result = await payrollService.GenerateBankExportAsync(payRun.Id, new BankExportRequest { Bank = "BOC" });
-
-        result.Failures.Should().BeEmpty();
-        result.ContentBase64.Should().NotBeNullOrEmpty();
-        result.Bank.Should().Be("BOC");
-
-        var refreshed = await payrollService.GetPayRunAsync(payRun.Id);
-        refreshed.Should().NotBeNull();
-        refreshed!.ExportStatus.Should().Be(BankExportStatus.Generated);
-        refreshed.ExportedBank.Should().Be("BOC");
-    }
-
     private static CreatePayRunRequest BuildDefaultRequest(Guid employeeId)
     {
         return new CreatePayRunRequest

@@ -10,22 +10,19 @@ public class BankExportTemplateResolver
         {
             { "HNB", new HnbBankExportTemplate() },
             { "BOC", new BocBankExportTemplate() },
-            { "Commercial", new CommercialBankExportTemplate() }
+            { "Commercial", new CommercialBankExportTemplate() },
+            { "Sampath", new SampathBankExportTemplate() },
+            { "DFCC", new DfccBankExportTemplate() }
         };
     }
 
-    public IBankExportTemplate Resolve(string bank)
+    public IBankExportTemplate Resolve(string templateName)
     {
-        if (string.IsNullOrWhiteSpace(bank))
-        {
-            throw new ArgumentException("Bank is required", nameof(bank));
-        }
-
-        if (_templates.TryGetValue(bank.Trim(), out var template))
+        if (_templates.TryGetValue(templateName, out var template))
         {
             return template;
         }
 
-        throw new KeyNotFoundException($"Unsupported bank export template '{bank}'.");
+        throw new InvalidOperationException($"Unsupported bank export template: {templateName}");
     }
 }

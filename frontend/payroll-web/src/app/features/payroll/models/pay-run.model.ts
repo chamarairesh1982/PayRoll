@@ -1,6 +1,5 @@
+import { BankExportStatus } from './bank-export.model';
 import { PaySlip } from './payslip.model';
-
-export type BankExportStatus = 'Pending' | 'Generated' | 'Downloaded';
 
 export type PayRunStatus = 'Draft' | 'Prepared' | 'Approved' | 'Locked';
 
@@ -45,22 +44,6 @@ export interface AttendanceNoPaySummary {
   employeeCode?: string | null;
   employeeName?: string | null;
   noPayAmount: number;
-}
-
-export interface BankExportFailure {
-  employeeId: string;
-  employeeCode?: string | null;
-  employeeName?: string | null;
-  reason: string;
-}
-
-export interface BankExportResult {
-  status: BankExportStatus;
-  bank: string;
-  fileName: string;
-  contentType: string;
-  contentBase64: string;
-  failures: BankExportFailure[];
 }
 
 export interface PayRunStatusHistory {
