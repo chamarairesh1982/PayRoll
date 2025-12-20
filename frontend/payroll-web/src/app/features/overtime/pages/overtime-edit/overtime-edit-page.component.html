@@ -5,9 +5,12 @@
     <div *ngIf="overtimeRecord.isLockedForPayroll" class="locked-message">
       This OT record is locked and cannot be edited.
     </div>
+    <div *ngIf="!overtimeRecord.isLockedForPayroll && overtimeRecord.status !== 'Draft'" class="locked-message">
+      Only draft overtime entries can be edited.
+    </div>
 
     <app-overtime-form
-      *ngIf="!overtimeRecord.isLockedForPayroll"
+      *ngIf="!overtimeRecord.isLockedForPayroll && overtimeRecord.status === 'Draft'"
       [initialValue]="overtimeRecord"
       mode="edit"
       (submitted)="onSubmitted($event)"

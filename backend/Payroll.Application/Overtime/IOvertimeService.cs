@@ -10,7 +10,8 @@ public interface IOvertimeService
         int page,
         int pageSize,
         Guid? employeeId,
-        DateOnly? date,
+        DateOnly? from,
+        DateOnly? to,
         OvertimeStatus? status);
 
     Task<OTEntryDto?> GetByIdAsync(Guid id);
@@ -19,5 +20,9 @@ public interface IOvertimeService
 
     Task UpdateAsync(Guid id, UpdateOTEntryRequest request);
 
-    Task DeleteAsync(Guid id);
+    Task SubmitAsync(Guid id);
+
+    Task ApproveAsync(Guid id, OvertimeActionRequest request);
+
+    Task RejectAsync(Guid id, OvertimeActionRequest request);
 }

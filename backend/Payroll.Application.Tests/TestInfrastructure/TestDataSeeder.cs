@@ -257,6 +257,7 @@ public static class TestDataSeeder
                 maritalStatus: MaritalStatus.Single,
                 employmentStartDate: joinDate,
                 baseSalary: basicSalary,
+                hourlyRate: null,
                 companyId: null,
                 branchId: null,
                 costCenterId: null,
@@ -338,16 +339,16 @@ public static class TestDataSeeder
         return leave;
     }
 
-    public static OTEntry SeedOvertime(PayrollDbContext context, Employee employee, DateOnly date, double hours, OvertimeType type = OvertimeType.Weekday)
+    public static OTEntry SeedOvertime(PayrollDbContext context, Employee employee, DateOnly date, int rawMinutes, OvertimeType type = OvertimeType.Normal)
     {
         var overtime = new OTEntry
         {
             EmployeeId = employee.Id,
             Date = date,
-            Hours = hours,
+            RawMinutes = rawMinutes,
             Type = type,
             Status = OvertimeStatus.Approved,
-            ApprovedAt = DateTimeOffset.UtcNow,
+            ApprovedAtUtc = DateTimeOffset.UtcNow,
             IsLockedForPayroll = false,
             CreatedBy = "seed"
         };

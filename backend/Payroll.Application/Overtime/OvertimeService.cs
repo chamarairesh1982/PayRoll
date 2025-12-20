@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Payroll.Application.Exceptions;
 using Payroll.Application.Interfaces;
 using Payroll.Application.Overtime.DTOs;
 using Payroll.Domain.Overtime;
@@ -21,7 +22,8 @@ public class OvertimeService : IOvertimeService
         int page,
         int pageSize,
         Guid? employeeId,
-        DateOnly? date,
+        DateOnly? from,
+        DateOnly? to,
         OvertimeStatus? status)
     {
         page = Math.Max(page, 1);
@@ -37,9 +39,14 @@ public class OvertimeService : IOvertimeService
             query = query.Where(o => o.EmployeeId == employeeId.Value);
         }
 
-        if (date.HasValue)
+        if (from.HasValue)
         {
-            query = query.Where(o => o.Date == date.Value);
+            query = query.Where(o => o.Date >= from.Value);
+        }
+
+        if (to.HasValue)
+        {
+            query = query.Where(o => o.Date <= to.Value);
         }
 
         if (status.HasValue)
@@ -58,7 +65,6 @@ public class OvertimeService : IOvertimeService
 
         var employeeIds = records
             .Select(o => o.EmployeeId)
-            .Concat(records.Where(o => o.ApprovedById.HasValue).Select(o => o.ApprovedById!.Value))
             .Distinct()
             .ToList();
 
@@ -89,15 +95,9 @@ public class OvertimeService : IOvertimeService
             return null;
         }
 
-        var employeeIds = new List<Guid> { overtime.EmployeeId };
-        if (overtime.ApprovedById.HasValue)
-        {
-            employeeIds.Add(overtime.ApprovedById.Value);
-        }
-
         var employees = await _dbContext.Employees
             .AsNoTracking()
-            .Where(e => employeeIds.Contains(e.Id))
+            .Where(e => e.Id == overtime.EmployeeId)
             .ToDictionaryAsync(e => e.Id, e => e);
 
         return MapToDto(overtime, employees);
@@ -105,9 +105,17 @@ public class OvertimeService : IOvertimeService
 
     public async Task<OTEntryDto> CreateAsync(CreateOTEntryRequest request)
     {
-        if (request.Hours <= 0)
+        EnsureRole("Maker", "HR");
+        EnsureValidStatus(request.Status);
+
+        if (request.Status is not (OvertimeStatus.Draft or OvertimeStatus.Submitted))
         {
-            throw new ArgumentException("Hours must be greater than zero.", nameof(request.Hours));
+            throw new InvalidOperationException("Overtime entries can only be created as draft or submitted.");
+        }
+
+        if (request.RawMinutes <= 0)
+        {
+            throw new ArgumentException("Minutes must be greater than zero.", nameof(request.RawMinutes));
         }
 
         var employee = await _dbContext.Employees.AsNoTracking().FirstOrDefaultAsync(e => e.Id == request.EmployeeId);
@@ -119,14 +127,15 @@ public class OvertimeService : IOvertimeService
         var overtime = new OTEntry
         {
             EmployeeId = request.EmployeeId,
-            Date = DateOnly.FromDateTime(request.Date.Date),
-            Hours = request.Hours,
+            Date = DateOnly.FromDateTime(request.WorkDate.Date),
+            RawMinutes = request.RawMinutes,
             Type = request.Type,
-            Status = OvertimeStatus.Pending,
-            Reason = request.Reason?.Trim(),
-            ApprovedAt = null,
-            ApprovedById = null,
+            Status = request.Status,
+            Comment = request.Comment?.Trim(),
+            ApprovedAtUtc = null,
+            ApprovedByUserId = null,
             IsLockedForPayroll = false,
+            CreatedByUserId = _currentUserService.UserId,
             CreatedBy = _currentUserService.UserName ?? "system"
         };
 
@@ -149,24 +158,26 @@ public class OvertimeService : IOvertimeService
             throw new KeyNotFoundException("Overtime record not found");
         }
 
+        EnsureEditable(overtime);
+
         if (overtime.IsLockedForPayroll)
         {
             throw new InvalidOperationException("Overtime record is locked for payroll and cannot be modified.");
         }
 
-        if (request.Date.HasValue)
+        if (request.WorkDate.HasValue)
         {
-            overtime.Date = DateOnly.FromDateTime(request.Date.Value.Date);
+            overtime.Date = DateOnly.FromDateTime(request.WorkDate.Value.Date);
         }
 
-        if (request.Hours.HasValue)
+        if (request.RawMinutes.HasValue)
         {
-            if (request.Hours.Value <= 0)
+            if (request.RawMinutes.Value <= 0)
             {
-                throw new ArgumentException("Hours must be greater than zero.", nameof(request.Hours));
+                throw new ArgumentException("Minutes must be greater than zero.", nameof(request.RawMinutes));
             }
 
-            overtime.Hours = request.Hours.Value;
+            overtime.RawMinutes = request.RawMinutes.Value;
         }
 
         if (request.Type.HasValue)
@@ -174,20 +185,9 @@ public class OvertimeService : IOvertimeService
             overtime.Type = request.Type.Value;
         }
 
-        if (request.Reason != null)
+        if (request.Comment != null)
         {
-            overtime.Reason = request.Reason.Trim();
-        }
-
-        if (request.Status.HasValue)
-        {
-            overtime.Status = request.Status.Value;
-            overtime.ApprovedAt = request.Status is OvertimeStatus.Approved or OvertimeStatus.Rejected
-                ? DateTimeOffset.UtcNow
-                : null;
-            overtime.ApprovedById = overtime.ApprovedAt.HasValue && Guid.TryParse(_currentUserService.UserId, out var approverId)
-                ? approverId
-                : null;
+            overtime.Comment = request.Comment.Trim();
         }
 
         overtime.ModifiedAt = DateTime.UtcNow;
@@ -196,8 +196,37 @@ public class OvertimeService : IOvertimeService
         await _dbContext.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(Guid id)
+    public async Task SubmitAsync(Guid id)
     {
+        var overtime = await _dbContext.OTEntries.FirstOrDefaultAsync(o => o.Id == id && o.IsActive);
+        if (overtime is null)
+        {
+            throw new KeyNotFoundException("Overtime record not found");
+        }
+
+        EnsureEditable(overtime);
+
+        if (overtime.IsLockedForPayroll)
+        {
+            throw new InvalidOperationException("Overtime record is locked for payroll and cannot be submitted.");
+        }
+
+        if (overtime.Status != OvertimeStatus.Draft)
+        {
+            throw new InvalidOperationException("Only draft overtime entries can be submitted.");
+        }
+
+        overtime.Status = OvertimeStatus.Submitted;
+        overtime.ModifiedAt = DateTime.UtcNow;
+        overtime.ModifiedBy = _currentUserService.UserName ?? "system";
+
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task ApproveAsync(Guid id, OvertimeActionRequest request)
+    {
+        EnsureRole("Approver");
+
         var overtime = await _dbContext.OTEntries.FirstOrDefaultAsync(o => o.Id == id && o.IsActive);
         if (overtime is null)
         {
@@ -206,10 +235,48 @@ public class OvertimeService : IOvertimeService
 
         if (overtime.IsLockedForPayroll)
         {
-            throw new InvalidOperationException("Overtime record is locked for payroll and cannot be deleted.");
+            throw new InvalidOperationException("Overtime record is locked for payroll and cannot be approved.");
         }
 
-        overtime.IsActive = false;
+        if (overtime.Status != OvertimeStatus.Submitted)
+        {
+            throw new InvalidOperationException("Only submitted overtime entries can be approved.");
+        }
+
+        overtime.Status = OvertimeStatus.Approved;
+        overtime.Comment = request.Comment?.Trim() ?? overtime.Comment;
+        overtime.ApprovedAtUtc = DateTimeOffset.UtcNow;
+        overtime.ApprovedByUserId = _currentUserService.UserId;
+        overtime.ModifiedAt = DateTime.UtcNow;
+        overtime.ModifiedBy = _currentUserService.UserName ?? "system";
+
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task RejectAsync(Guid id, OvertimeActionRequest request)
+    {
+        EnsureRole("Approver");
+
+        var overtime = await _dbContext.OTEntries.FirstOrDefaultAsync(o => o.Id == id && o.IsActive);
+        if (overtime is null)
+        {
+            throw new KeyNotFoundException("Overtime record not found");
+        }
+
+        if (overtime.IsLockedForPayroll)
+        {
+            throw new InvalidOperationException("Overtime record is locked for payroll and cannot be rejected.");
+        }
+
+        if (overtime.Status != OvertimeStatus.Submitted)
+        {
+            throw new InvalidOperationException("Only submitted overtime entries can be rejected.");
+        }
+
+        overtime.Status = OvertimeStatus.Rejected;
+        overtime.Comment = request.Comment?.Trim() ?? overtime.Comment;
+        overtime.ApprovedAtUtc = DateTimeOffset.UtcNow;
+        overtime.ApprovedByUserId = _currentUserService.UserId;
         overtime.ModifiedAt = DateTime.UtcNow;
         overtime.ModifiedBy = _currentUserService.UserName ?? "system";
 
@@ -221,26 +288,62 @@ public class OvertimeService : IOvertimeService
         IReadOnlyDictionary<Guid, Domain.Employees.Employee> employees)
     {
         employees.TryGetValue(overtime.EmployeeId, out var employee);
-        var approvedBy = overtime.ApprovedById.HasValue && employees.TryGetValue(overtime.ApprovedById.Value, out var approver)
-            ? approver
-            : null;
-
         return new OTEntryDto
         {
             Id = overtime.Id,
             EmployeeId = overtime.EmployeeId,
             EmployeeCode = employee?.EmployeeCode,
             EmployeeName = employee is null ? null : $"{employee.FirstName} {employee.LastName}",
-            Date = overtime.Date.ToDateTime(TimeOnly.MinValue),
-            Hours = overtime.Hours,
+            WorkDate = overtime.Date.ToDateTime(TimeOnly.MinValue),
+            RawMinutes = overtime.RawMinutes,
             Type = overtime.Type,
             Status = overtime.Status,
-            Reason = overtime.Reason,
-            ApprovedById = overtime.ApprovedById,
-            ApprovedByName = approvedBy is null ? null : $"{approvedBy.FirstName} {approvedBy.LastName}",
-            ApprovedAt = overtime.ApprovedAt?.UtcDateTime,
+            Comment = overtime.Comment,
+            ApprovedByUserId = overtime.ApprovedByUserId,
+            ApprovedAtUtc = overtime.ApprovedAtUtc?.UtcDateTime,
+            CreatedByUserId = overtime.CreatedByUserId,
+            CreatedAtUtc = overtime.CreatedAt,
+            UpdatedAtUtc = overtime.ModifiedAt,
             PayRunId = overtime.PayRunId,
             IsLockedForPayroll = overtime.IsLockedForPayroll
         };
+    }
+
+    private void EnsureRole(params string[] roles)
+    {
+        var hasRole = _currentUserService.Roles.Any(role =>
+            roles.Any(r => string.Equals(role, r, StringComparison.OrdinalIgnoreCase)));
+        if (!hasRole)
+        {
+            throw new ForbiddenAccessException($"Only users with roles {string.Join(" or ", roles)} can perform this action.");
+        }
+    }
+
+    private void EnsureEditable(OTEntry entry)
+    {
+        var isCreator = !string.IsNullOrWhiteSpace(_currentUserService.UserId)
+            && string.Equals(entry.CreatedByUserId, _currentUserService.UserId, StringComparison.OrdinalIgnoreCase);
+
+        var isHrOrMaker = _currentUserService.Roles.Any(role =>
+            string.Equals(role, "Maker", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(role, "HR", StringComparison.OrdinalIgnoreCase));
+
+        if (!isCreator && !isHrOrMaker)
+        {
+            throw new ForbiddenAccessException("Only the entry creator or HR users can modify this overtime entry.");
+        }
+
+        if (entry.Status != OvertimeStatus.Draft)
+        {
+            throw new InvalidOperationException("Only draft overtime entries can be edited.");
+        }
+    }
+
+    private static void EnsureValidStatus(OvertimeStatus status)
+    {
+        if (!Enum.IsDefined(typeof(OvertimeStatus), status))
+        {
+            throw new ArgumentException("Invalid overtime status.");
+        }
     }
 }

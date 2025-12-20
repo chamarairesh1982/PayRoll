@@ -14,17 +14,19 @@ public class OTEntryConfiguration : IEntityTypeConfiguration<OTEntry>
 
         builder.Property(o => o.EmployeeId).IsRequired();
         builder.Property(o => o.Date).IsRequired().HasColumnType("date");
-        builder.Property(o => o.Hours).IsRequired();
+        builder.Property(o => o.RawMinutes).IsRequired();
         builder.Property(o => o.Type).IsRequired().HasConversion<int>();
         builder.Property(o => o.Status)
             .IsRequired()
             .HasConversion<int>()
-            .HasDefaultValue(OvertimeStatus.Pending)
-            .HasSentinel(OvertimeStatus.Pending);
+            .HasDefaultValue(OvertimeStatus.Draft)
+            .HasSentinel(OvertimeStatus.Draft);
         builder.Property(o => o.IsLockedForPayroll).HasDefaultValue(false);
         builder.Property(o => o.PayRunId).IsRequired(false);
 
-        builder.Property(o => o.Reason).HasMaxLength(500);
+        builder.Property(o => o.Comment).HasMaxLength(500);
+        builder.Property(o => o.CreatedByUserId).HasMaxLength(100);
+        builder.Property(o => o.ApprovedByUserId).HasMaxLength(100);
         builder.Property(o => o.CreatedBy).HasMaxLength(100);
         builder.Property(o => o.ModifiedBy).HasMaxLength(100);
 

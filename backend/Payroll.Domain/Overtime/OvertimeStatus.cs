@@ -2,8 +2,8 @@ namespace Payroll.Domain.Overtime;
 
 public enum OvertimeStatus
 {
-    Pending = 1,
-    Approved = 2,
-    Rejected = 3,
-    Cancelled = 4
+    Draft = 1,
+    Submitted = 2,
+    Approved = 3,
+    Rejected = 4
 }

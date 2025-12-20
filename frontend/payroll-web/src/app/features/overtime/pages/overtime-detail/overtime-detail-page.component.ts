@@ -36,8 +36,19 @@ export class OvertimeDetailPageComponent implements OnInit {
   }
 
   goToEdit(): void {
-    if (this.overtimeRecord && !this.overtimeRecord.isLockedForPayroll) {
+    if (this.overtimeRecord && !this.overtimeRecord.isLockedForPayroll && this.overtimeRecord.status === 'Draft') {
       this.router.navigate(['/overtime', this.overtimeRecord.id, 'edit']);
     }
+  }
+
+  submitRecord(): void {
+    if (!this.overtimeRecord || this.overtimeRecord.isLockedForPayroll || this.overtimeRecord.status !== 'Draft') {
+      return;
+    }
+
+    this.overtimeApi.submitOvertimeRecord(this.overtimeRecord.id).subscribe({
+      next: () => this.ngOnInit(),
+      error: err => console.error('Failed to submit overtime record', err),
+    });
   }
 }

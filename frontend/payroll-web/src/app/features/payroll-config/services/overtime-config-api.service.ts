@@ -6,7 +6,7 @@ import { OTRule, OTRulePayload } from '../models/ot-rule.model';
 
 @Injectable({ providedIn: 'root' })
 export class OvertimeConfigApiService {
-  private baseUrl = `${environment.apiBaseUrl}/ot/rules`;
+  private baseUrl = `${environment.apiBaseUrl}/overtime/rules`;
 
   constructor(private http: HttpClient) {}
 

@@ -6,7 +6,7 @@ using Payroll.Domain.Overtime;
 namespace Payroll.Api.Controllers;
 
 [ApiController]
-[Route("api/overtime")]
+[Route("api/overtime/entries")]
 public class OvertimeController : ControllerBase
 {
     private readonly IOvertimeService _service;
@@ -21,10 +21,11 @@ public class OvertimeController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 25,
         [FromQuery] Guid? employeeId = null,
-        [FromQuery] DateOnly? date = null,
+        [FromQuery] DateOnly? from = null,
+        [FromQuery] DateOnly? to = null,
         [FromQuery] OvertimeStatus? status = null)
     {
-        var result = await _service.GetAsync(page, pageSize, employeeId, date, status);
+        var result = await _service.GetAsync(page, pageSize, employeeId, from, to, status);
         return Ok(result);
     }
 
@@ -54,10 +55,24 @@ public class OvertimeController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Delete(Guid id)
+    [HttpPost("{id:guid}/submit")]
+    public async Task<IActionResult> Submit(Guid id)
     {
-        await _service.DeleteAsync(id);
+        await _service.SubmitAsync(id);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/approve")]
+    public async Task<IActionResult> Approve(Guid id, [FromBody] OvertimeActionRequest request)
+    {
+        await _service.ApproveAsync(id, request);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/reject")]
+    public async Task<IActionResult> Reject(Guid id, [FromBody] OvertimeActionRequest request)
+    {
+        await _service.RejectAsync(id, request);
         return NoContent();
     }
 }

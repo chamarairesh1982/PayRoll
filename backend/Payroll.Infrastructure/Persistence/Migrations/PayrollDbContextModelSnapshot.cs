@@ -136,6 +136,9 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("BaseSalary")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal?>("HourlyRate")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("BranchCode")
                         .HasColumnType("nvarchar(max)");
 
@@ -476,11 +479,16 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("ApprovedAt")
+                    b.Property<DateTimeOffset?>("ApprovedAtUtc")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<Guid?>("ApprovedById")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("ApprovedByUserId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -773,14 +781,18 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");
 
                     b.Property<Guid>("EmployeeId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<double>("Hours")
-                        .HasColumnType("float");
+                    b.Property<int>("RawMinutes")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -799,10 +811,6 @@ namespace Payroll.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid?>("PayRunId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Reason")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("Status")
                         .ValueGeneratedOnAdd()
@@ -825,16 +833,6 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("AppliesOnHoliday")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
-
-                    b.Property<bool>("AppliesOnWeekend")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -843,13 +841,14 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<double>("DailyCapHours")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("float")
-                        .HasDefaultValue(0.0);
+                    b.Property<double?>("DailyHoursCap")
+                        .HasColumnType("float");
 
-                    b.Property<decimal>("HolidayMultiplier")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("EffectiveTo")
+                        .HasColumnType("date");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -861,26 +860,24 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                    b.Property<double?>("MonthlyHoursCap")
+                        .HasColumnType("float");
 
-                    b.Property<double>("PayRunCapHours")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("float")
-                        .HasDefaultValue(0.0);
+                    b.Property<decimal>("Multiplier")
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("RoundingMinutes")
+                    b.Property<int>("RoundToMinutes")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .HasDefaultValue(0);
+                        .HasDefaultValue(15);
 
-                    b.Property<decimal>("WeekdayMultiplier")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("RoundingMode")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(2);
 
-                    b.Property<decimal>("WeekendMultiplier")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 

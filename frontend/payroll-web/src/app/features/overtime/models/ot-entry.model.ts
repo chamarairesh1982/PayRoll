@@ -1,6 +1,6 @@
-export type OvertimeType = 'Weekday' | 'Weekend' | 'PublicHoliday';
+export type OvertimeType = 'Normal' | 'Weekend' | 'Holiday';
 
-export type OvertimeStatus = 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
+export type OvertimeStatus = 'Draft' | 'Submitted' | 'Approved' | 'Rejected';
 
 export interface OTEntry {
   id: string;
@@ -9,19 +9,22 @@ export interface OTEntry {
   employeeCode?: string;
   employeeName?: string;
 
-  date: string;
+  workDate: string;
 
-  hours: number;
+  rawMinutes: number;
 
   type: OvertimeType;
 
   status: OvertimeStatus;
 
-  reason?: string | null;
+  comment?: string | null;
 
-  approvedById?: string | null;
-  approvedByName?: string | null;
-  approvedAt?: string | null;
+  approvedByUserId?: string | null;
+  approvedAtUtc?: string | null;
+
+  createdByUserId?: string | null;
+  createdAtUtc: string;
+  updatedAtUtc?: string | null;
 
   isLockedForPayroll: boolean;
 }

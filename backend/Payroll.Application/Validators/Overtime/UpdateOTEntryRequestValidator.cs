@@ -7,8 +7,8 @@ public class UpdateOTEntryRequestValidator : AbstractValidator<UpdateOTEntryRequ
 {
     public UpdateOTEntryRequestValidator()
     {
-        RuleFor(x => x.Hours!.Value)
+        RuleFor(x => x.RawMinutes!.Value)
             .GreaterThan(0)
-            .When(x => x.Hours.HasValue);
+            .When(x => x.RawMinutes.HasValue);
     }
 }
