@@ -14,6 +14,11 @@ export interface Employee {
   probationEndDate?: string | null;
   confirmationDate?: string | null;
   baseSalary: number;
+  hourlyRate?: number | null;
+  bankName?: string | null;
+  bankCode?: string | null;
+  branchCode?: string | null;
+  bankAccountNumber?: string | null;
   companyId?: string | null;
   branchId?: string | null;
   costCenterId?: string | null;

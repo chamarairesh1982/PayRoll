@@ -16,6 +16,14 @@
       <app-form-field-error [control]="form.get('lastName')"></app-form-field-error>
     </label>
     <label>
+      Initials
+      <input type="text" formControlName="initials" />
+    </label>
+    <label>
+      Calling Name
+      <input type="text" formControlName="callingName" />
+    </label>
+    <label>
       NIC Number
       <input type="text" formControlName="nicNumber" />
       <app-form-field-error [control]="form.get('nicNumber')"></app-form-field-error>
@@ -58,6 +66,26 @@
       Base Salary
       <input type="number" formControlName="baseSalary" step="0.01" />
       <app-form-field-error [control]="form.get('baseSalary')"></app-form-field-error>
+    </label>
+    <label>
+      Hourly Rate
+      <input type="number" formControlName="hourlyRate" step="0.01" />
+    </label>
+    <label>
+      Bank Name
+      <input type="text" formControlName="bankName" />
+    </label>
+    <label>
+      Bank Code
+      <input type="text" formControlName="bankCode" />
+    </label>
+    <label>
+      Branch Code
+      <input type="text" formControlName="branchCode" />
+    </label>
+    <label>
+      Bank Account Number
+      <input type="text" formControlName="bankAccountNumber" />
     </label>
     <label>
       Company
