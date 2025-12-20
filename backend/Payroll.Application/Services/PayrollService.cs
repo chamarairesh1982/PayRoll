@@ -54,6 +54,8 @@ public class PayrollService : IPayrollService
 
     public async Task<PayRunDetailDto> CreatePayRunAsync(CreatePayRunRequest request, CancellationToken cancellationToken = default)
     {
+        ValidatePayRunPeriod(request);
+
         if (!request.IsConsolidated && request.CompanyId == null && request.BranchId == null && request.CostCenterId == null)
         {
             throw new InvalidOperationException("Non-consolidated pay runs must target a company, branch, or cost center.");
@@ -1602,6 +1604,30 @@ public class PayrollService : IPayrollService
         return snapshots;
     }
 
+    private static bool IsHourlyEmployee(Employee employee)
+    {
+        return employee.HourlyRate.HasValue && employee.HourlyRate.Value > 0;
+    }
+
+    private static void ValidatePayRunPeriod(CreatePayRunRequest request)
+    {
+        if (request.PeriodStart == default || request.PeriodEnd == default)
+        {
+            throw new InvalidOperationException("Pay run period start and end must be provided.");
+        }
+
+        if (request.PeriodStart > request.PeriodEnd)
+        {
+            throw new InvalidOperationException("Pay run period start must be before or equal to the period end.");
+        }
+
+        if (request.PeriodType == PayPeriodType.Monthly
+            && (request.PeriodStart.Month != request.PeriodEnd.Month || request.PeriodStart.Year != request.PeriodEnd.Year))
+        {
+            throw new InvalidOperationException("Monthly pay runs must be contained within a single calendar month.");
+        }
+    }
+
     private async Task<PaySlip> CalculatePaySlipForEmployeeAsync(
         PayRun payRun,
         Employee employee,
@@ -1612,7 +1638,23 @@ public class PayrollService : IPayrollService
         List<PayRunRecurringLine> recurringLines,
         CancellationToken ct)
     {
-        ctx.BasicSalary = employee.BaseSalary;
+        ctx.IsHourlyEmployee = IsHourlyEmployee(employee);
+        ctx.EffectiveHourlyRate = ctx.IsHourlyEmployee ? employee.HourlyRate : null;
+
+        if (ctx.IsHourlyEmployee)
+        {
+            if (ctx.Attendance.Count == 0)
+            {
+                throw new InvalidOperationException($"Hourly payroll requires approved hours for {employee.FullName} ({employee.EmployeeCode}) in {payRun.PeriodStart:yyyy-MM}.");
+            }
+
+            ctx.ApprovedHoursForPeriod = ctx.Attendance.Sum(a => a.HoursWorked);
+            ctx.BasicSalary = ctx.ApprovedHoursForPeriod.Value * ctx.EffectiveHourlyRate!.Value;
+        }
+        else
+        {
+            ctx.BasicSalary = employee.BaseSalary;
+        }
 
         var paySlip = new PaySlip
         {
@@ -1654,12 +1696,16 @@ public class PayrollService : IPayrollService
 
     private Task ApplyBasicSalaryAsync(PaySlipCalculationContext ctx, PayRun payRun)
     {
+        var description = ctx.IsHourlyEmployee
+            ? $"Hourly Wages ({ctx.ApprovedHoursForPeriod:0.##}h @ {ctx.EffectiveHourlyRate:N2})"
+            : "Basic Salary";
+
         ctx.Earnings.Add(new EarningLine
         {
             Id = Guid.NewGuid(),
             PaySlipId = ctx.PaySlipId,
             Code = "BASIC",
-            Description = "Basic Salary",
+            Description = description,
             Amount = RoundCurrency(ctx.BasicSalary),
             IsEpfApplicable = true,
             IsEtfApplicable = true,
@@ -1671,59 +1717,62 @@ public class PayrollService : IPayrollService
 
     private Task ApplyNoPayDeductionsAsync(PaySlipCalculationContext ctx, PayRun payRun)
     {
-        var periodStart = DateOnly.FromDateTime(payRun.PeriodStart);
-        var periodEnd = DateOnly.FromDateTime(payRun.PeriodEnd);
-        var dailyRate = RoundCurrency(ctx.BasicSalary / ctx.WorkingDaysPerMonth);
-        var hourlyRate = ctx.BasicSalary / (ctx.WorkingDaysPerMonth * ctx.WorkingHoursPerDay);
-
-        var reconciliation = _timeReconciliationService.ReconcileEmployee(new TimeReconciliationEmployeeInput(
-            ctx.Employee.Id,
-            ctx.Employee.Code,
-            ctx.Employee.FullName,
-            periodStart,
-            periodEnd,
-            ctx.WorkingHoursPerDay,
-            ctx.AttendanceHalfDayHours,
-            ctx.Attendance,
-            ctx.LeaveRequests,
-            ctx.LeaveTypes));
-
-        var noPayAmount = ctx.NoPayCalculationBasis == CalculationBasis.PerHour
-            ? RoundCurrency(hourlyRate * reconciliation.NoPayHours)
-            : RoundCurrency(dailyRate * reconciliation.NoPayDays);
-
-        if (noPayAmount > 0)
+        if (!ctx.IsHourlyEmployee)
         {
-            var unitLabel = ctx.NoPayCalculationBasis == CalculationBasis.PerHour ? "hours" : "days";
-            var unitTotal = ctx.NoPayCalculationBasis == CalculationBasis.PerHour
-                ? reconciliation.NoPayHours
-                : reconciliation.NoPayDays;
-            ctx.Deductions.Add(new DeductionLine
+            var periodStart = DateOnly.FromDateTime(payRun.PeriodStart);
+            var periodEnd = DateOnly.FromDateTime(payRun.PeriodEnd);
+            var dailyRate = RoundCurrency(ctx.BasicSalary / ctx.WorkingDaysPerMonth);
+            var hourlyRate = ctx.BasicSalary / (ctx.WorkingDaysPerMonth * ctx.WorkingHoursPerDay);
+
+            var reconciliation = _timeReconciliationService.ReconcileEmployee(new TimeReconciliationEmployeeInput(
+                ctx.Employee.Id,
+                ctx.Employee.Code,
+                ctx.Employee.FullName,
+                periodStart,
+                periodEnd,
+                ctx.WorkingHoursPerDay,
+                ctx.AttendanceHalfDayHours,
+                ctx.Attendance,
+                ctx.LeaveRequests,
+                ctx.LeaveTypes));
+
+            var noPayAmount = ctx.NoPayCalculationBasis == CalculationBasis.PerHour
+                ? RoundCurrency(hourlyRate * reconciliation.NoPayHours)
+                : RoundCurrency(dailyRate * reconciliation.NoPayDays);
+
+            if (noPayAmount > 0)
             {
-                Id = Guid.NewGuid(),
-                PaySlipId = ctx.PaySlipId,
-                Code = "DED_NO_PAY",
-                Description = $"No Pay ({unitTotal:0.##} {unitLabel})",
-                Source = "TimeReconciliation",
-                Amount = noPayAmount,
-                IsPreTax = true,
-                IsPostTax = false,
-                NoPayDays = reconciliation.NoPayDays,
-                NoPayHours = reconciliation.NoPayHours,
-                MetadataJson = JsonSerializer.Serialize(new NoPayBreakdown
+                var unitLabel = ctx.NoPayCalculationBasis == CalculationBasis.PerHour ? "hours" : "days";
+                var unitTotal = ctx.NoPayCalculationBasis == CalculationBasis.PerHour
+                    ? reconciliation.NoPayHours
+                    : reconciliation.NoPayDays;
+                ctx.Deductions.Add(new DeductionLine
                 {
+                    Id = Guid.NewGuid(),
+                    PaySlipId = ctx.PaySlipId,
+                    Code = "DED_NO_PAY",
+                    Description = $"No Pay ({unitTotal:0.##} {unitLabel})",
+                    Source = "TimeReconciliation",
+                    Amount = noPayAmount,
+                    IsPreTax = true,
+                    IsPostTax = false,
                     NoPayDays = reconciliation.NoPayDays,
                     NoPayHours = reconciliation.NoPayHours,
-                    Days = reconciliation.Days.Select(day => new NoPayBreakdownDay
+                    MetadataJson = JsonSerializer.Serialize(new NoPayBreakdown
                     {
-                        Date = day.Date,
-                        Status = day.Status.ToString(),
-                        NoPayDays = day.NoPayDayUnits,
-                        NoPayHours = day.NoPayHours,
-                        Warnings = day.Warnings.ToList()
-                    }).ToList()
-                })
-            });
+                        NoPayDays = reconciliation.NoPayDays,
+                        NoPayHours = reconciliation.NoPayHours,
+                        Days = reconciliation.Days.Select(day => new NoPayBreakdownDay
+                        {
+                            Date = day.Date,
+                            Status = day.Status.ToString(),
+                            NoPayDays = day.NoPayDayUnits,
+                            NoPayHours = day.NoPayHours,
+                            Warnings = day.Warnings.ToList()
+                        }).ToList()
+                    })
+                });
+            }
         }
 
         foreach (var request in ctx.LeaveEncashmentRequests)
@@ -3157,6 +3206,9 @@ public class PayrollService : IPayrollService
         public Guid PaySlipId { get; init; }
         public Employee Employee { get; init; } = null!;
         public decimal BasicSalary { get; set; }
+        public bool IsHourlyEmployee { get; set; }
+        public decimal? ApprovedHoursForPeriod { get; set; }
+        public decimal? EffectiveHourlyRate { get; set; }
         public List<AttendanceRecord> Attendance { get; init; } = new();
         public List<OTEntry> Overtime { get; init; } = new();
         public List<Loan> ActiveLoans { get; init; } = new();
