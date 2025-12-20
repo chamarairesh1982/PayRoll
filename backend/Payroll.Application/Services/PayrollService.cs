@@ -1717,11 +1717,15 @@ public class PayrollService : IPayrollService
 
     private Task ApplyNoPayDeductionsAsync(PaySlipCalculationContext ctx, PayRun payRun)
     {
+        var dailyRate = ctx.IsHourlyEmployee
+            ? RoundCurrency((ctx.EffectiveHourlyRate
+                ?? (ctx.BasicSalary / (ctx.WorkingDaysPerMonth * ctx.WorkingHoursPerDay))) * ctx.WorkingHoursPerDay)
+            : RoundCurrency(ctx.BasicSalary / ctx.WorkingDaysPerMonth);
+
         if (!ctx.IsHourlyEmployee)
         {
             var periodStart = DateOnly.FromDateTime(payRun.PeriodStart);
             var periodEnd = DateOnly.FromDateTime(payRun.PeriodEnd);
-            var dailyRate = RoundCurrency(ctx.BasicSalary / ctx.WorkingDaysPerMonth);
             var hourlyRate = ctx.BasicSalary / (ctx.WorkingDaysPerMonth * ctx.WorkingHoursPerDay);
 
             var reconciliation = _timeReconciliationService.ReconcileEmployee(new TimeReconciliationEmployeeInput(
