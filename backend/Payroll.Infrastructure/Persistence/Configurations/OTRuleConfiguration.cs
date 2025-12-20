@@ -12,15 +12,16 @@ public class OTRuleConfiguration : IEntityTypeConfiguration<OTRule>
 
         builder.HasKey(r => r.Id);
 
-        builder.Property(r => r.Name).IsRequired().HasMaxLength(150);
-        builder.Property(r => r.WeekdayMultiplier).HasColumnType("decimal(18,2)");
-        builder.Property(r => r.WeekendMultiplier).HasColumnType("decimal(18,2)");
-        builder.Property(r => r.HolidayMultiplier).HasColumnType("decimal(18,2)");
-        builder.Property(r => r.RoundingMinutes).HasDefaultValue(0);
-        builder.Property(r => r.DailyCapHours).HasDefaultValue(0);
-        builder.Property(r => r.PayRunCapHours).HasDefaultValue(0);
-        builder.Property(r => r.AppliesOnWeekend).HasDefaultValue(true);
-        builder.Property(r => r.AppliesOnHoliday).HasDefaultValue(true);
+        builder.Property(r => r.Type).IsRequired().HasConversion<int>();
+        builder.Property(r => r.Multiplier).HasColumnType("decimal(18,2)");
+        builder.Property(r => r.RoundToMinutes).HasDefaultValue(15);
+        builder.Property(r => r.RoundingMode)
+            .HasConversion<int>()
+            .HasDefaultValue(OvertimeRoundingMode.Nearest);
+        builder.Property(r => r.DailyHoursCap).HasColumnType("float");
+        builder.Property(r => r.MonthlyHoursCap).HasColumnType("float");
+        builder.Property(r => r.EffectiveFrom).HasColumnType("date");
+        builder.Property(r => r.EffectiveTo).HasColumnType("date");
 
         builder.Property(r => r.CreatedBy).HasMaxLength(100);
         builder.Property(r => r.ModifiedBy).HasMaxLength(100);

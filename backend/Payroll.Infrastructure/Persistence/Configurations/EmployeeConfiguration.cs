@@ -51,6 +51,9 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.Property(e => e.BaseSalary)
             .HasColumnType("decimal(18,2)");
 
+        builder.Property(e => e.HourlyRate)
+            .HasColumnType("decimal(18,2)");
+
         builder.Property(e => e.CreatedBy)
             .HasMaxLength(100);
 

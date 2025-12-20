@@ -2,7 +2,7 @@ namespace Payroll.Domain.Overtime;
 
 public enum OvertimeType
 {
-    Weekday = 1,
+    Normal = 1,
     Weekend = 2,
-    PublicHoliday = 3
+    Holiday = 3
 }

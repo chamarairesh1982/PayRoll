@@ -2,13 +2,13 @@ namespace Payroll.Application.PayrollConfig.DTOs;
 
 public class CreateOTRuleRequest
 {
-    public string Name { get; set; } = string.Empty;
-    public decimal WeekdayMultiplier { get; set; }
-    public decimal WeekendMultiplier { get; set; }
-    public decimal HolidayMultiplier { get; set; }
-    public int RoundingMinutes { get; set; }
-    public double DailyCapHours { get; set; }
-    public double PayRunCapHours { get; set; }
-    public bool AppliesOnWeekend { get; set; } = true;
-    public bool AppliesOnHoliday { get; set; } = true;
+    public Payroll.Domain.Overtime.OvertimeType Type { get; set; }
+    public decimal Multiplier { get; set; }
+    public int RoundToMinutes { get; set; }
+    public Payroll.Domain.Overtime.OvertimeRoundingMode RoundingMode { get; set; } = Payroll.Domain.Overtime.OvertimeRoundingMode.Nearest;
+    public double? DailyHoursCap { get; set; }
+    public double? MonthlyHoursCap { get; set; }
+    public DateOnly EffectiveFrom { get; set; }
+    public DateOnly? EffectiveTo { get; set; }
+    public bool IsActive { get; set; } = true;
 }

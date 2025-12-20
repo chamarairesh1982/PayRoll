@@ -8,11 +8,11 @@
     </div>
     <div class="row">
       <span class="label">Date:</span>
-      <span class="value">{{ overtimeRecord.date | date: 'yyyy-MM-dd' }}</span>
+      <span class="value">{{ overtimeRecord.workDate | date: 'yyyy-MM-dd' }}</span>
     </div>
     <div class="row">
-      <span class="label">Hours:</span>
-      <span class="value">{{ overtimeRecord.hours }}</span>
+      <span class="label">Minutes:</span>
+      <span class="value">{{ overtimeRecord.rawMinutes }}</span>
     </div>
     <div class="row">
       <span class="label">Type:</span>
@@ -22,17 +22,17 @@
       <span class="label">Status:</span>
       <span class="value">{{ overtimeRecord.status }}</span>
     </div>
-    <div class="row" *ngIf="overtimeRecord.reason">
-      <span class="label">Reason:</span>
-      <span class="value">{{ overtimeRecord.reason }}</span>
+    <div class="row" *ngIf="overtimeRecord.comment">
+      <span class="label">Comment:</span>
+      <span class="value">{{ overtimeRecord.comment }}</span>
     </div>
-    <div class="row" *ngIf="overtimeRecord.approvedByName">
+    <div class="row" *ngIf="overtimeRecord.approvedByUserId">
       <span class="label">Approved By:</span>
-      <span class="value">{{ overtimeRecord.approvedByName }}</span>
+      <span class="value">{{ overtimeRecord.approvedByUserId }}</span>
     </div>
-    <div class="row" *ngIf="overtimeRecord.approvedAt">
+    <div class="row" *ngIf="overtimeRecord.approvedAtUtc">
       <span class="label">Approved At:</span>
-      <span class="value">{{ overtimeRecord.approvedAt | date: 'medium' }}</span>
+      <span class="value">{{ overtimeRecord.approvedAtUtc | date: 'medium' }}</span>
     </div>
     <div class="row">
       <span class="label">Locked for Payroll:</span>
@@ -41,7 +41,21 @@
 
     <div class="actions">
       <button type="button" class="secondary" (click)="goBack()">Back</button>
-      <button type="button" [disabled]="overtimeRecord.isLockedForPayroll" (click)="goToEdit()">Edit</button>
+      <button
+        type="button"
+        [disabled]="overtimeRecord.isLockedForPayroll || overtimeRecord.status !== 'Draft'"
+        (click)="goToEdit()"
+      >
+        Edit
+      </button>
+      <button
+        type="button"
+        class="secondary"
+        [disabled]="overtimeRecord.isLockedForPayroll || overtimeRecord.status !== 'Draft'"
+        (click)="submitRecord()"
+      >
+        Submit
+      </button>
     </div>
   </div>
 </ng-container>

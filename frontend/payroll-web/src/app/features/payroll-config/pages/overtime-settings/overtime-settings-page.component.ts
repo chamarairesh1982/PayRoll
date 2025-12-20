@@ -49,15 +49,14 @@ export class OvertimeSettingsPageComponent implements OnInit {
   createRule(): void {
     this.selectedRule = {
       id: '',
-      name: '',
-      weekdayMultiplier: 1.5,
-      weekendMultiplier: 2,
-      holidayMultiplier: 2,
-      roundingMinutes: 15,
-      dailyCapHours: 12,
-      payRunCapHours: 80,
-      appliesOnWeekend: true,
-      appliesOnHoliday: true,
+      type: 'Normal',
+      multiplier: 1.5,
+      roundToMinutes: 15,
+      roundingMode: 'Nearest',
+      dailyHoursCap: null,
+      monthlyHoursCap: null,
+      effectiveFrom: new Date().toISOString().split('T')[0],
+      effectiveTo: null,
       isActive: true,
     };
     this.successMessage = null;

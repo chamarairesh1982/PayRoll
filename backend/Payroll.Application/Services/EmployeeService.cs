@@ -92,6 +92,7 @@ public class EmployeeService : IEmployeeService
             request.MaritalStatus,
             request.EmploymentStartDate,
             request.BaseSalary,
+            request.HourlyRate,
             request.CompanyId,
             request.BranchId,
             request.CostCenterId,
@@ -138,6 +139,7 @@ public class EmployeeService : IEmployeeService
             request.MaritalStatus,
             request.EmploymentStartDate,
             request.BaseSalary,
+            request.HourlyRate,
             request.CompanyId,
             request.BranchId,
             request.CostCenterId,
@@ -216,6 +218,7 @@ public class EmployeeService : IEmployeeService
             employee.Id,
             employee.EmployeeCode,
             employee.BaseSalary,
+            employee.HourlyRate,
             employee.ModifiedAt,
             employee.ModifiedBy
         };
@@ -240,6 +243,7 @@ public class EmployeeService : IEmployeeService
             ProbationEndDate = employee.ProbationEndDate,
             ConfirmationDate = employee.ConfirmationDate,
             BaseSalary = employee.BaseSalary,
+            HourlyRate = employee.HourlyRate,
             CompanyId = employee.CompanyId,
             BranchId = employee.BranchId,
             CostCenterId = employee.CostCenterId,

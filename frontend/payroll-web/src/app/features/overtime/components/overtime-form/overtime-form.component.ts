@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { OTEntry, OvertimeStatus, OvertimeType } from '../../models/ot-entry.model';
+import { OTEntry, OvertimeType } from '../../models/ot-entry.model';
 
 @Component({
   selector: 'app-overtime-form',
@@ -13,17 +13,15 @@ export class OvertimeFormComponent implements OnInit, OnChanges {
   @Output() submitted = new EventEmitter<Partial<OTEntry>>();
 
   form: FormGroup;
-  overtimeTypes: OvertimeType[] = ['Weekday', 'Weekend', 'PublicHoliday'];
-  statuses: OvertimeStatus[] = ['Pending', 'Approved', 'Rejected', 'Cancelled'];
+  overtimeTypes: OvertimeType[] = ['Normal', 'Weekend', 'Holiday'];
 
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
       employeeId: ['', Validators.required],
-      date: ['', Validators.required],
-      hours: [0, [Validators.required, Validators.min(0.01)]],
-      type: ['Weekday', Validators.required],
-      status: ['Pending'],
-      reason: [''],
+      workDate: ['', Validators.required],
+      rawMinutes: [0, [Validators.required, Validators.min(1)]],
+      type: ['Normal', Validators.required],
+      comment: [''],
     });
   }
 

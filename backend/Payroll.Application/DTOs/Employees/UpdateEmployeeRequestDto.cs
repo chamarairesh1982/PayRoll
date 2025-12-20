@@ -18,6 +18,7 @@ public class UpdateEmployeeRequestDto
     public DateTime? ProbationEndDate { get; set; }
     public DateTime? ConfirmationDate { get; set; }
     public decimal BaseSalary { get; set; }
+    public decimal? HourlyRate { get; set; }
     public bool IsActive { get; set; }
     public Guid? CompanyId { get; set; }
     public Guid? BranchId { get; set; }

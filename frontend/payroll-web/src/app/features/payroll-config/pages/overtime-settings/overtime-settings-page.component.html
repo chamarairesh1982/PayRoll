@@ -20,11 +20,11 @@
           [class.active]="selectedRule?.id === rule.id"
           (click)="selectRule(rule)"
         >
-          <div class="rule-name">{{ rule.name || 'Untitled rule' }}</div>
+          <div class="rule-name">{{ rule.type }} OT</div>
           <div class="rule-meta">
-            <span>Weekday {{ rule.weekdayMultiplier }}x</span>
-            <span *ngIf="rule.appliesOnWeekend">Weekend {{ rule.weekendMultiplier }}x</span>
-            <span *ngIf="rule.appliesOnHoliday">Holiday {{ rule.holidayMultiplier }}x</span>
+            <span>{{ rule.multiplier }}x</span>
+            <span>{{ rule.effectiveFrom }} → {{ rule.effectiveTo || 'Open' }}</span>
+            <span [class.muted]="!rule.isActive">{{ rule.isActive ? 'Active' : 'Inactive' }}</span>
           </div>
         </li>
       </ul>

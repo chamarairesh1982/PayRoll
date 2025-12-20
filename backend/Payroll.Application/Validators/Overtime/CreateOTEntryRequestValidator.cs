@@ -8,7 +8,8 @@ public class CreateOTEntryRequestValidator : AbstractValidator<CreateOTEntryRequ
     public CreateOTEntryRequestValidator()
     {
         RuleFor(x => x.EmployeeId).NotEmpty();
-        RuleFor(x => x.Date).NotEqual(default(DateTime));
-        RuleFor(x => x.Hours).GreaterThan(0);
+        RuleFor(x => x.WorkDate).NotEqual(default(DateTime));
+        RuleFor(x => x.RawMinutes).GreaterThan(0);
+        RuleFor(x => x.Status).IsInEnum();
     }
 }

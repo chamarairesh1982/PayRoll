@@ -1,0 +1,48 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <h1>Overtime Approvals</h1>
+      <p class="muted">Review submitted overtime entries.</p>
+    </div>
+    <button type="button" class="btn" (click)="loadRecords()">Refresh</button>
+  </header>
+
+  <div *ngIf="isLoading" class="loading">Loading submitted overtime entries...</div>
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+
+  <div class="table-wrapper" *ngIf="!isLoading">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Employee</th>
+          <th>Minutes</th>
+          <th>Type</th>
+          <th>Comment</th>
+          <th class="actions">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let record of records">
+          <td>{{ record.workDate | date: 'yyyy-MM-dd' }}</td>
+          <td>
+            <div class="employee-cell">
+              <span class="code">{{ record.employeeCode || record.employeeId }}</span>
+              <span class="name" *ngIf="record.employeeName">{{ record.employeeName }}</span>
+            </div>
+          </td>
+          <td>{{ record.rawMinutes }}</td>
+          <td>{{ record.type }}</td>
+          <td>{{ record.comment || '-' }}</td>
+          <td class="actions">
+            <button type="button" class="success" (click)="approve(record)">Approve</button>
+            <button type="button" class="danger" (click)="reject(record)">Reject</button>
+          </td>
+        </tr>
+        <tr *ngIf="records.length === 0">
+          <td colspan="6" class="empty">No submitted overtime entries.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

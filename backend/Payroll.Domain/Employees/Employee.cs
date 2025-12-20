@@ -21,6 +21,7 @@ public class Employee : AuditableEntity, IAggregateRoot
         MaritalStatus maritalStatus,
         DateTime employmentStartDate,
         decimal baseSalary,
+        decimal? hourlyRate,
         Guid? companyId,
         Guid? branchId,
         Guid? costCenterId,
@@ -41,6 +42,7 @@ public class Employee : AuditableEntity, IAggregateRoot
         DateOfBirth = ValidateDateOfBirth(dateOfBirth);
         EmploymentStartDate = employmentStartDate;
         BaseSalary = ValidateBaseSalary(baseSalary);
+        HourlyRate = hourlyRate;
         Gender = gender;
         MaritalStatus = maritalStatus;
         Initials = initials;
@@ -72,6 +74,7 @@ public class Employee : AuditableEntity, IAggregateRoot
     public DateTime? ProbationEndDate { get; private set; }
     public DateTime? ConfirmationDate { get; private set; }
     public decimal BaseSalary { get; private set; }
+    public decimal? HourlyRate { get; private set; }
     public string? BankName { get; private set; }
     public string? BankCode { get; private set; }
     public string? BranchCode { get; private set; }
@@ -96,6 +99,7 @@ public class Employee : AuditableEntity, IAggregateRoot
         MaritalStatus maritalStatus,
         DateTime employmentStartDate,
         decimal baseSalary,
+        decimal? hourlyRate,
         Guid? companyId,
         Guid? branchId,
         Guid? costCenterId,
@@ -120,6 +124,7 @@ public class Employee : AuditableEntity, IAggregateRoot
             maritalStatus,
             employmentStartDate,
             baseSalary,
+            hourlyRate,
             companyId,
             branchId,
             costCenterId,
@@ -145,6 +150,7 @@ public class Employee : AuditableEntity, IAggregateRoot
         MaritalStatus maritalStatus,
         DateTime employmentStartDate,
         decimal baseSalary,
+        decimal? hourlyRate,
         Guid? companyId,
         Guid? branchId,
         Guid? costCenterId,
@@ -167,6 +173,7 @@ public class Employee : AuditableEntity, IAggregateRoot
         MaritalStatus = maritalStatus;
         EmploymentStartDate = employmentStartDate;
         BaseSalary = ValidateBaseSalary(baseSalary);
+        HourlyRate = hourlyRate;
         Initials = initials;
         CallingName = callingName;
         CompanyId = companyId;

@@ -7,7 +7,7 @@ import { OTEntry, OvertimeStatus } from '../models/ot-entry.model';
 
 @Injectable({ providedIn: 'root' })
 export class OvertimeApiService {
-  private baseUrl = `${environment.apiBaseUrl}/overtime`;
+  private baseUrl = `${environment.apiBaseUrl}/overtime/entries`;
 
   constructor(private http: HttpClient) {}
 
@@ -15,7 +15,8 @@ export class OvertimeApiService {
     page?: number;
     pageSize?: number;
     employeeId?: string;
-    date?: string;
+    from?: string;
+    to?: string;
     status?: OvertimeStatus | '';
   }): Observable<PaginatedResult<OTEntry>> {
     let httpParams = new HttpParams();
@@ -32,8 +33,12 @@ export class OvertimeApiService {
       httpParams = httpParams.set('employeeId', params.employeeId);
     }
 
-    if (params.date) {
-      httpParams = httpParams.set('date', params.date);
+    if (params.from) {
+      httpParams = httpParams.set('from', params.from);
+    }
+
+    if (params.to) {
+      httpParams = httpParams.set('to', params.to);
     }
 
     if (params.status !== undefined) {
@@ -55,7 +60,15 @@ export class OvertimeApiService {
     return this.http.put<void>(`${this.baseUrl}/${id}`, payload);
   }
 
-  deleteOvertimeRecord(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  submitOvertimeRecord(id: string): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${id}/submit`, {});
+  }
+
+  approveOvertimeRecord(id: string, comment?: string | null): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${id}/approve`, { comment });
+  }
+
+  rejectOvertimeRecord(id: string, comment?: string | null): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${id}/reject`, { comment });
   }
 }

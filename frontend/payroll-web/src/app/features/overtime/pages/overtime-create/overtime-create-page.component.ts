@@ -12,7 +12,7 @@ export class OvertimeCreatePageComponent {
   constructor(private overtimeApi: OvertimeApiService, private router: Router) {}
 
   onSubmitted(payload: Partial<OTEntry>): void {
-    this.overtimeApi.createOvertimeRecord(payload).subscribe({
+    this.overtimeApi.createOvertimeRecord({ ...payload, status: 'Draft' }).subscribe({
       next: () => this.router.navigate(['/overtime']),
       error: err => console.error('Failed to create overtime record', err),
     });

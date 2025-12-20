@@ -321,13 +321,20 @@ public class PayrollService : IPayrollService
         payRun.Status = PayRunStatus.Locked;
         payRun.IsLocked = true;
 
+        var periodStart = DateOnly.FromDateTime(payRun.PeriodStart);
+        var periodEnd = DateOnly.FromDateTime(payRun.PeriodEnd);
+
         var overtimeEntries = await _dbContext.OTEntries
-            .Where(o => o.PayRunId == payRun.Id && o.IsActive)
+            .Where(o => o.IsActive
+                        && o.Status == OvertimeStatus.Approved
+                        && o.Date >= periodStart
+                        && o.Date <= periodEnd)
             .ToListAsync(cancellationToken);
 
         foreach (var overtimeEntry in overtimeEntries)
         {
             overtimeEntry.IsLockedForPayroll = true;
+            overtimeEntry.PayRunId ??= payRun.Id;
         }
 
         await _auditLogger.LogAsync(
@@ -612,7 +619,7 @@ public class PayrollService : IPayrollService
             .ToListAsync(cancellationToken);
 
         var payrollSettings = await GetPayrollSettingsAsync(cancellationToken);
-        var overtimeRule = await GetOvertimeRuleSnapshotAsync(cancellationToken);
+        var overtimeRules = await GetOvertimeRulesAsync(DateOnly.FromDateTime(payRun.PeriodEnd), cancellationToken);
 
         var taxProfile = await _dbContext.EmployeeTaxProfiles
             .AsNoTracking()
@@ -643,14 +650,7 @@ public class PayrollService : IPayrollService
             WorkingHoursPerDay = payrollSettings.WorkingHoursPerDay,
             NoPayCalculationBasis = payrollSettings.NoPayCalculationBasis,
             AttendanceHalfDayHours = payrollSettings.AttendanceHalfDayHours,
-            WeekdayOvertimeMultiplier = overtimeRule.WeekdayOvertimeMultiplier,
-            WeekendOvertimeMultiplier = overtimeRule.WeekendOvertimeMultiplier,
-            HolidayOvertimeMultiplier = overtimeRule.HolidayOvertimeMultiplier,
-            OvertimeRoundingMinutes = overtimeRule.OvertimeRoundingMinutes,
-            OvertimeDailyCapHours = overtimeRule.OvertimeDailyCapHours,
-            OvertimePayRunCapHours = overtimeRule.OvertimePayRunCapHours,
-            AppliesOnWeekend = overtimeRule.AppliesOnWeekend,
-            AppliesOnHoliday = overtimeRule.AppliesOnHoliday,
+            OvertimeRules = overtimeRules,
             TaxProfile = taxProfile
         };
 
@@ -1067,7 +1067,7 @@ cancellationToken);
             .ToListAsync(ct);
 
         var payrollSettings = await GetPayrollSettingsAsync(ct);
-        var overtimeRule = await GetOvertimeRuleSnapshotAsync(ct);
+        var overtimeRules = await GetOvertimeRulesAsync(periodEnd, ct);
 
         var overtime = await _dbContext.OTEntries
             .Where(o => employeeIds.Contains(o.EmployeeId)
@@ -1188,14 +1188,7 @@ cancellationToken);
                     WorkingHoursPerDay = payrollSettings.WorkingHoursPerDay,
                     NoPayCalculationBasis = payrollSettings.NoPayCalculationBasis,
                     AttendanceHalfDayHours = payrollSettings.AttendanceHalfDayHours,
-                    WeekdayOvertimeMultiplier = overtimeRule.WeekdayOvertimeMultiplier,
-                    WeekendOvertimeMultiplier = overtimeRule.WeekendOvertimeMultiplier,
-                    HolidayOvertimeMultiplier = overtimeRule.HolidayOvertimeMultiplier,
-                    OvertimeRoundingMinutes = overtimeRule.OvertimeRoundingMinutes,
-                    OvertimeDailyCapHours = overtimeRule.OvertimeDailyCapHours,
-                    OvertimePayRunCapHours = overtimeRule.OvertimePayRunCapHours,
-                    AppliesOnWeekend = overtimeRule.AppliesOnWeekend,
-                    AppliesOnHoliday = overtimeRule.AppliesOnHoliday,
+                    OvertimeRules = overtimeRules,
                     TaxProfile = taxProfile
                 },
                 recurringKeySet,
@@ -1252,25 +1245,58 @@ cancellationToken);
         };
     }
 
-    private async Task<OvertimeRuleSnapshot> GetOvertimeRuleSnapshotAsync(CancellationToken ct)
+    private async Task<IReadOnlyDictionary<OvertimeType, OvertimeRuleSnapshot>> GetOvertimeRulesAsync(
+        DateOnly effectiveDate,
+        CancellationToken ct)
     {
-        var rule = await _dbContext.OTRules
+        var payrollSettings = await GetPayrollSettingsAsync(ct);
+        var rules = await _dbContext.OTRules
             .AsNoTracking()
-            .Where(r => r.IsActive)
-            .OrderByDescending(r => r.ModifiedAt ?? r.CreatedAt)
-            .FirstOrDefaultAsync(ct);
+            .Where(r => r.IsActive
+                        && r.EffectiveFrom <= effectiveDate
+                        && (r.EffectiveTo == null || r.EffectiveTo >= effectiveDate))
+            .ToListAsync(ct);
 
-        return new OvertimeRuleSnapshot
+        var snapshots = new Dictionary<OvertimeType, OvertimeRuleSnapshot>();
+
+        foreach (var type in Enum.GetValues<OvertimeType>())
         {
-            WeekdayOvertimeMultiplier = rule?.WeekdayMultiplier ?? PayrollSettingsDefaults.WeekdayOvertimeMultiplier,
-            WeekendOvertimeMultiplier = rule?.WeekendMultiplier ?? PayrollSettingsDefaults.WeekendOvertimeMultiplier,
-            HolidayOvertimeMultiplier = rule?.HolidayMultiplier ?? PayrollSettingsDefaults.HolidayOvertimeMultiplier,
-            OvertimeRoundingMinutes = rule?.RoundingMinutes ?? PayrollSettingsDefaults.OvertimeRoundingMinutes,
-            OvertimeDailyCapHours = rule?.DailyCapHours ?? PayrollSettingsDefaults.OvertimeDailyCapHours,
-            OvertimePayRunCapHours = rule?.PayRunCapHours ?? PayrollSettingsDefaults.OvertimePayRunCapHours,
-            AppliesOnWeekend = rule?.AppliesOnWeekend ?? true,
-            AppliesOnHoliday = rule?.AppliesOnHoliday ?? true
-        };
+            var rule = rules.FirstOrDefault(r => r.Type == type);
+
+            if (rule != null)
+            {
+                snapshots[type] = new OvertimeRuleSnapshot
+                {
+                    Type = type,
+                    Multiplier = rule.Multiplier,
+                    RoundToMinutes = rule.RoundToMinutes,
+                    RoundingMode = rule.RoundingMode,
+                    DailyHoursCap = rule.DailyHoursCap,
+                    MonthlyHoursCap = rule.MonthlyHoursCap
+                };
+                continue;
+            }
+
+            var fallbackMultiplier = type switch
+            {
+                OvertimeType.Normal => payrollSettings.WeekdayOvertimeMultiplier,
+                OvertimeType.Weekend => payrollSettings.WeekendOvertimeMultiplier,
+                OvertimeType.Holiday => payrollSettings.HolidayOvertimeMultiplier,
+                _ => payrollSettings.WeekdayOvertimeMultiplier
+            };
+
+            snapshots[type] = new OvertimeRuleSnapshot
+            {
+                Type = type,
+                Multiplier = fallbackMultiplier,
+                RoundToMinutes = payrollSettings.OvertimeRoundingMinutes,
+                RoundingMode = OvertimeRoundingMode.Nearest,
+                DailyHoursCap = payrollSettings.OvertimeDailyCapHours <= 0 ? null : payrollSettings.OvertimeDailyCapHours,
+                MonthlyHoursCap = payrollSettings.OvertimePayRunCapHours <= 0 ? null : payrollSettings.OvertimePayRunCapHours
+            };
+        }
+
+        return snapshots;
     }
 
     private async Task<PaySlip> CalculatePaySlipForEmployeeAsync(
@@ -1578,45 +1604,92 @@ cancellationToken);
 
     private Task ApplyOvertimeEarningsAsync(PaySlipCalculationContext ctx, PayRun payRun)
     {
-        var baseHourlyRate = ctx.BasicSalary / (ctx.WorkingDaysPerMonth * ctx.WorkingHoursPerDay);
-        var remainingPayRunCap = ctx.OvertimePayRunCapHours > 0
-            ? (decimal)ctx.OvertimePayRunCapHours
-            : decimal.MaxValue;
+        var baseHourlyRate = ctx.Employee.HourlyRate ??
+            (ctx.BasicSalary / (ctx.WorkingDaysPerMonth * ctx.WorkingHoursPerDay));
 
-        foreach (var overtime in ctx.Overtime.OrderBy(o => o.Date))
+        var aggregated = new Dictionary<OvertimeType, (int Minutes, decimal Amount)>();
+        var dailyRemaining = new Dictionary<DateOnly, int>();
+        var monthlyRemaining = ResolveCapMinutes(ctx.OvertimeRules.Values.Select(r => r.MonthlyHoursCap));
+        var dailyCapMinutes = ResolveCapMinutes(ctx.OvertimeRules.Values.Select(r => r.DailyHoursCap));
+
+        foreach (var overtime in ctx.Overtime.OrderBy(o => o.Date).ThenBy(o => o.CreatedAt))
         {
-            var multiplier = overtime.Type switch
-            {
-                OvertimeType.Weekend when ctx.AppliesOnWeekend => ctx.WeekendOvertimeMultiplier,
-                OvertimeType.PublicHoliday when ctx.AppliesOnHoliday => ctx.HolidayOvertimeMultiplier,
-                _ => ctx.WeekdayOvertimeMultiplier
-            };
-
-            var adjustedHours = CalculateRoundedOvertimeHours(overtime, ctx, ref remainingPayRunCap);
-            var otAmount = RoundCurrency(adjustedHours * baseHourlyRate * multiplier);
-
-            if (otAmount <= 0 || adjustedHours <= 0)
+            if (!ctx.OvertimeRules.TryGetValue(overtime.Type, out var rule))
             {
                 continue;
             }
 
+            var roundedMinutes = ApplyOvertimeRounding(overtime.RawMinutes, rule.RoundToMinutes, rule.RoundingMode);
+            if (roundedMinutes <= 0)
+            {
+                continue;
+            }
+
+            if (!dailyRemaining.TryGetValue(overtime.Date, out var remainingDaily))
+            {
+                remainingDaily = dailyCapMinutes;
+            }
+
+            var remainingMonthly = monthlyRemaining;
+
+            var appliedMinutes = Math.Min(roundedMinutes, remainingDaily);
+            appliedMinutes = Math.Min(appliedMinutes, remainingMonthly);
+
+            if (appliedMinutes <= 0)
+            {
+                continue;
+            }
+
+            dailyRemaining[overtime.Date] = Math.Max(0, remainingDaily - appliedMinutes);
+            monthlyRemaining = Math.Max(0, remainingMonthly - appliedMinutes);
+
+            var amount = RoundCurrency((appliedMinutes / 60m) * baseHourlyRate * rule.Multiplier);
+            if (amount <= 0)
+            {
+                continue;
+            }
+
+            aggregated[overtime.Type] = aggregated.TryGetValue(overtime.Type, out var existing)
+                ? (existing.Minutes + appliedMinutes, existing.Amount + amount)
+                : (appliedMinutes, amount);
+
+            overtime.PayRunId = payRun.Id;
+        }
+
+        foreach (var (type, summary) in aggregated)
+        {
+            if (summary.Amount <= 0 || summary.Minutes <= 0)
+            {
+                continue;
+            }
+
+            var hours = summary.Minutes / 60m;
             ctx.Earnings.Add(new EarningLine
             {
                 Id = Guid.NewGuid(),
                 PaySlipId = ctx.PaySlipId,
                 Code = "OT",
-                Description = $"Overtime ({overtime.Type}, {adjustedHours:0.##}h)",
-                Amount = otAmount,
+                Description = $"Overtime ({type}, {hours:0.##}h)",
+                Amount = summary.Amount,
                 IsEpfApplicable = true,
                 IsEtfApplicable = true,
                 IsTaxable = true
             });
-
-            overtime.PayRunId = payRun.Id;
-            overtime.IsLockedForPayroll = true;
         }
 
         return Task.CompletedTask;
+    }
+
+    private static int ResolveCapMinutes(IEnumerable<double?> capHours)
+    {
+        var hours = capHours.Where(cap => cap.HasValue && cap.Value > 0).Select(cap => cap!.Value).ToList();
+        if (!hours.Any())
+        {
+            return int.MaxValue;
+        }
+
+        var minHours = hours.Min();
+        return (int)Math.Floor(minHours * 60);
     }
 
     private Task ApplyFixedAllowancesAsync(PaySlipCalculationContext ctx, PayRun payRun)
@@ -2537,50 +2610,24 @@ cancellationToken);
     private static decimal RoundCurrency(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
     private static decimal RoundTax(decimal value) => Math.Round(value, 0, MidpointRounding.AwayFromZero);
 
-    private static decimal CalculateRoundedOvertimeHours(
-        OTEntry overtime,
-        PaySlipCalculationContext ctx,
-        ref decimal remainingPayRunCap)
+    private static int ApplyOvertimeRounding(int rawMinutes, int roundToMinutes, OvertimeRoundingMode mode)
     {
-        var hours = (decimal)overtime.Hours;
-
-        if (ctx.OvertimeDailyCapHours > 0)
+        if (roundToMinutes <= 0)
         {
-            hours = Math.Min(hours, (decimal)ctx.OvertimeDailyCapHours);
+            return rawMinutes;
         }
 
-        if (ctx.OvertimePayRunCapHours > 0)
+        var step = roundToMinutes;
+        var quotient = rawMinutes / (double)step;
+
+        var rounded = mode switch
         {
-            hours = Math.Min(hours, remainingPayRunCap);
-        }
+            OvertimeRoundingMode.Down => Math.Floor(quotient),
+            OvertimeRoundingMode.Up => Math.Ceiling(quotient),
+            _ => Math.Round(quotient, MidpointRounding.AwayFromZero)
+        };
 
-        hours = ApplyOvertimeRounding(hours, ctx.OvertimeRoundingMinutes);
-
-        if (ctx.OvertimeDailyCapHours > 0)
-        {
-            hours = Math.Min(hours, (decimal)ctx.OvertimeDailyCapHours);
-        }
-
-        if (ctx.OvertimePayRunCapHours > 0)
-        {
-            hours = Math.Min(hours, remainingPayRunCap);
-            remainingPayRunCap = Math.Max(0, remainingPayRunCap - hours);
-        }
-
-        return hours;
-    }
-
-    private static decimal ApplyOvertimeRounding(decimal hours, int roundingMinutes)
-    {
-        if (roundingMinutes <= 0)
-        {
-            return hours;
-        }
-
-        var minutes = hours * 60m;
-        var step = (decimal)roundingMinutes;
-        var roundedMinutes = Math.Round(minutes / step, MidpointRounding.AwayFromZero) * step;
-        return roundedMinutes / 60m;
+        return (int)(rounded * step);
     }
 
     private decimal ResolvePayItemAmount(EmployeePayItem payItem, decimal basicSalary)
@@ -2752,14 +2799,8 @@ cancellationToken);
         public int WorkingHoursPerDay { get; init; }
         public CalculationBasis NoPayCalculationBasis { get; init; }
         public decimal AttendanceHalfDayHours { get; init; }
-        public decimal WeekdayOvertimeMultiplier { get; init; }
-        public decimal WeekendOvertimeMultiplier { get; init; }
-        public decimal HolidayOvertimeMultiplier { get; init; }
-        public int OvertimeRoundingMinutes { get; init; }
-        public double OvertimeDailyCapHours { get; init; }
-        public double OvertimePayRunCapHours { get; init; }
-        public bool AppliesOnWeekend { get; init; }
-        public bool AppliesOnHoliday { get; init; }
+        public IReadOnlyDictionary<OvertimeType, OvertimeRuleSnapshot> OvertimeRules { get; init; }
+            = new Dictionary<OvertimeType, OvertimeRuleSnapshot>();
         public EmployeeTaxProfile? TaxProfile { get; init; }
     }
 
@@ -2787,14 +2828,12 @@ cancellationToken);
 
     private sealed class OvertimeRuleSnapshot
     {
-        public decimal WeekdayOvertimeMultiplier { get; init; }
-        public decimal WeekendOvertimeMultiplier { get; init; }
-        public decimal HolidayOvertimeMultiplier { get; init; }
-        public int OvertimeRoundingMinutes { get; init; }
-        public double OvertimeDailyCapHours { get; init; }
-        public double OvertimePayRunCapHours { get; init; }
-        public bool AppliesOnWeekend { get; init; }
-        public bool AppliesOnHoliday { get; init; }
+        public OvertimeType Type { get; init; }
+        public decimal Multiplier { get; init; }
+        public int RoundToMinutes { get; init; }
+        public OvertimeRoundingMode RoundingMode { get; init; }
+        public double? DailyHoursCap { get; init; }
+        public double? MonthlyHoursCap { get; init; }
     }
 
     // TODO: Add integration tests to cover basic, overtime, and statutory calculation scenarios.

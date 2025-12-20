@@ -4,21 +4,19 @@ namespace Payroll.Domain.Overtime;
 
 public class OTRule : AuditableEntity
 {
-    public string Name { get; set; } = string.Empty;
+    public OvertimeType Type { get; set; }
 
-    public decimal WeekdayMultiplier { get; set; }
+    public decimal Multiplier { get; set; }
 
-    public decimal WeekendMultiplier { get; set; }
+    public int RoundToMinutes { get; set; }
 
-    public decimal HolidayMultiplier { get; set; }
+    public OvertimeRoundingMode RoundingMode { get; set; }
 
-    public int RoundingMinutes { get; set; }
+    public double? DailyHoursCap { get; set; }
 
-    public double DailyCapHours { get; set; }
+    public double? MonthlyHoursCap { get; set; }
 
-    public double PayRunCapHours { get; set; }
+    public DateOnly EffectiveFrom { get; set; }
 
-    public bool AppliesOnWeekend { get; set; } = true;
-
-    public bool AppliesOnHoliday { get; set; } = true;
+    public DateOnly? EffectiveTo { get; set; }
 }

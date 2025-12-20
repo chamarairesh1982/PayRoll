@@ -8,17 +8,19 @@ public class OTEntry : AuditableEntity
 
     public DateOnly Date { get; set; }
 
-    public double Hours { get; set; }
+    public int RawMinutes { get; set; }
 
     public OvertimeType Type { get; set; }
 
     public OvertimeStatus Status { get; set; }
 
-    public string? Reason { get; set; }
+    public string? Comment { get; set; }
 
-    public Guid? ApprovedById { get; set; }
+    public string? CreatedByUserId { get; set; }
 
-    public DateTimeOffset? ApprovedAt { get; set; }
+    public string? ApprovedByUserId { get; set; }
+
+    public DateTimeOffset? ApprovedAtUtc { get; set; }
 
     public Guid? PayRunId { get; set; }
 

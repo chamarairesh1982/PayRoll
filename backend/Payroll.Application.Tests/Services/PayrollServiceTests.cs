@@ -55,7 +55,7 @@ public class PayrollServiceTests
         var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP002", "Bob", 100_000m);
         TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
         TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
-        TestDataSeeder.SeedOvertime(context.DbContext, employee, new DateOnly(2025, 4, 15), 10, OvertimeType.Weekday);
+        TestDataSeeder.SeedOvertime(context.DbContext, employee, new DateOnly(2025, 4, 15), 600, OvertimeType.Normal);
 
         var payrollService = CreatePayrollService(context);
         var request = BuildDefaultRequest(employee.Id);
@@ -85,23 +85,34 @@ public class PayrollServiceTests
         TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
         TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
 
-        context.DbContext.OTRules.Add(new OTRule
-        {
-            Name = "Test OT Rule",
-            WeekdayMultiplier = 1.5m,
-            WeekendMultiplier = 2.0m,
-            HolidayMultiplier = 2.5m,
-            RoundingMinutes = 30,
-            DailyCapHours = 4,
-            PayRunCapHours = 5,
-            AppliesOnWeekend = true,
-            AppliesOnHoliday = true,
-            CreatedBy = "seed"
-        });
+        var effectiveFrom = new DateOnly(2020, 1, 1);
+        context.DbContext.OTRules.AddRange(
+            new OTRule
+            {
+                Type = OvertimeType.Normal,
+                Multiplier = 1.5m,
+                RoundToMinutes = 30,
+                RoundingMode = OvertimeRoundingMode.Nearest,
+                DailyHoursCap = 4,
+                MonthlyHoursCap = 5,
+                EffectiveFrom = effectiveFrom,
+                CreatedBy = "seed"
+            },
+            new OTRule
+            {
+                Type = OvertimeType.Weekend,
+                Multiplier = 2.0m,
+                RoundToMinutes = 30,
+                RoundingMode = OvertimeRoundingMode.Nearest,
+                DailyHoursCap = 4,
+                MonthlyHoursCap = 5,
+                EffectiveFrom = effectiveFrom,
+                CreatedBy = "seed"
+            });
         await context.DbContext.SaveChangesAsync();
 
-        TestDataSeeder.SeedOvertime(context.DbContext, employee, new DateOnly(2025, 4, 10), 2.4, OvertimeType.Weekday);
-        TestDataSeeder.SeedOvertime(context.DbContext, employee, new DateOnly(2025, 4, 11), 3.2, OvertimeType.Weekend);
+        TestDataSeeder.SeedOvertime(context.DbContext, employee, new DateOnly(2025, 4, 10), 144, OvertimeType.Normal);
+        TestDataSeeder.SeedOvertime(context.DbContext, employee, new DateOnly(2025, 4, 11), 192, OvertimeType.Weekend);
 
         var payrollService = CreatePayrollService(context);
         var request = BuildDefaultRequest(employee.Id);
@@ -109,12 +120,142 @@ public class PayrollServiceTests
         var result = await payrollService.CreatePayRunAsync(request);
 
         var paySlip = result.PaySlips.Should().ContainSingle().Subject;
-        var weekdayOt = paySlip.Earnings.Single(e => e.Description.Contains("Weekday"));
+        var weekdayOt = paySlip.Earnings.Single(e => e.Description.Contains("Normal"));
         var weekendOt = paySlip.Earnings.Single(e => e.Description.Contains("Weekend"));
 
         weekdayOt.Amount.Should().Be(468.75m);
         weekendOt.Amount.Should().Be(625m);
         paySlip.Earnings.Where(e => e.Code == "OT").Sum(e => e.Amount).Should().Be(1_093.75m);
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Apply_Rounding_Mode_Up()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMPOT_UP", "Lena", 52_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+
+        context.DbContext.OTRules.Add(new OTRule
+        {
+            Type = OvertimeType.Normal,
+            Multiplier = 1.5m,
+            RoundToMinutes = 15,
+            RoundingMode = OvertimeRoundingMode.Up,
+            DailyHoursCap = null,
+            MonthlyHoursCap = null,
+            EffectiveFrom = new DateOnly(2020, 1, 1),
+            CreatedBy = "seed"
+        });
+        await context.DbContext.SaveChangesAsync();
+
+        TestDataSeeder.SeedOvertime(context.DbContext, employee, new DateOnly(2025, 4, 10), 62, OvertimeType.Normal);
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+
+        var result = await payrollService.CreatePayRunAsync(request);
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        var baseHourlyRate = 52_000m / (26 * 8);
+        var expectedHours = 1.25m;
+        var expectedOt = Math.Round(baseHourlyRate * expectedHours * 1.5m, 2, MidpointRounding.AwayFromZero);
+
+        paySlip.Earnings.Should().Contain(e => e.Code == "OT" && e.Amount == expectedOt);
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Apply_Multipliers_By_Type()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMPOT_MULTI", "Kai", 78_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+
+        var effectiveFrom = new DateOnly(2020, 1, 1);
+        context.DbContext.OTRules.AddRange(
+            new OTRule
+            {
+                Type = OvertimeType.Normal,
+                Multiplier = 1.25m,
+                RoundToMinutes = 15,
+                RoundingMode = OvertimeRoundingMode.Nearest,
+                EffectiveFrom = effectiveFrom,
+                CreatedBy = "seed"
+            },
+            new OTRule
+            {
+                Type = OvertimeType.Weekend,
+                Multiplier = 2.0m,
+                RoundToMinutes = 15,
+                RoundingMode = OvertimeRoundingMode.Nearest,
+                EffectiveFrom = effectiveFrom,
+                CreatedBy = "seed"
+            },
+            new OTRule
+            {
+                Type = OvertimeType.Holiday,
+                Multiplier = 2.5m,
+                RoundToMinutes = 15,
+                RoundingMode = OvertimeRoundingMode.Nearest,
+                EffectiveFrom = effectiveFrom,
+                CreatedBy = "seed"
+            });
+        await context.DbContext.SaveChangesAsync();
+
+        TestDataSeeder.SeedOvertime(context.DbContext, employee, new DateOnly(2025, 4, 10), 60, OvertimeType.Normal);
+        TestDataSeeder.SeedOvertime(context.DbContext, employee, new DateOnly(2025, 4, 11), 60, OvertimeType.Weekend);
+        TestDataSeeder.SeedOvertime(context.DbContext, employee, new DateOnly(2025, 4, 12), 60, OvertimeType.Holiday);
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+
+        var result = await payrollService.CreatePayRunAsync(request);
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        var baseHourlyRate = 78_000m / (26 * 8);
+
+        paySlip.Earnings.Should().Contain(e => e.Description.Contains("Normal") &&
+                                              e.Amount == Math.Round(baseHourlyRate * 1.25m, 2, MidpointRounding.AwayFromZero));
+        paySlip.Earnings.Should().Contain(e => e.Description.Contains("Weekend") &&
+                                              e.Amount == Math.Round(baseHourlyRate * 2.0m, 2, MidpointRounding.AwayFromZero));
+        paySlip.Earnings.Should().Contain(e => e.Description.Contains("Holiday") &&
+                                              e.Amount == Math.Round(baseHourlyRate * 2.5m, 2, MidpointRounding.AwayFromZero));
+    }
+
+    [Fact]
+    public async Task RecalculatePayRun_Should_Not_Duplicate_Overtime_Lines()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMPOT_RE", "Nova", 90_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+
+        context.DbContext.OTRules.Add(new OTRule
+        {
+            Type = OvertimeType.Normal,
+            Multiplier = 1.5m,
+            RoundToMinutes = 15,
+            RoundingMode = OvertimeRoundingMode.Nearest,
+            EffectiveFrom = new DateOnly(2020, 1, 1),
+            CreatedBy = "seed"
+        });
+        await context.DbContext.SaveChangesAsync();
+
+        TestDataSeeder.SeedOvertime(context.DbContext, employee, new DateOnly(2025, 4, 15), 120, OvertimeType.Normal);
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+
+        var created = await payrollService.CreatePayRunAsync(request);
+        var initialSlip = created.PaySlips.Single();
+        var initialOtLines = initialSlip.Earnings.Count(e => e.Code == "OT");
+
+        var recalculated = await payrollService.RecalculatePayRunAsync(created.Id, new RecalculatePayRunRequest());
+        var recalculatedSlip = recalculated.PaySlips.Single();
+        var recalculatedOtLines = recalculatedSlip.Earnings.Count(e => e.Code == "OT");
+
+        recalculatedOtLines.Should().Be(initialOtLines);
     }
 
     [Fact]
@@ -264,13 +405,13 @@ public class PayrollServiceTests
     }
 
     [Fact]
-    public async Task CreatePayRun_Should_Lock_Overtime_Record_When_Included_In_PaySlip()
+    public async Task CreatePayRun_Should_Assign_PayRunId_For_Overtime()
     {
         using var context = new TestContext();
         var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP023", "Kyle", 70_000m);
         TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
         TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
-        var overtime = TestDataSeeder.SeedOvertime(context.DbContext, employee, new DateOnly(2025, 4, 12), 4, OvertimeType.Weekend);
+        var overtime = TestDataSeeder.SeedOvertime(context.DbContext, employee, new DateOnly(2025, 4, 12), 240, OvertimeType.Weekend);
 
         var payrollService = CreatePayrollService(context);
         var request = BuildDefaultRequest(employee.Id);
@@ -279,7 +420,7 @@ public class PayrollServiceTests
 
         var persistedOvertime = await context.DbContext.OTEntries.FindAsync(overtime.Id);
         persistedOvertime.Should().NotBeNull();
-        persistedOvertime!.IsLockedForPayroll.Should().BeTrue();
+        persistedOvertime!.IsLockedForPayroll.Should().BeFalse();
         persistedOvertime.PayRunId.Should().Be(result.Id);
     }
 

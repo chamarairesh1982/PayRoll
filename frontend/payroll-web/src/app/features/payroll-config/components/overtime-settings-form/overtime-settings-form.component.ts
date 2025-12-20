@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { OTRule, OTRulePayload } from '../../models/ot-rule.model';
+import { OTRule, OTRulePayload, OvertimeRoundingMode, OvertimeType } from '../../models/ot-rule.model';
 
 @Component({
   selector: 'app-overtime-settings-form',
@@ -13,18 +13,19 @@ export class OvertimeSettingsFormComponent implements OnChanges {
   @Output() submitted = new EventEmitter<OTRulePayload>();
 
   form: FormGroup;
+  overtimeTypes: OvertimeType[] = ['Normal', 'Weekend', 'Holiday'];
+  roundingModes: OvertimeRoundingMode[] = ['Down', 'Nearest', 'Up'];
 
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
-      name: ['', [Validators.required, Validators.maxLength(150)]],
-      weekdayMultiplier: [1.5, [Validators.required, Validators.min(0)]],
-      weekendMultiplier: [2, [Validators.required, Validators.min(0)]],
-      holidayMultiplier: [2, [Validators.required, Validators.min(0)]],
-      roundingMinutes: [15, [Validators.required, Validators.min(0)]],
-      dailyCapHours: [12, [Validators.required, Validators.min(0)]],
-      payRunCapHours: [80, [Validators.required, Validators.min(0)]],
-      appliesOnWeekend: [true],
-      appliesOnHoliday: [true],
+      type: ['Normal', [Validators.required]],
+      multiplier: [1.5, [Validators.required, Validators.min(0.01)]],
+      roundToMinutes: [15, [Validators.required, Validators.min(1)]],
+      roundingMode: ['Nearest', [Validators.required]],
+      dailyHoursCap: [null, [Validators.min(0)]],
+      monthlyHoursCap: [null, [Validators.min(0)]],
+      effectiveFrom: ['', [Validators.required]],
+      effectiveTo: [null],
       isActive: [true],
     });
   }

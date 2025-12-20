@@ -17,11 +17,9 @@ export class OvertimeListPageComponent implements OnInit {
   isLoading = false;
 
   selectedEmployeeId?: string;
-  selectedDate?: string;
+  selectedFrom?: string;
+  selectedTo?: string;
   selectedStatus: OvertimeStatus | '' = '';
-
-  showConfirm = false;
-  recordToDelete: OTEntry | null = null;
 
   constructor(private overtimeApi: OvertimeApiService, private router: Router) {}
 
@@ -36,7 +34,8 @@ export class OvertimeListPageComponent implements OnInit {
         page: this.page,
         pageSize: this.pageSize,
         employeeId: this.selectedEmployeeId,
-        date: this.selectedDate,
+        from: this.selectedFrom,
+        to: this.selectedTo,
         status: this.selectedStatus,
       })
       .subscribe({
@@ -61,7 +60,8 @@ export class OvertimeListPageComponent implements OnInit {
 
   resetFilters(): void {
     this.selectedEmployeeId = undefined;
-    this.selectedDate = undefined;
+    this.selectedFrom = undefined;
+    this.selectedTo = undefined;
     this.selectedStatus = '';
     this.applyFilters();
   }
@@ -78,34 +78,16 @@ export class OvertimeListPageComponent implements OnInit {
     this.router.navigate(['/overtime', record.id, 'edit']);
   }
 
-  confirmDelete(record: OTEntry): void {
+  submitRecord(record: OTEntry): void {
     if (record.isLockedForPayroll) {
-      alert('This OT record is locked and cannot be deleted.');
+      alert('This OT record is locked and cannot be submitted.');
       return;
     }
 
-    this.recordToDelete = record;
-    this.showConfirm = true;
-  }
-
-  cancelDelete(): void {
-    this.recordToDelete = null;
-    this.showConfirm = false;
-  }
-
-  deleteRecord(): void {
-    if (!this.recordToDelete) {
-      return;
-    }
-
-    this.overtimeApi.deleteOvertimeRecord(this.recordToDelete.id).subscribe({
-      next: () => {
-        this.cancelDelete();
-        this.loadRecords();
-      },
+    this.overtimeApi.submitOvertimeRecord(record.id).subscribe({
+      next: () => this.loadRecords(),
       error: err => {
-        console.error('Failed to delete overtime record', err);
-        this.cancelDelete();
+        console.error('Failed to submit overtime record', err);
       },
     });
   }
@@ -126,5 +108,13 @@ export class OvertimeListPageComponent implements OnInit {
 
   get totalPages(): number {
     return this.pageSize ? Math.ceil(this.totalCount / this.pageSize) : 1;
+  }
+
+  canEdit(record: OTEntry): boolean {
+    return record.status === 'Draft' && !record.isLockedForPayroll;
+  }
+
+  canSubmit(record: OTEntry): boolean {
+    return record.status === 'Draft' && !record.isLockedForPayroll;
   }
 }

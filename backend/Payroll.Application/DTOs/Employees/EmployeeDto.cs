@@ -19,6 +19,7 @@ public class EmployeeDto
     public DateTime? ProbationEndDate { get; set; }
     public DateTime? ConfirmationDate { get; set; }
     public decimal BaseSalary { get; set; }
+    public decimal? HourlyRate { get; set; }
     public Guid? CompanyId { get; set; }
     public Guid? BranchId { get; set; }
     public Guid? CostCenterId { get; set; }

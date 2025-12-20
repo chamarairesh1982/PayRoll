@@ -8,14 +8,14 @@
 
     <label>
       Date
-      <input type="date" formControlName="date" />
-      <app-form-field-error [control]="form.get('date')"></app-form-field-error>
+      <input type="date" formControlName="workDate" />
+      <app-form-field-error [control]="form.get('workDate')"></app-form-field-error>
     </label>
 
     <label>
-      Hours
-      <input type="number" formControlName="hours" min="0" step="0.25" />
-      <app-form-field-error [control]="form.get('hours')"></app-form-field-error>
+      Minutes
+      <input type="number" formControlName="rawMinutes" min="1" step="1" />
+      <app-form-field-error [control]="form.get('rawMinutes')"></app-form-field-error>
     </label>
 
     <label>
@@ -26,16 +26,9 @@
       <app-form-field-error [control]="form.get('type')"></app-form-field-error>
     </label>
 
-    <label *ngIf="mode === 'edit'">
-      Status
-      <select formControlName="status">
-        <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
-      </select>
-    </label>
-
     <label class="full-width">
-      Reason
-      <textarea rows="3" formControlName="reason"></textarea>
+      Comment
+      <textarea rows="3" formControlName="comment"></textarea>
     </label>
   </div>
 

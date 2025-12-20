@@ -10,19 +10,22 @@ public class OTEntryDto
     public string? EmployeeCode { get; set; }
     public string? EmployeeName { get; set; }
 
-    public DateTime Date { get; set; }
+    public DateTime WorkDate { get; set; }
 
-    public double Hours { get; set; }
+    public int RawMinutes { get; set; }
 
     public OvertimeType Type { get; set; }
 
     public OvertimeStatus Status { get; set; }
 
-    public string? Reason { get; set; }
+    public string? Comment { get; set; }
 
-    public Guid? ApprovedById { get; set; }
-    public string? ApprovedByName { get; set; }
-    public DateTime? ApprovedAt { get; set; }
+    public string? ApprovedByUserId { get; set; }
+    public DateTime? ApprovedAtUtc { get; set; }
+
+    public string? CreatedByUserId { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
+    public DateTime? UpdatedAtUtc { get; set; }
 
     public Guid? PayRunId { get; set; }
 

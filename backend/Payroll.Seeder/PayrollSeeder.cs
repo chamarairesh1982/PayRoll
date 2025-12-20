@@ -228,9 +228,9 @@ public sealed class PayrollSeeder
         EnsureAttendanceAbsence(lowerSalaryEmployee.Id, new DateOnly(2025, 4, 8));
         EnsureAttendancePartial(lowerSalaryEmployee.Id, new DateOnly(2025, 4, 18), 4m);
 
-        EnsureOvertimeEntry(lowerSalaryEmployee.Id, new DateOnly(2025, 4, 10), 3.5, OvertimeType.Weekday, OvertimeStatus.Approved);
-        EnsureOvertimeEntry(lowerSalaryEmployee.Id, new DateOnly(2025, 4, 12), 4, OvertimeType.Weekend, OvertimeStatus.Approved);
-        EnsureOvertimeEntry(lowerSalaryEmployee.Id, new DateOnly(2025, 4, 20), 2.5, OvertimeType.Weekday, OvertimeStatus.Pending);
+        EnsureOvertimeEntry(salariedEmployee.Id, new DateOnly(2025, 4, 10), 210, OvertimeType.Normal, OvertimeStatus.Approved);
+        EnsureOvertimeEntry(salariedEmployee.Id, new DateOnly(2025, 4, 12), 180, OvertimeType.Weekend, OvertimeStatus.Approved);
+        EnsureOvertimeEntry(lowerSalaryEmployee.Id, new DateOnly(2025, 4, 20), 150, OvertimeType.Normal, OvertimeStatus.Submitted);
 
         EnsureLeaveRequest(salariedEmployee.Id, new DateOnly(2025, 4, 22), new DateOnly(2025, 4, 22), 1, "Approved demo leave");
 
@@ -633,19 +633,48 @@ public sealed class PayrollSeeder
             return;
         }
 
-        _context.OTRules.Add(new OTRule
-        {
-            Name = "Sri Lanka Default OT",
-            WeekdayMultiplier = 1.5m,
-            WeekendMultiplier = 2m,
-            HolidayMultiplier = 2.5m,
-            RoundingMinutes = 15,
-            DailyCapHours = 4,
-            PayRunCapHours = 40,
-            AppliesOnWeekend = true,
-            AppliesOnHoliday = true,
-            CreatedBy = SeedUser
-        });
+        var effectiveFrom = new DateOnly(2020, 1, 1);
+
+        _context.OTRules.AddRange(
+            new OTRule
+            {
+                Type = OvertimeType.Normal,
+                Multiplier = 1.5m,
+                RoundToMinutes = 15,
+                RoundingMode = OvertimeRoundingMode.Nearest,
+                DailyHoursCap = 4,
+                MonthlyHoursCap = 40,
+                EffectiveFrom = effectiveFrom,
+                EffectiveTo = null,
+                IsActive = true,
+                CreatedBy = SeedUser
+            },
+            new OTRule
+            {
+                Type = OvertimeType.Weekend,
+                Multiplier = 2m,
+                RoundToMinutes = 15,
+                RoundingMode = OvertimeRoundingMode.Nearest,
+                DailyHoursCap = 4,
+                MonthlyHoursCap = 40,
+                EffectiveFrom = effectiveFrom,
+                EffectiveTo = null,
+                IsActive = true,
+                CreatedBy = SeedUser
+            },
+            new OTRule
+            {
+                Type = OvertimeType.Holiday,
+                Multiplier = 2.5m,
+                RoundToMinutes = 15,
+                RoundingMode = OvertimeRoundingMode.Nearest,
+                DailyHoursCap = 4,
+                MonthlyHoursCap = 40,
+                EffectiveFrom = effectiveFrom,
+                EffectiveTo = null,
+                IsActive = true,
+                CreatedBy = SeedUser
+            });
 
         _context.SaveChanges();
     }
@@ -851,6 +880,7 @@ public sealed class PayrollSeeder
             MaritalStatus.Single,
             new DateTime(2020, 1, 1),
             baseSalary,
+            null,
             companyId,
             branchId,
             costCenterId,
@@ -1032,7 +1062,7 @@ public sealed class PayrollSeeder
         _context.SaveChanges();
     }
 
-    private void EnsureOvertimeEntry(Guid employeeId, DateOnly date, double hours, OvertimeType type, OvertimeStatus status)
+    private void EnsureOvertimeEntry(Guid employeeId, DateOnly date, int rawMinutes, OvertimeType type, OvertimeStatus status)
     {
         if (_context.OTEntries.Any(o => o.EmployeeId == employeeId && o.Date == date && o.Type == type))
         {
@@ -1043,10 +1073,10 @@ public sealed class PayrollSeeder
         {
             EmployeeId = employeeId,
             Date = date,
-            Hours = hours,
+            RawMinutes = rawMinutes,
             Type = type,
             Status = status,
-            ApprovedAt = status == OvertimeStatus.Approved ? DateTimeOffset.UtcNow : null,
+            ApprovedAtUtc = status == OvertimeStatus.Approved ? DateTimeOffset.UtcNow : null,
             IsLockedForPayroll = false,
             CreatedBy = SeedUser
         });
