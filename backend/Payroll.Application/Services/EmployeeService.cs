@@ -249,6 +249,13 @@ public class EmployeeService : IEmployeeService
         };
     }
 
+    private bool HasAdminRole()
+    {
+        return _currentUserService.Roles.Any(role =>
+            string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(role, "PayrollAdmin", StringComparison.OrdinalIgnoreCase));
+    }
+
     private EmployeeDto MapToDto(Employee employee, bool includeSensitive)
     {
         return new EmployeeDto
