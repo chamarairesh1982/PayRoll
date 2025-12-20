@@ -45,6 +45,21 @@
   color: #991b1b;
 }
 
+.status-badge.status-generated {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.status-badge.status-exported {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.status-failed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 .summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -178,6 +193,45 @@
   border-radius: 8px;
   padding: 1rem;
   background: #ffffff;
+}
+
+.gl-posting {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #ffffff;
+  display: grid;
+  gap: 1rem;
+}
+
+.gl-header,
+.gl-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.gl-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.gl-actions button {
+  padding: 0.5rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid #1d4ed8;
+  background: #1d4ed8;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.gl-summary {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .time-reconciliation,

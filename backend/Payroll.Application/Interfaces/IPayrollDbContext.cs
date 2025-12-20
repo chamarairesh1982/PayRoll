@@ -49,5 +49,9 @@ public interface IPayrollDbContext
     DbSet<PayrollSettings> PayrollSettings { get; }
     DbSet<AuditEvent> AuditEvents { get; }
     DbSet<GeneralLedgerAccountMapping> GeneralLedgerAccountMappings { get; }
+    DbSet<GlAccount> GlAccounts { get; }
+    DbSet<GlMapping> GlMappings { get; }
+    DbSet<GlJournalBatch> GlJournalBatches { get; }
+    DbSet<GlJournalLine> GlJournalLines { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

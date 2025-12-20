@@ -11,8 +11,10 @@ import {
 import { PayRunDetail } from '../../models/pay-run.model';
 import { PayslipDocument, PayslipDocumentStatus } from '../../models/payslip-document.model';
 import { PaySlipEarningLine } from '../../models/payslip.model';
+import { GlJournalBatchDetail, GlJournalBatchSummary } from '../../models/gl.model';
 import { TimeReconciliationResult } from '../../models/time-reconciliation.model';
 import { PayRunsApiService } from '../../services/pay-runs-api.service';
+import { GlApiService } from '../../services/gl-api.service';
 
 @Component({
   selector: 'app-pay-run-detail-page',
@@ -33,6 +35,13 @@ export class PayRunDetailPageComponent implements OnInit {
   bankExportTemplates: BankExportTemplate[] = [];
   bankExports: PayRunBankExport[] = [];
   bankExportErrors: BankExportValidationError[] = [];
+  glBatches: GlJournalBatchSummary[] = [];
+  selectedGlBatch?: GlJournalBatchDetail;
+  glErrorMessage: string | null = null;
+  isLoadingGl = false;
+  isGeneratingGl = false;
+  isApprovingGl = false;
+  isExportingGl = false;
   selectedTemplateId: string | null = null;
   isLoadingExports = false;
   apitReport?: ApitReport;
@@ -51,6 +60,7 @@ export class PayRunDetailPageComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private payRunsApi: PayRunsApiService,
+    private glApi: GlApiService,
     private organizationApi: OrganizationApiService,
     private router: Router,
   ) {}
@@ -80,6 +90,7 @@ export class PayRunDetailPageComponent implements OnInit {
         this.payRun = payRun;
         this.isLoading = false;
         this.loadBankExports();
+        this.loadGlBatches();
         this.loadPayslipDocuments();
         this.loadTimeReconciliation();
       },
@@ -119,6 +130,108 @@ export class PayRunDetailPageComponent implements OnInit {
       error: err => {
         console.error('Failed to load bank exports', err);
         this.isLoadingExports = false;
+      },
+    });
+  }
+
+  loadGlBatches(): void {
+    if (!this.payRun) {
+      return;
+    }
+
+    this.isLoadingGl = true;
+    this.glErrorMessage = null;
+    this.glApi.getPayRunBatches(this.payRun.id).subscribe({
+      next: batches => {
+        this.glBatches = batches;
+        if (this.selectedGlBatch) {
+          const existing = batches.find(batch => batch.id === this.selectedGlBatch?.id);
+          if (!existing) {
+            this.selectedGlBatch = undefined;
+          }
+        }
+        this.isLoadingGl = false;
+      },
+      error: err => {
+        console.error('Failed to load GL batches', err);
+        this.glErrorMessage = err.error?.message || 'Failed to load GL batches.';
+        this.isLoadingGl = false;
+      },
+    });
+  }
+
+  generateGlBatch(regenerate = false): void {
+    if (!this.payRun) {
+      return;
+    }
+
+    this.isGeneratingGl = true;
+    this.glErrorMessage = null;
+    this.glApi.generateBatch(this.payRun.id, regenerate).subscribe({
+      next: batch => {
+        this.selectedGlBatch = batch;
+        this.isGeneratingGl = false;
+        this.loadGlBatches();
+      },
+      error: err => {
+        console.error('Failed to generate GL batch', err);
+        this.glErrorMessage = err.error?.message || 'Failed to generate GL batch.';
+        this.isGeneratingGl = false;
+      },
+    });
+  }
+
+  viewGlBatch(batchId: string): void {
+    this.glErrorMessage = null;
+    this.glApi.getBatch(batchId).subscribe({
+      next: batch => {
+        this.selectedGlBatch = batch;
+      },
+      error: err => {
+        console.error('Failed to load GL batch', err);
+        this.glErrorMessage = err.error?.message || 'Failed to load GL batch details.';
+      },
+    });
+  }
+
+  approveGlBatch(): void {
+    if (!this.selectedGlBatch) {
+      return;
+    }
+
+    this.isApprovingGl = true;
+    this.glErrorMessage = null;
+    this.glApi.approveBatch(this.selectedGlBatch.id, { comment: this.actionComment }).subscribe({
+      next: batch => {
+        this.selectedGlBatch = batch;
+        this.isApprovingGl = false;
+        this.loadGlBatches();
+      },
+      error: err => {
+        console.error('Failed to approve GL batch', err);
+        this.glErrorMessage = err.error?.message || 'Failed to approve GL batch.';
+        this.isApprovingGl = false;
+      },
+    });
+  }
+
+  exportGlBatch(): void {
+    if (!this.selectedGlBatch) {
+      return;
+    }
+
+    this.isExportingGl = true;
+    this.glErrorMessage = null;
+    this.glApi.exportBatch(this.selectedGlBatch.id).subscribe({
+      next: file => {
+        this.saveBase64File(file, 'gl-export.csv');
+        this.isExportingGl = false;
+        this.loadGlBatches();
+      },
+      error: err => {
+        console.error('Failed to export GL batch', err);
+        this.glErrorMessage = err.error?.message || 'Failed to export GL batch.';
+        this.isExportingGl = false;
       },
     });
   }
@@ -486,6 +599,10 @@ export class PayRunDetailPageComponent implements OnInit {
   }
 
   get canGeneratePayslips(): boolean {
+    return !!this.payRun && this.payRun.isLocked && this.payRun.status === 'Locked';
+  }
+
+  get canGenerateGlBatch(): boolean {
     return !!this.payRun && this.payRun.isLocked && this.payRun.status === 'Locked';
   }
 
