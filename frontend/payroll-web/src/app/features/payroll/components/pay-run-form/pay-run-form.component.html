@@ -61,6 +61,9 @@
           {{ costCenter.name }} ({{ costCenter.code }})
         </option>
       </select>
+      <div class="error" *ngIf="scopeInvalid">
+        Select a company, branch, or cost center for non-consolidated pay runs.
+      </div>
     </label>
 
     <label class="checkbox-field">

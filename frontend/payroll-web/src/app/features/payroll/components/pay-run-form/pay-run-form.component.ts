@@ -59,7 +59,7 @@ export class PayRunFormComponent implements OnInit, OnChanges {
         includeActiveEmployeesOnly: [true],
         employeeIds: [[]],
       },
-      { validators: this.periodRangeValidator },
+      { validators: [this.periodRangeValidator, this.scopeValidator] },
     );
   }
 
@@ -216,7 +216,32 @@ export class PayRunFormComponent implements OnInit, OnChanges {
     return null;
   };
 
+  private scopeValidator = (group: FormGroup) => {
+    const isConsolidated = group.get('isConsolidated')?.value;
+    const companyId = group.get('companyId')?.value;
+    const branchId = group.get('branchId')?.value;
+    const costCenterId = group.get('costCenterId')?.value;
+
+    if (!isConsolidated && !companyId && !branchId && !costCenterId) {
+      return { scopeRequired: true };
+    }
+
+    return null;
+  };
+
   get periodRangeInvalid(): boolean {
     return !!this.form.errors?.['periodRange'] && this.form.get('periodEnd')?.touched;
+  }
+
+  get scopeInvalid(): boolean {
+    if (!this.form.errors?.['scopeRequired']) {
+      return false;
+    }
+
+    const companyTouched = this.form.get('companyId')?.touched;
+    const branchTouched = this.form.get('branchId')?.touched;
+    const costCenterTouched = this.form.get('costCenterId')?.touched;
+
+    return !!(companyTouched || branchTouched || costCenterTouched);
   }
 }
