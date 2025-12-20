@@ -68,7 +68,10 @@ public class OrganizationService : IOrganizationService
 
         if (branchId.HasValue)
         {
-            costCenters = costCenters.Where(cc => cc.BranchId == branchId.Value);
+            costCenters = costCenters.Where(cc =>
+                cc.BranchId == branchId.Value
+                || (cc.BranchId == null
+                    && (!companyId.HasValue || (cc.CompanyId.HasValue && cc.CompanyId == companyId.Value))));
         }
 
         var results = await costCenters

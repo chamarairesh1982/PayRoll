@@ -77,7 +77,14 @@ export class EmployeeFormComponent implements OnInit, OnChanges {
       this.form.markAllAsTouched();
       return;
     }
-    this.submitted.emit(this.form.value);
+    const value = this.form.value;
+    const payload: Partial<Employee> = {
+      ...value,
+      companyId: value.companyId || null,
+      branchId: value.branchId || null,
+      costCenterId: value.costCenterId || null,
+    };
+    this.submitted.emit(payload);
   }
 
   private loadCompanies(): void {
