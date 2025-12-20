@@ -10,8 +10,6 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
-import { TooltipModule } from 'primeng/tooltip';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 const PRIMENG_MODULES = [
   TableModule,
@@ -25,8 +23,6 @@ const PRIMENG_MODULES = [
   ToastModule,
   ConfirmDialogModule,
   DialogModule,
-  TooltipModule,
-  ProgressSpinnerModule,
 ];
 
 @NgModule({
