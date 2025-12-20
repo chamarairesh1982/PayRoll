@@ -6,6 +6,7 @@ using Payroll.Application.Interfaces;
 using Payroll.Application.PayrollConfig;
 using Payroll.Application.RecurringPayItems;
 using Payroll.Application.Services;
+using Payroll.Application.TimeReconciliation;
 using Payroll.Application.Tests.TestInfrastructure;
 using Payroll.Domain.Payroll;
 using Xunit;
@@ -24,7 +25,14 @@ public class RecurringPayItemEngineTests
         var epfService = new EpfEtfRuleSetService(context.DbContext, context.CurrentUserService);
         var taxService = new TaxRuleSetService(context.DbContext, context.CurrentUserService);
         var auditLogger = new AuditLogger(context.DbContext, context.CurrentUserService);
-        return new PayrollService(context.DbContext, epfService, taxService, auditLogger,new FakeCurrentUserService());
+        var timeReconciliationService = new TimeReconciliationService();
+        return new PayrollService(
+            context.DbContext,
+            epfService,
+            taxService,
+            auditLogger,
+            new FakeCurrentUserService(),
+            timeReconciliationService);
 
 
     }

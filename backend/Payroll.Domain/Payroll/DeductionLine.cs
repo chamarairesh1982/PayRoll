@@ -10,4 +10,7 @@ public class DeductionLine
     public decimal Amount { get; set; }
     public bool IsPreTax { get; set; }
     public bool IsPostTax { get; set; }
+    public decimal? NoPayDays { get; set; }
+    public decimal? NoPayHours { get; set; }
+    public string? MetadataJson { get; set; }
 }

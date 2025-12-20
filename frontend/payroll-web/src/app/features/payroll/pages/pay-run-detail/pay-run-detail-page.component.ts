@@ -11,6 +11,7 @@ import {
 import { PayRunDetail } from '../../models/pay-run.model';
 import { PayslipDocument, PayslipDocumentStatus } from '../../models/payslip-document.model';
 import { PaySlipEarningLine } from '../../models/payslip.model';
+import { TimeReconciliationResult } from '../../models/time-reconciliation.model';
 import { PayRunsApiService } from '../../services/pay-runs-api.service';
 
 @Component({
@@ -43,6 +44,9 @@ export class PayRunDetailPageComponent implements OnInit {
   isGeneratingPayslips = false;
   generatingPayslipEmployeeId: string | null = null;
   payslipDocumentsMessage: string | null = null;
+  timeReconciliation?: TimeReconciliationResult;
+  isLoadingTimeReconciliation = false;
+  timeReconciliationError: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -77,6 +81,7 @@ export class PayRunDetailPageComponent implements OnInit {
         this.isLoading = false;
         this.loadBankExports();
         this.loadPayslipDocuments();
+        this.loadTimeReconciliation();
       },
       error: err => {
         console.error('Failed to load pay run', err);
@@ -319,6 +324,27 @@ export class PayRunDetailPageComponent implements OnInit {
     });
   }
 
+  loadTimeReconciliation(): void {
+    if (!this.payRun) {
+      return;
+    }
+
+    this.isLoadingTimeReconciliation = true;
+    this.timeReconciliationError = null;
+
+    this.payRunsApi.getTimeReconciliation(this.payRun.id).subscribe({
+      next: result => {
+        this.timeReconciliation = result;
+        this.isLoadingTimeReconciliation = false;
+      },
+      error: err => {
+        console.error('Failed to load time reconciliation', err);
+        this.timeReconciliationError = 'Unable to load time reconciliation summary.';
+        this.isLoadingTimeReconciliation = false;
+      },
+    });
+  }
+
   generateAllPayslips(): void {
     if (!this.payRun) {
       return;
@@ -427,6 +453,16 @@ export class PayRunDetailPageComponent implements OnInit {
   getOvertimeEarningsForSlip(paySlipId: string): PaySlipEarningLine[] {
     const slip = this.payRun?.paySlips.find(ps => ps.id === paySlipId);
     return slip?.earnings?.filter(e => e.code === 'OT') ?? [];
+  }
+
+  getNoPayAmount(employeeId: string): number {
+    const slip = this.payRun?.paySlips.find(ps => ps.employeeId === employeeId);
+    return slip?.deductions?.filter(d => d.code === 'DED_NO_PAY').reduce((sum, line) => sum + line.amount, 0) ?? 0;
+  }
+
+  getLeaveEncashmentAmount(employeeId: string): number {
+    const slip = this.payRun?.paySlips.find(ps => ps.employeeId === employeeId);
+    return slip?.earnings?.filter(e => e.code === 'LEAVE_ENCASHMENT').reduce((sum, line) => sum + line.amount, 0) ?? 0;
   }
 
   get canRecalculate(): boolean {

@@ -18,6 +18,9 @@ public class DeductionLineConfiguration : IEntityTypeConfiguration<DeductionLine
             .HasMaxLength(50)
             .HasDefaultValue(string.Empty);
         builder.Property(d => d.Amount).HasColumnType("decimal(18,2)");
+        builder.Property(d => d.NoPayDays).HasColumnType("decimal(5,2)");
+        builder.Property(d => d.NoPayHours).HasColumnType("decimal(7,2)");
+        builder.Property(d => d.MetadataJson);
 
         builder.HasOne<PaySlip>()
             .WithMany(ps => ps.Deductions)

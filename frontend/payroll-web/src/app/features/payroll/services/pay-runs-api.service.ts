@@ -11,6 +11,7 @@ import {
 } from '../models/bank-export.model';
 import { PayslipBulkGenerateResult, PayslipDocument } from '../models/payslip-document.model';
 import { PayPeriodType, PayRunDetail, PayRunStatus, PayRunSummary } from '../models/pay-run.model';
+import { TimeReconciliationResult } from '../models/time-reconciliation.model';
 import { PaySlip } from '../models/payslip.model';
 
 export interface PayRunActionRequest {
@@ -68,6 +69,10 @@ export class PayRunsApiService {
 
   getPayRun(id: string): Observable<PayRunDetail> {
     return this.http.get<PayRunDetail>(`${this.baseUrl}/${id}`);
+  }
+
+  getTimeReconciliation(payRunId: string): Observable<TimeReconciliationResult> {
+    return this.http.get<TimeReconciliationResult>(`${this.baseUrl}/${payRunId}/time-reconciliation`);
   }
 
   createPayRun(payload: {

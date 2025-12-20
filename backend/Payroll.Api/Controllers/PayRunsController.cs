@@ -32,6 +32,13 @@ public class PayRunsController : ControllerBase
         return payRun is null ? NotFound() : Ok(payRun);
     }
 
+    [HttpGet("{id:guid}/time-reconciliation")]
+    public async Task<IActionResult> GetTimeReconciliation(Guid id, CancellationToken cancellationToken = default)
+    {
+        var result = await _payrollService.GetTimeReconciliationAsync(id, cancellationToken);
+        return result is null ? NotFound() : Ok(result);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreatePayRunRequest request, CancellationToken cancellationToken = default)
     {

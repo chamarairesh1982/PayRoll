@@ -203,24 +203,66 @@
     </ng-template>
   </div>
 
-  <div class="attendance-no-pay">
-    <h2>Attendance no-pay summary</h2>
-    <table class="table" *ngIf="payRun.attendanceNoPaySummaries?.length; else noNoPay">
+  <div class="time-reconciliation">
+    <div class="time-reconciliation-header">
+      <div>
+        <h2>Time reconciliation summary</h2>
+        <div class="muted">Worked vs leave vs absence summary used for no-pay and encashment.</div>
+      </div>
+    </div>
+    <div *ngIf="timeReconciliationError" class="error">{{ timeReconciliationError }}</div>
+    <div *ngIf="isLoadingTimeReconciliation" class="muted">Loading time reconciliation...</div>
+    <table class="table" *ngIf="timeReconciliation?.employees?.length; else noReconciliation">
       <thead>
         <tr>
           <th>Employee</th>
+          <th>Worked</th>
+          <th>Paid leave</th>
+          <th>Unpaid leave</th>
+          <th>Absent</th>
           <th>No-pay amount</th>
+          <th>Leave encashment</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let summary of payRun.attendanceNoPaySummaries">
+        <tr *ngFor="let summary of timeReconciliation?.employees">
           <td>{{ summary.employeeCode || summary.employeeId }} - {{ summary.employeeName || 'N/A' }}</td>
-          <td>{{ summary.noPayAmount }}</td>
+          <td>{{ summary.workedDays }}</td>
+          <td>{{ summary.paidLeaveDays }}</td>
+          <td>{{ summary.unpaidLeaveDays }}</td>
+          <td>{{ summary.absentDays }}</td>
+          <td>{{ getNoPayAmount(summary.employeeId) }}</td>
+          <td>{{ getLeaveEncashmentAmount(summary.employeeId) }}</td>
         </tr>
       </tbody>
     </table>
-    <ng-template #noNoPay>
-      <div>No attendance no-pay deductions for this period.</div>
+    <ng-template #noReconciliation>
+      <div>No time reconciliation data for this period.</div>
+    </ng-template>
+  </div>
+
+  <div class="time-conflicts">
+    <h2>Reconciliation conflicts</h2>
+    <div *ngIf="timeReconciliation?.conflicts?.length; else noConflicts">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Date</th>
+            <th>Warning</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let conflict of timeReconciliation?.conflicts">
+            <td>{{ conflict.employeeCode || conflict.employeeId }} - {{ conflict.employeeName || 'N/A' }}</td>
+            <td>{{ conflict.date }}</td>
+            <td>{{ conflict.warning }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #noConflicts>
+      <div>No reconciliation conflicts detected for this period.</div>
     </ng-template>
   </div>
 
