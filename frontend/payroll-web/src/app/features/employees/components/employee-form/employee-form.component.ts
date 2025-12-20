@@ -79,10 +79,11 @@ export class EmployeeFormComponent implements OnInit, OnChanges {
         confirmationDate: this.normalizeDateInput(this.initialValue.confirmationDate),
       };
       this.form.patchValue(normalizedValue, { emitEvent: false });
-      const companyId = this.form.get('companyId')?.value || undefined;
-      const branchId = this.form.get('branchId')?.value || undefined;
-      this.loadBranches(companyId);
-      this.loadCostCenters(companyId, branchId);
+      const companyId = normalizedValue.companyId ?? undefined;
+      const branchId = normalizedValue.branchId ?? undefined;
+      const costCenterId = normalizedValue.costCenterId ?? undefined;
+      this.loadBranches(companyId, branchId);
+      this.loadCostCenters(companyId, branchId, costCenterId);
     }
   }
 
@@ -115,21 +116,30 @@ export class EmployeeFormComponent implements OnInit, OnChanges {
     this.organizationApi.getCompanies().subscribe(companies => {
       this.companies = companies;
       const companyId = this.form.get('companyId')?.value || undefined;
-      this.loadBranches(companyId);
       const branchId = this.form.get('branchId')?.value || undefined;
-      this.loadCostCenters(companyId, branchId);
+      const costCenterId = this.form.get('costCenterId')?.value || undefined;
+      this.loadBranches(companyId, branchId);
+      this.loadCostCenters(companyId, branchId, costCenterId);
     });
   }
 
-  private loadBranches(companyId?: string): void {
+  private loadBranches(companyId?: string, selectedBranchId?: string): void {
     this.organizationApi.getBranches(companyId).subscribe(branches => {
       this.branches = branches;
+      if (selectedBranchId) {
+        const hasSelection = branches.some(branch => branch.id === selectedBranchId);
+        this.form.patchValue({ branchId: hasSelection ? selectedBranchId : '' }, { emitEvent: false });
+      }
     });
   }
 
-  private loadCostCenters(companyId?: string, branchId?: string): void {
+  private loadCostCenters(companyId?: string, branchId?: string, selectedCostCenterId?: string): void {
     this.organizationApi.getCostCenters(companyId, branchId).subscribe(costCenters => {
       this.costCenters = costCenters;
+      if (selectedCostCenterId) {
+        const hasSelection = costCenters.some(costCenter => costCenter.id === selectedCostCenterId);
+        this.form.patchValue({ costCenterId: hasSelection ? selectedCostCenterId : '' }, { emitEvent: false });
+      }
     });
   }
 

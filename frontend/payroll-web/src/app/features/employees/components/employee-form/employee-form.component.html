@@ -98,7 +98,7 @@
     </label>
     <label>
       Branch
-      <select formControlName="branchId">
+      <select formControlName="branchId" [disabled]="!form.get('companyId')?.value">
         <option value="">Select branch (optional)</option>
         <option *ngFor="let branch of branches" [value]="branch.id">
           {{ branch.name }} ({{ branch.code }})
@@ -107,7 +107,7 @@
     </label>
     <label>
       Cost Center
-      <select formControlName="costCenterId">
+      <select formControlName="costCenterId" [disabled]="!form.get('companyId')?.value">
         <option value="">Select cost center (optional)</option>
         <option *ngFor="let costCenter of costCenters" [value]="costCenter.id">
           {{ costCenter.name }} ({{ costCenter.code }})

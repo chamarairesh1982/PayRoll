@@ -22,6 +22,8 @@ export interface Employee {
   companyId?: string | null;
   branchId?: string | null;
   costCenterId?: string | null;
+  branchName?: string | null;
+  costCenterName?: string | null;
   isActive: boolean;
 }
 
