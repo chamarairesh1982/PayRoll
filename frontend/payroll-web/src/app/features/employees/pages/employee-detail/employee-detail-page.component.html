@@ -8,6 +8,8 @@
   </div>
   <div class="card__body">
     <div class="row"><strong>Employee Code:</strong> {{ employee.employeeCode }}</div>
+    <div class="row"><strong>Initials:</strong> {{ employee.initials || '—' }}</div>
+    <div class="row"><strong>Calling Name:</strong> {{ employee.callingName || '—' }}</div>
     <div class="row"><strong>NIC:</strong> {{ employee.nicNumber }}</div>
     <div class="row"><strong>EPF Number:</strong> {{ employee.epfNumber || '—' }}</div>
     <div class="row"><strong>Date of Birth:</strong> {{ employee.dateOfBirth | dateFormat }}</div>
@@ -17,6 +19,14 @@
     <div class="row"><strong>Probation End:</strong> {{ employee.probationEndDate | dateFormat }}</div>
     <div class="row"><strong>Confirmation Date:</strong> {{ employee.confirmationDate | dateFormat }}</div>
     <div class="row"><strong>Base Salary:</strong> {{ employee.baseSalary | number: '1.0-2' }}</div>
+    <div class="row">
+      <strong>Hourly Rate:</strong>
+      {{ employee.hourlyRate != null ? (employee.hourlyRate | number: '1.0-2') : '—' }}
+    </div>
+    <div class="row"><strong>Bank Name:</strong> {{ employee.bankName || '—' }}</div>
+    <div class="row"><strong>Bank Code:</strong> {{ employee.bankCode || '—' }}</div>
+    <div class="row"><strong>Branch Code:</strong> {{ employee.branchCode || '—' }}</div>
+    <div class="row"><strong>Bank Account Number:</strong> {{ employee.bankAccountNumber || '—' }}</div>
     <div class="row"><strong>Active:</strong> {{ employee.isActive ? 'Yes' : 'No' }}</div>
   </div>
 </div>
