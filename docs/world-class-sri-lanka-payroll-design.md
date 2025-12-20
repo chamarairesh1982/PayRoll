@@ -49,6 +49,7 @@ Optional: Reopened (controlled) for corrections.
 - Slab-based tax engine with effective-dated slabs
 - Reliefs/rebates + tax-free allowances
 - Mid-year changes supported (effective dates)
+- Use the slab set effective for the **pay period end date** when calculating PAYE
 - Monthly and annual reports + employee certificates
 
 ### Statutory traceability

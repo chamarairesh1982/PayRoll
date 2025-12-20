@@ -8,7 +8,7 @@
     <div>Order</div>
     <div>From Amount</div>
     <div>To Amount</div>
-    <div>Rate %</div>
+    <div>Rate</div>
     <div class="actions">Actions</div>
   </div>
   <div class="slabs-row" *ngFor="let slab of slabs; index as i">
@@ -20,7 +20,7 @@
       <input type="number" [(ngModel)]="slab.toAmount" (change)="onChange()" placeholder="No upper limit" />
     </div>
     <div>
-      <input type="number" step="0.01" [(ngModel)]="slab.ratePercent" (change)="onChange()" />
+      <input type="number" step="0.01" [(ngModel)]="slab.rate" (change)="onChange()" />
     </div>
     <div class="actions">
       <button type="button" (click)="moveUp(i)" [disabled]="i === 0">↑</button>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -515,6 +516,165 @@ public class PayrollService : IPayrollService
         return paySlip is null ? null : MapToDto(paySlip);
     }
 
+    public async Task<TaxCalculationSummaryDto> PreviewTaxAsync(TaxPreviewRequest request, CancellationToken cancellationToken = default)
+    {
+        var employee = await _dbContext.Employees
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == request.EmployeeId, cancellationToken);
+
+        if (employee is null)
+        {
+            throw new KeyNotFoundException("Employee not found.");
+        }
+
+        var payRun = new PayRun
+        {
+            Id = Guid.NewGuid(),
+            PeriodType = PayPeriodType.Monthly,
+            PeriodStart = request.PeriodStart,
+            PeriodEnd = request.PeriodEnd,
+            PayDate = request.PeriodEnd,
+            CreatedBy = _currentUserService.UserName ?? "system"
+        };
+
+        var periodStart = DateOnly.FromDateTime(payRun.PeriodStart);
+        var periodEnd = DateOnly.FromDateTime(payRun.PeriodEnd);
+
+        var attendance = await _dbContext.AttendanceRecords
+            .AsNoTracking()
+            .Where(a => a.EmployeeId == employee.Id
+                        && a.Period.Start <= periodEnd
+                        && a.Period.End >= periodStart)
+            .ToListAsync(cancellationToken);
+
+        var overtime = await _dbContext.OTEntries
+            .AsNoTracking()
+            .Where(o => o.EmployeeId == employee.Id
+                        && o.Date >= periodStart
+                        && o.Date <= periodEnd
+                        && o.Status == OvertimeStatus.Approved)
+            .ToListAsync(cancellationToken);
+
+        var loans = await _dbContext.Loans
+            .AsNoTracking()
+            .Include(l => l.Repayments)
+            .Where(l => l.EmployeeId == employee.Id && l.Status == LoanStatus.Active)
+            .ToListAsync(cancellationToken);
+
+        var allowanceTypes = await _dbContext.AllowanceTypes
+            .AsNoTracking()
+            .ToDictionaryAsync(a => a.Code, cancellationToken);
+
+        var deductionTypes = await _dbContext.DeductionTypes
+            .AsNoTracking()
+            .ToDictionaryAsync(d => d.Code, cancellationToken);
+
+        var payItems = await _dbContext.EmployeePayItems
+            .AsNoTracking()
+            .Where(pi => pi.EmployeeId == employee.Id
+                        && pi.IsActive
+                        && pi.EffectiveFrom <= periodEnd
+                        && (pi.EffectiveTo == null || pi.EffectiveTo >= periodStart))
+            .ToListAsync(cancellationToken);
+
+        var recurringPayItems = await _dbContext.EmployeeRecurringPayItems
+            .AsNoTracking()
+            .Include(pi => pi.AllowanceType)
+            .Include(pi => pi.DeductionType)
+            .Where(pi => pi.EmployeeId == employee.Id
+                        && pi.IsActive
+                        && pi.EffectiveFrom <= periodEnd
+                        && (pi.EffectiveTo == null || pi.EffectiveTo >= periodStart))
+            .ToListAsync(cancellationToken);
+
+        var recurringAssignments = await _dbContext.RecurringPayItemAssignments
+            .AsNoTracking()
+            .Include(a => a.Rule)
+                .ThenInclude(r => r!.AllowanceType)
+            .Include(a => a.Rule)
+                .ThenInclude(r => r!.DeductionType)
+            .Where(a => a.EmployeeId == employee.Id
+                        && a.IsActive
+                        && a.StartDate <= periodEnd
+                        && (a.EndDate == null || a.EndDate >= periodStart)
+                        && a.Rule != null
+                        && a.Rule.IsActive
+                        && a.Rule.Frequency == payRun.PeriodType
+                        && a.Rule.StartDate <= periodEnd
+                        && (a.Rule.EndDate == null || a.Rule.EndDate >= periodStart))
+            .ToListAsync(cancellationToken);
+
+        var leaveRequests = await _dbContext.LeaveRequests
+            .AsNoTracking()
+            .Where(lr => lr.EmployeeId == employee.Id
+                         && lr.IsActive
+                         && lr.Status == LeaveStatus.Approved
+                         && lr.StartDate <= periodEnd
+                         && lr.EndDate >= periodStart)
+            .ToListAsync(cancellationToken);
+
+        var payrollSettings = await GetPayrollSettingsAsync(cancellationToken);
+        var overtimeRule = await GetOvertimeRuleSnapshotAsync(cancellationToken);
+
+        var taxProfile = await _dbContext.EmployeeTaxProfiles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.EmployeeId == employee.Id, cancellationToken);
+
+        var periodEndDate = DateOnly.FromDateTime(payRun.PeriodEnd);
+        var defaultTaxRuleSet = await _taxRuleSetService.GetActiveRuleForDateAsync(periodEndDate);
+        var overrideRuleSets = taxProfile?.SlabSetOverrideId.HasValue == true
+            ? await _taxRuleSetService.GetByIdsAsync(new[] { taxProfile.SlabSetOverrideId.Value })
+            : new Dictionary<Guid, TaxRuleSetDto>();
+        var taxRuleSet = ResolveTaxRuleSetForEmployee(taxProfile, defaultTaxRuleSet, overrideRuleSets);
+        var epfEtfRule = await _epfEtfRuleSetService.GetActiveRuleForDateAsync(periodEndDate);
+
+        var ctx = new PaySlipCalculationContext
+        {
+            Employee = employee,
+            PaySlipId = Guid.NewGuid(),
+            Attendance = attendance,
+            Overtime = overtime,
+            ActiveLoans = loans,
+            PayItems = payItems,
+            RecurringPayItems = recurringPayItems,
+            RecurringAssignments = recurringAssignments,
+            LeaveRequests = leaveRequests,
+            AllowanceTypes = allowanceTypes,
+            DeductionTypes = deductionTypes,
+            WorkingDaysPerMonth = payrollSettings.WorkingDaysPerMonth,
+            WorkingHoursPerDay = payrollSettings.WorkingHoursPerDay,
+            NoPayCalculationBasis = payrollSettings.NoPayCalculationBasis,
+            AttendanceHalfDayHours = payrollSettings.AttendanceHalfDayHours,
+            WeekdayOvertimeMultiplier = overtimeRule.WeekdayOvertimeMultiplier,
+            WeekendOvertimeMultiplier = overtimeRule.WeekendOvertimeMultiplier,
+            HolidayOvertimeMultiplier = overtimeRule.HolidayOvertimeMultiplier,
+            OvertimeRoundingMinutes = overtimeRule.OvertimeRoundingMinutes,
+            OvertimeDailyCapHours = overtimeRule.OvertimeDailyCapHours,
+            OvertimePayRunCapHours = overtimeRule.OvertimePayRunCapHours,
+            AppliesOnWeekend = overtimeRule.AppliesOnWeekend,
+            AppliesOnHoliday = overtimeRule.AppliesOnHoliday,
+            TaxProfile = taxProfile
+        };
+
+        await CalculatePaySlipForEmployeeAsync(
+            payRun,
+            employee,
+            epfEtfRule,
+            taxRuleSet,
+            ctx,
+            new HashSet<string>(),
+            new List<PayRunRecurringLine>(),
+            cancellationToken);
+
+        return ctx.TaxCalculationSummary ?? new TaxCalculationSummaryDto(
+            taxRuleSet?.Id,
+            0,
+            0,
+            0,
+            0,
+            Array.Empty<TaxCalculationBreakdownLine>());
+    }
+
     public async Task<FileExportResultDto?> ExportPaySlipAsync(Guid payRunId, Guid paySlipId, string format = "pdf", CancellationToken cancellationToken = default)
     {
         var payRun = await LoadPayRunWithSlipsAsync(payRunId, cancellationToken);
@@ -922,7 +1082,7 @@ cancellationToken);
             return null;
         }
 
-        var taxRuleSet = await _taxRuleSetService.GetActiveRuleForDateAsync(DateOnly.FromDateTime(payRun.PayDate));
+        var taxRuleSet = await _taxRuleSetService.GetActiveRuleForDateAsync(DateOnly.FromDateTime(payRun.PeriodEnd));
         var yearStart = new DateTime(payRun.PayDate.Year, 1, 1);
         var employeeIds = payRun.PaySlips.Select(ps => ps.EmployeeId).Distinct().ToList();
 
@@ -952,7 +1112,7 @@ cancellationToken);
         {
             var taxableEarnings = paySlip.Earnings.Where(e => e.IsTaxable).Sum(e => e.Amount);
             var preTaxDeductions = paySlip.Deductions.Where(d => d.IsPreTax).Sum(d => d.Amount);
-            var payeResult = CalculatePaye(taxRuleSet, taxableEarnings, preTaxDeductions, payRun.PeriodType);
+            var payeResult = CalculatePaye(taxRuleSet, taxableEarnings, payRun.PeriodType);
 
             var ytdTax = yearToDateTaxes.TryGetValue(paySlip.EmployeeId, out var total)
                 ? total
@@ -967,7 +1127,7 @@ cancellationToken);
                 TaxableEarnings = RoundCurrency(taxableEarnings),
                 PreTaxDeductions = RoundCurrency(preTaxDeductions),
                 ReliefAmount = payeResult.ReliefAmount,
-                RebateAmount = payeResult.RebateAmount,
+                RebateAmount = 0,
                 TaxableAfterRelief = payeResult.TaxableAfterRelief,
                 ApitWithheld = paySlip.PayeTax,
                 YearToDateApit = ytdTax
@@ -994,10 +1154,10 @@ cancellationToken);
             return null;
         }
 
-        var taxRuleSet = await _taxRuleSetService.GetActiveRuleForDateAsync(DateOnly.FromDateTime(payRun.PayDate));
+        var taxRuleSet = await _taxRuleSetService.GetActiveRuleForDateAsync(DateOnly.FromDateTime(payRun.PeriodEnd));
         var taxableEarnings = paySlip.Earnings.Where(e => e.IsTaxable).Sum(e => e.Amount);
         var preTaxDeductions = paySlip.Deductions.Where(d => d.IsPreTax).Sum(d => d.Amount);
-        var payeResult = CalculatePaye(taxRuleSet, taxableEarnings, preTaxDeductions, payRun.PeriodType);
+        var payeResult = CalculatePaye(taxRuleSet, taxableEarnings, payRun.PeriodType);
 
         var yearStart = new DateTime(payRun.PayDate.Year, 1, 1);
         var yearToDateTax = await _dbContext.PaySlips
@@ -1020,7 +1180,7 @@ cancellationToken);
         builder.AppendLine($"Pre-Tax Deductions: {RoundCurrency(preTaxDeductions):N2}");
         builder.AppendLine($"Income Relief Applied: {payeResult.ReliefAmount:N2}");
         builder.AppendLine($"Taxable After Relief: {payeResult.TaxableAfterRelief:N2}");
-        builder.AppendLine($"Tax Rebates Applied: {payeResult.RebateAmount:N2}");
+        builder.AppendLine("Tax Rebates Applied: 0.00");
         builder.AppendLine($"APIT Withheld (Period): {paySlip.PayeTax:N2}");
         builder.AppendLine($"APIT Year To Date: {yearToDateTax:N2}");
 
@@ -1118,9 +1278,21 @@ cancellationToken);
                          && lr.EndDate >= periodStart)
             .ToListAsync(ct);
 
-        var payDateOnly = DateOnly.FromDateTime(payRun.PayDate);
+        var payDateOnly = DateOnly.FromDateTime(payRun.PeriodEnd);
         var epfEtfRule = await _epfEtfRuleSetService.GetActiveRuleForDateAsync(payDateOnly);
         var taxRuleSet = await _taxRuleSetService.GetActiveRuleForDateAsync(payDateOnly);
+        var taxProfiles = await _dbContext.EmployeeTaxProfiles
+            .AsNoTracking()
+            .Where(p => employeeIds.Contains(p.EmployeeId))
+            .ToDictionaryAsync(p => p.EmployeeId, ct);
+
+        var overrideRuleSetIds = taxProfiles.Values
+            .Where(p => p.SlabSetOverrideId.HasValue)
+            .Select(p => p.SlabSetOverrideId!.Value)
+            .Distinct()
+            .ToList();
+
+        var overrideRuleSets = await _taxRuleSetService.GetByIdsAsync(overrideRuleSetIds);
 
         var paySlips = new List<PaySlip>();
 
@@ -1134,11 +1306,14 @@ cancellationToken);
 
         foreach (var employee in employees)
         {
+            taxProfiles.TryGetValue(employee.Id, out var taxProfile);
+            var resolvedTaxRuleSet = ResolveTaxRuleSetForEmployee(taxProfile, taxRuleSet, overrideRuleSets);
+
             var paySlip = await CalculatePaySlipForEmployeeAsync(
                 payRun,
                 employee,
                 epfEtfRule,
-                taxRuleSet,
+                resolvedTaxRuleSet,
                 new PaySlipCalculationContext
                 {
                     Employee = employee,
@@ -1163,7 +1338,8 @@ cancellationToken);
                     OvertimeDailyCapHours = overtimeRule.OvertimeDailyCapHours,
                     OvertimePayRunCapHours = overtimeRule.OvertimePayRunCapHours,
                     AppliesOnWeekend = overtimeRule.AppliesOnWeekend,
-                    AppliesOnHoliday = overtimeRule.AppliesOnHoliday
+                    AppliesOnHoliday = overtimeRule.AppliesOnHoliday,
+                    TaxProfile = taxProfile
                 },
                 recurringKeySet,
                 recurringLinesToInsert,
@@ -1281,6 +1457,9 @@ cancellationToken);
         paySlip.EmployerEpf = ctx.EmployerEpf;
         paySlip.EmployerEtf = ctx.EmployerEtf;
         paySlip.PayeTax = ctx.PayeTax;
+        paySlip.TaxCalculationJson = ctx.TaxCalculationSummary is null
+            ? null
+            : JsonSerializer.Serialize(ctx.TaxCalculationSummary);
         paySlip.Earnings = ctx.Earnings;
         paySlip.Deductions = ctx.Deductions;
 
@@ -1918,8 +2097,7 @@ cancellationToken);
     private void ApplyPaye(PaySlipCalculationContext ctx, TaxRuleSetDto? taxRuleSet, PayPeriodType periodType)
     {
         var taxableEarnings = ctx.Earnings.Where(e => e.IsTaxable).Sum(e => e.Amount);
-        var preTaxDeductions = ctx.Deductions.Where(d => d.IsPreTax).Sum(d => d.Amount);
-        var payeResult = CalculatePaye(taxRuleSet, taxableEarnings, preTaxDeductions, periodType);
+        var payeResult = CalculatePaye(taxRuleSet, taxableEarnings, periodType);
 
         if (payeResult.CalculatedTax > 0)
         {
@@ -1936,59 +2114,68 @@ cancellationToken);
         }
 
         ctx.PayeTax = payeResult.CalculatedTax;
+        ctx.TaxCalculationSummary = new TaxCalculationSummaryDto(
+            taxRuleSet?.Id,
+            payeResult.TaxableIncome,
+            payeResult.ReliefAmount,
+            payeResult.TaxableAfterRelief,
+            payeResult.CalculatedTax,
+            payeResult.Breakdown);
     }
 
     private PayeComputationResult CalculatePaye(
         TaxRuleSetDto? taxRuleSet,
         decimal taxableEarnings,
-        decimal preTaxDeductions,
         PayPeriodType periodType)
     {
-        var taxableIncome = taxableEarnings - preTaxDeductions;
-
-        if (taxableIncome <= 0 || taxRuleSet is null || taxRuleSet.Slabs.Count == 0)
+        if (taxRuleSet is null || taxRuleSet.Slabs.Count == 0 || taxableEarnings <= 0)
         {
-            return new PayeComputationResult(0, 0, 0, 0, 0);
+            return new PayeComputationResult(0, 0, 0, 0, 0, Array.Empty<TaxCalculationBreakdownLine>());
         }
 
-        var incomeRelief = taxRuleSet.Reliefs
-            .Where(r => r.ReliefType == TaxReliefType.IncomeRelief)
+        var reliefTotal = taxRuleSet.Reliefs
             .Sum(r => GetReliefPortion(r, periodType));
 
-        var taxableAfterRelief = Math.Max(0, taxableIncome - incomeRelief);
+        var taxableBase = Math.Max(0, taxableEarnings - reliefTotal);
 
         decimal totalTax = 0;
+        var breakdown = new List<TaxCalculationBreakdownLine>();
         var sortedSlabs = taxRuleSet.Slabs.OrderBy(s => s.Order).ToList();
 
         foreach (var slab in sortedSlabs)
         {
-            if (taxableAfterRelief <= slab.FromAmount)
+            if (taxableBase <= slab.FromAmount)
             {
                 continue;
             }
 
             var upperBound = slab.ToAmount ?? decimal.MaxValue;
-            var chargeable = Math.Min(taxableAfterRelief, upperBound) - slab.FromAmount;
-            if (chargeable < 0)
+            var taxableInBand = Math.Min(taxableBase, upperBound) - slab.FromAmount;
+            if (taxableInBand <= 0)
             {
-                chargeable = 0;
+                continue;
             }
 
-            totalTax += chargeable * slab.RatePercent / 100m;
+            var taxForBand = taxableInBand * slab.Rate;
+            totalTax += taxForBand;
+
+            breakdown.Add(new TaxCalculationBreakdownLine(
+                RoundCurrency(slab.FromAmount),
+                slab.ToAmount,
+                slab.Rate,
+                RoundCurrency(taxableInBand),
+                RoundCurrency(taxForBand)));
         }
 
-        var rebate = taxRuleSet.Reliefs
-            .Where(r => r.ReliefType == TaxReliefType.TaxRebate)
-            .Sum(r => GetReliefPortion(r, periodType));
-
-        var paye = RoundCurrency(Math.Max(0, totalTax - rebate));
+        var paye = RoundTax(Math.Max(0, totalTax));
 
         return new PayeComputationResult(
-            RoundCurrency(taxableIncome),
-            RoundCurrency(incomeRelief),
-            RoundCurrency(rebate),
-            RoundCurrency(taxableAfterRelief),
-            paye);
+            RoundCurrency(taxableEarnings),
+            RoundCurrency(reliefTotal),
+            0,
+            RoundCurrency(taxableBase),
+            paye,
+            breakdown);
     }
 
     private static decimal GetReliefPortion(TaxReliefDto relief, PayPeriodType periodType)
@@ -1996,6 +2183,25 @@ cancellationToken);
         return relief.Frequency == TaxReliefFrequency.Monthly
             ? relief.Amount
             : relief.Amount / 12m;
+    }
+
+    private static TaxRuleSetDto? ResolveTaxRuleSetForEmployee(
+        EmployeeTaxProfile? taxProfile,
+        TaxRuleSetDto? defaultRuleSet,
+        IReadOnlyDictionary<Guid, TaxRuleSetDto> overrideRuleSets)
+    {
+        if (taxProfile?.IsTaxExempt == true)
+        {
+            return null;
+        }
+
+        if (taxProfile?.SlabSetOverrideId.HasValue == true
+            && overrideRuleSets.TryGetValue(taxProfile.SlabSetOverrideId.Value, out var overrideRuleSet))
+        {
+            return overrideRuleSet;
+        }
+
+        return defaultRuleSet;
     }
 
     private static PayRunSummaryDto MapToSummaryDto(PayRun payRun)
@@ -2115,6 +2321,9 @@ cancellationToken);
             EmployerEpf = paySlip.EmployerEpf,
             EmployerEtf = paySlip.EmployerEtf,
             PayeTax = paySlip.PayeTax,
+            TaxCalculation = string.IsNullOrWhiteSpace(paySlip.TaxCalculationJson)
+                ? null
+                : JsonSerializer.Deserialize<TaxCalculationSummaryDto>(paySlip.TaxCalculationJson),
             Earnings = paySlip.Earnings.Select(e => new EarningDto(e.Id, e.Code, e.Description, e.Amount, e.IsEpfApplicable, e.IsEtfApplicable, e.IsTaxable)).ToList(),
             Deductions = paySlip.Deductions.Select(d => new DeductionDto(d.Id, d.Code, d.Description, d.Source, d.Amount, d.IsPreTax, d.IsPostTax)).ToList()
         };
@@ -2469,6 +2678,7 @@ cancellationToken);
     }
 
     private static decimal RoundCurrency(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
+    private static decimal RoundTax(decimal value) => Math.Round(value, 0, MidpointRounding.AwayFromZero);
 
     private static decimal CalculateRoundedOvertimeHours(
         OTEntry overtime,
@@ -2678,6 +2888,7 @@ cancellationToken);
         public decimal EmployerEpf { get; set; }
         public decimal EmployerEtf { get; set; }
         public decimal PayeTax { get; set; }
+        public TaxCalculationSummaryDto? TaxCalculationSummary { get; set; }
         public decimal TotalEarnings => Earnings.Sum(x => x.Amount);
         public decimal TotalDeductions => Deductions.Sum(x => x.Amount);
         public int WorkingDaysPerMonth { get; init; }
@@ -2692,6 +2903,7 @@ cancellationToken);
         public double OvertimePayRunCapHours { get; init; }
         public bool AppliesOnWeekend { get; init; }
         public bool AppliesOnHoliday { get; init; }
+        public EmployeeTaxProfile? TaxProfile { get; init; }
     }
 
     private sealed record PayeComputationResult(
@@ -2699,7 +2911,8 @@ cancellationToken);
         decimal ReliefAmount,
         decimal RebateAmount,
         decimal TaxableAfterRelief,
-        decimal CalculatedTax);
+        decimal CalculatedTax,
+        IReadOnlyList<TaxCalculationBreakdownLine> Breakdown);
 
     private sealed class PayrollSettingsSnapshot
     {

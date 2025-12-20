@@ -7,7 +7,7 @@ import { TaxRelief, TaxRuleSet, TaxSlab } from '../models/tax-rule-set.model';
 
 @Injectable({ providedIn: 'root' })
 export class TaxRuleSetsApiService {
-  private baseUrl = `${environment.apiBaseUrl}/tax-rule-sets`;
+  private baseUrl = `${environment.apiBaseUrl}/tax/slabsets`;
 
   constructor(private http: HttpClient) {}
 
@@ -51,7 +51,7 @@ export class TaxRuleSetsApiService {
           id: slab.id,
           fromAmount: slab.fromAmount,
           toAmount: slab.toAmount ?? null,
-          ratePercent: slab.ratePercent,
+          rate: slab.rate,
           order: slab.order,
         })) || [],
       reliefs:

@@ -32,6 +32,7 @@ export class TaxRuleSetFormComponent implements OnChanges {
       effectiveTo: [''],
       isDefault: [false],
       isActive: [true],
+      frequency: [{ value: 'Monthly', disabled: true }],
     });
   }
 
@@ -87,13 +88,14 @@ export class TaxRuleSetFormComponent implements OnChanges {
         ...slab,
         fromAmount: Number(slab.fromAmount),
         toAmount: slab.toAmount === null || slab.toAmount === undefined ? null : Number(slab.toAmount),
-        ratePercent: Number(slab.ratePercent),
+        rate: Number(slab.rate),
         order: slab.order,
       })),
       reliefs: this.reliefs.map(relief => ({
         ...relief,
         amount: Number(relief.amount),
       })),
+      frequency: 'Monthly',
       effectiveTo: value.effectiveTo ? value.effectiveTo : null,
     });
   }

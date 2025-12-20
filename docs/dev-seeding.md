@@ -44,7 +44,8 @@ Deletes only scenario/demo data (records prefixed with `DEMO_`) and reseeds mast
   - No template entity exists yet; the seeder sets `PayRun.ExportedBank = HNB` on the locked demo pay run.
 
 > Note: component flags like `includeInDailyRateBase` and `includeInOtBase` are not modeled yet, so only taxable/EPF/ETF flags are seeded where the fields exist.
-> Employee EPF/ETF registration numbers and tax status flags are not modeled in the current `Employee` entity, so the seeder cannot populate them yet.
+> Employee EPF/ETF registration numbers are not modeled in the current `Employee` entity, so the seeder cannot populate them yet.
+> Employee tax profiles (tax exemption/override) are modeled in `EmployeeTaxProfiles` and seeded for demo employees.
 > Currency defaults are not modeled in `PayrollSettings`, so the seeder cannot persist LKR defaults yet.
 
 ## Scenario data inserted

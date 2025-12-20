@@ -2,7 +2,7 @@ export interface TaxSlab {
   id?: string;
   fromAmount: number;
   toAmount?: number | null;
-  ratePercent: number;
+  rate: number;
   order: number;
 }
 
@@ -25,6 +25,7 @@ export interface TaxRuleSet {
   effectiveTo?: string | null;
   isDefault: boolean;
   isActive: boolean;
+  frequency?: string;
   slabs: TaxSlab[];
   reliefs: TaxRelief[];
 }

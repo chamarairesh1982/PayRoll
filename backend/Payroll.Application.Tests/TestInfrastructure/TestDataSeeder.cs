@@ -57,6 +57,7 @@ public static class TestDataSeeder
             YearOfAssessment = 2025,
             EffectiveFrom = new DateOnly(2025, 4, 1),
             EffectiveTo = null,
+            Frequency = TaxRuleSetFrequency.Monthly,
             IsDefault = true,
             IsActive = true,
             CreatedBy = "seed"
@@ -70,7 +71,7 @@ public static class TestDataSeeder
                 TaxRuleSetId = taxRuleSetId,
                 FromAmount = 0m,
                 ToAmount = 100000m,
-                RatePercent = 0m,
+                Rate = 0m,
                 Order = 1,
                 CreatedBy = "seed"
             },
@@ -80,7 +81,7 @@ public static class TestDataSeeder
                 TaxRuleSetId = taxRuleSetId,
                 FromAmount = 100000m,
                 ToAmount = 141667m,
-                RatePercent = 6m,
+                Rate = 0.06m,
                 Order = 2,
                 CreatedBy = "seed"
             },
@@ -90,7 +91,7 @@ public static class TestDataSeeder
                 TaxRuleSetId = taxRuleSetId,
                 FromAmount = 141667m,
                 ToAmount = 183333m,
-                RatePercent = 12m,
+                Rate = 0.12m,
                 Order = 3,
                 CreatedBy = "seed"
             },
@@ -100,7 +101,7 @@ public static class TestDataSeeder
                 TaxRuleSetId = taxRuleSetId,
                 FromAmount = 183333m,
                 ToAmount = null,
-                RatePercent = 18m,
+                Rate = 0.18m,
                 Order = 4,
                 CreatedBy = "seed"
             }

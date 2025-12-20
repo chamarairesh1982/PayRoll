@@ -16,6 +16,7 @@ public interface IPayrollService
     Task<PayRunDetailDto> LockPayRunAsync(Guid id, PayRunActionRequest request, CancellationToken cancellationToken = default);
     Task UnlockPayRunAsync(Guid id, PayRunActionRequest request, CancellationToken cancellationToken = default);
     Task<PaySlipDto?> GetPaySlipAsync(Guid payRunId, Guid paySlipId, CancellationToken cancellationToken = default);
+    Task<TaxCalculationSummaryDto> PreviewTaxAsync(TaxPreviewRequest request, CancellationToken cancellationToken = default);
     Task<BankExportResultDto> GenerateBankExportAsync(Guid payRunId, BankExportRequest request, CancellationToken cancellationToken = default);
     Task MarkBankExportDownloadedAsync(Guid payRunId, CancellationToken cancellationToken = default);
     Task<GeneralLedgerExportDto> GenerateGeneralLedgerExportAsync(Guid payRunId, CancellationToken cancellationToken = default);

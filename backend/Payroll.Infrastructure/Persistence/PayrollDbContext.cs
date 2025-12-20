@@ -20,6 +20,7 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     }
 
     public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<EmployeeTaxProfile> EmployeeTaxProfiles => Set<EmployeeTaxProfile>();
     public DbSet<PayRun> PayRuns => Set<PayRun>();
     public DbSet<PaySlip> PaySlips => Set<PaySlip>();
     public DbSet<PayRunStatusHistory> PayRunStatusHistories => Set<PayRunStatusHistory>();

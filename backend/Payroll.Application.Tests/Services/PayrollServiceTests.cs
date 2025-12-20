@@ -188,7 +188,7 @@ public class PayrollServiceTests
         var result = await payrollService.CreatePayRunAsync(request);
 
         var paySlip = result.PaySlips.Should().ContainSingle().Subject;
-        var expectedTaxableIncome = (200_000m + 10_000m) - Math.Round(200_000m * 0.08m, 2, MidpointRounding.AwayFromZero);
+        var expectedTaxableIncome = 200_000m + 10_000m;
         var expectedPaye = CalculateProgressiveTax(expectedTaxableIncome);
 
         paySlip.Earnings.Should().Contain(e => e.Code == "ALW_TAX" && e.IsTaxable);
@@ -240,7 +240,7 @@ public class PayrollServiceTests
     }
 
     [Fact]
-    public async Task CreatePayRun_Should_Reduce_TaxableIncome_With_PreTax_Deduction()
+    public async Task CreatePayRun_Should_Ignore_PreTax_Deductions_For_Paye()
     {
         using var context = new TestContext();
         var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP022", "Jane", 150_000m);
@@ -256,8 +256,7 @@ public class PayrollServiceTests
         var result = await payrollService.CreatePayRunAsync(request);
 
         var paySlip = result.PaySlips.Should().ContainSingle().Subject;
-        var epf = Math.Round(150_000m * 0.08m, 2, MidpointRounding.AwayFromZero);
-        var expectedTaxableIncome = 150_000m - (epf + 5_000m);
+        var expectedTaxableIncome = 150_000m;
         var expectedPaye = CalculateProgressiveTax(expectedTaxableIncome);
 
         paySlip.Deductions.Should().Contain(d => d.Code == "DED_GROSS" && d.IsPreTax && d.Amount == 5_000m);
@@ -307,7 +306,7 @@ public class PayrollServiceTests
     }
 
     [Fact]
-    public async Task CreatePayRun_Should_Apply_PreTax_Deduction_Before_Paye()
+    public async Task CreatePayRun_Should_Calculate_Paye_Without_PreTax_Deductions()
     {
         using var context = new TestContext();
         var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP013", "Ivy", 200_000m);
@@ -323,8 +322,7 @@ public class PayrollServiceTests
         var result = await payrollService.CreatePayRunAsync(request);
 
         var paySlip = result.PaySlips.Should().ContainSingle().Subject;
-        var epf = Math.Round(200_000m * 0.08m, 2, MidpointRounding.AwayFromZero);
-        var expectedTaxableIncome = 200_000m - (epf + 10_000m);
+        var expectedTaxableIncome = 200_000m;
         var expectedPaye = CalculateProgressiveTax(expectedTaxableIncome);
 
         paySlip.Deductions.Should().Contain(d => d.Code == "DED_PRE" && d.IsPreTax && d.Amount == 10_000m);
@@ -484,12 +482,138 @@ public class PayrollServiceTests
         var result = await payrollService.CreatePayRunAsync(request);
 
         var paySlip = result.PaySlips.Should().ContainSingle().Subject;
-        var taxableIncome = 200_000m - Math.Round(200_000m * 0.08m, 2, MidpointRounding.AwayFromZero);
+        var taxableIncome = 200_000m;
         var expectedPaye = CalculateProgressiveTax(taxableIncome);
 
         paySlip.Deductions.Should().Contain(d => d.Code == "PAYE" && d.Amount == expectedPaye);
         paySlip.PayeTax.Should().Be(expectedPaye);
         paySlip.NetPay.Should().Be(200_000m - paySlip.TotalDeductions);
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Apply_Relief_Before_Paye()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP055", "Lena", 200_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+
+        var ruleSet = context.DbContext.TaxRuleSets.Single();
+        context.DbContext.TaxReliefs.Add(new TaxRelief
+        {
+            Id = Guid.NewGuid(),
+            TaxRuleSetId = ruleSet.Id,
+            Name = "Monthly Relief",
+            Amount = 10_000m,
+            ReliefType = TaxReliefType.IncomeRelief,
+            Frequency = TaxReliefFrequency.Monthly,
+            CreatedBy = "seed"
+        });
+        context.DbContext.SaveChanges();
+
+        var payrollService = CreatePayrollService(context);
+        var result = await payrollService.CreatePayRunAsync(BuildDefaultRequest(employee.Id));
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        var expectedTaxableIncome = 190_000m;
+        var expectedPaye = CalculateProgressiveTax(expectedTaxableIncome);
+
+        paySlip.PayeTax.Should().Be(expectedPaye);
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Round_Paye_To_Nearest_Rupee()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP056", "Mila", 5m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+
+        var ruleSet = new TaxRuleSet
+        {
+            Id = Guid.NewGuid(),
+            Name = "Rounding Rule Set",
+            YearOfAssessment = 2025,
+            EffectiveFrom = new DateOnly(2025, 4, 1),
+            Frequency = TaxRuleSetFrequency.Monthly,
+            IsDefault = true,
+            IsActive = true,
+            CreatedBy = "seed",
+            Slabs = new List<TaxSlab>
+            {
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    FromAmount = 0m,
+                    ToAmount = null,
+                    Rate = 0.10m,
+                    Order = 1,
+                    CreatedBy = "seed"
+                }
+            }
+        };
+
+        context.DbContext.TaxRuleSets.Add(ruleSet);
+        context.DbContext.SaveChanges();
+
+        var payrollService = CreatePayrollService(context);
+        var result = await payrollService.CreatePayRunAsync(BuildDefaultRequest(employee.Id));
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        paySlip.PayeTax.Should().Be(1m);
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Calculate_Paye_On_Slab_Boundary()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP057", "Nora", 141_667m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+
+        var payrollService = CreatePayrollService(context);
+        var result = await payrollService.CreatePayRunAsync(BuildDefaultRequest(employee.Id));
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        var expectedPaye = CalculateProgressiveTax(141_667m);
+
+        paySlip.PayeTax.Should().Be(expectedPaye);
+    }
+
+    [Fact]
+    public async Task RecalculatePayRun_Should_Not_Duplicate_Paye_Lines()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP058", "Owen", 200_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+
+        var payrollService = CreatePayrollService(context);
+        var created = await payrollService.CreatePayRunAsync(BuildDefaultRequest(employee.Id));
+
+        await payrollService.RecalculatePayRunAsync(created.Id, new RecalculatePayRunRequest());
+
+        var refreshed = await payrollService.GetPayRunAsync(created.Id);
+        var paySlip = refreshed!.PaySlips.Should().ContainSingle().Subject;
+        paySlip.Deductions.Count(d => d.Code == "PAYE").Should().Be(1);
+    }
+
+    [Fact]
+    public async Task PreviewTax_Should_Return_Breakdown()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP059", "Pia", 200_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+
+        var payrollService = CreatePayrollService(context);
+        var preview = await payrollService.PreviewTaxAsync(new TaxPreviewRequest(
+            employee.Id,
+            new DateTime(2025, 4, 1),
+            new DateTime(2025, 4, 30)));
+
+        preview.TaxableEarnings.Should().Be(200_000m);
+        preview.Tax.Should().Be(CalculateProgressiveTax(200_000m));
+        preview.Breakdown.Should().NotBeEmpty();
     }
 
     [Fact]
@@ -553,9 +677,9 @@ public class PayrollServiceTests
         var slabs = new[]
         {
             (From: 0m, To: 100_000m, Rate: 0m),
-            (From: 100_000m, To: 141_667m, Rate: 6m),
-            (From: 141_667m, To: 183_333m, Rate: 12m),
-            (From: 183_333m, To: (decimal?)null, Rate: 18m)
+            (From: 100_000m, To: 141_667m, Rate: 0.06m),
+            (From: 141_667m, To: 183_333m, Rate: 0.12m),
+            (From: 183_333m, To: (decimal?)null, Rate: 0.18m)
         };
 
         decimal total = 0;
@@ -568,10 +692,10 @@ public class PayrollServiceTests
 
             var upper = slab.To ?? decimal.MaxValue;
             var chargeable = Math.Min(taxableIncome, upper) - slab.From;
-            total += chargeable * slab.Rate / 100m;
+            total += chargeable * slab.Rate;
         }
 
-        return Math.Round(total, 2, MidpointRounding.AwayFromZero);
+        return Math.Round(total, 0, MidpointRounding.AwayFromZero);
     }
 
     private sealed class TestContext : IDisposable

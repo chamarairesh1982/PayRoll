@@ -233,6 +233,51 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.ToTable("Employees", (string)null);
                 });
 
+            modelBuilder.Entity("Payroll.Domain.Employees.EmployeeTaxProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsTaxExempt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid?>("SlabSetOverrideId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId")
+                        .IsUnique();
+
+                    b.HasIndex("SlabSetOverrideId");
+
+                    b.ToTable("EmployeeTaxProfiles", (string)null);
+                });
+
             modelBuilder.Entity("Payroll.Domain.Employees.EmployeePayItem", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1236,6 +1281,9 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("PayeTax")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("TaxCalculationJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("TotalDeductions")
                         .HasColumnType("decimal(18,2)");
 
@@ -1958,6 +2006,11 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.Property<DateOnly?>("EffectiveTo")
                         .HasColumnType("date");
 
+                    b.Property<int>("Frequency")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -1996,6 +2049,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                             CreatedAt = new DateTime(2020, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = "system",
                             EffectiveFrom = new DateOnly(2025, 4, 1),
+                            Frequency = 1,
                             IsActive = true,
                             IsDefault = true,
                             Name = "Sri Lanka PAYE YA 2025/26",
@@ -2033,8 +2087,8 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.Property<int>("Order")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("RatePercent")
-                        .HasColumnType("decimal(5,2)");
+                    b.Property<decimal>("Rate")
+                        .HasColumnType("decimal(5,4)");
 
                     b.Property<Guid>("TaxRuleSetId")
                         .HasColumnType("uniqueidentifier");
@@ -2057,7 +2111,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                             FromAmount = 0m,
                             IsActive = true,
                             Order = 1,
-                            RatePercent = 0m,
+                            Rate = 0m,
                             TaxRuleSetId = new Guid("99999999-9999-9999-9999-999999999999"),
                             ToAmount = 100000m
                         },
@@ -2069,7 +2123,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                             FromAmount = 100000m,
                             IsActive = true,
                             Order = 2,
-                            RatePercent = 6m,
+                            Rate = 0.06m,
                             TaxRuleSetId = new Guid("99999999-9999-9999-9999-999999999999"),
                             ToAmount = 141667m
                         },
@@ -2081,7 +2135,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                             FromAmount = 141667m,
                             IsActive = true,
                             Order = 3,
-                            RatePercent = 12m,
+                            Rate = 0.12m,
                             TaxRuleSetId = new Guid("99999999-9999-9999-9999-999999999999"),
                             ToAmount = 183333m
                         },
@@ -2093,7 +2147,7 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                             FromAmount = 183333m,
                             IsActive = true,
                             Order = 4,
-                            RatePercent = 18m,
+                            Rate = 0.18m,
                             TaxRuleSetId = new Guid("99999999-9999-9999-9999-999999999999")
                         });
                 });
@@ -2181,6 +2235,24 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Loan");
+                });
+
+            modelBuilder.Entity("Payroll.Domain.Employees.EmployeeTaxProfile", b =>
+                {
+                    b.HasOne("Payroll.Domain.Employees.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Payroll.Domain.PayrollConfig.TaxRuleSet", "SlabSetOverride")
+                        .WithMany()
+                        .HasForeignKey("SlabSetOverrideId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("SlabSetOverride");
                 });
 
             modelBuilder.Entity("Payroll.Domain.Organizations.Branch", b =>
