@@ -10,10 +10,12 @@ namespace Payroll.Api.Controllers;
 public class PayRunsController : ControllerBase
 {
     private readonly IPayrollService _payrollService;
+    private readonly IPayslipDocumentService _payslipDocumentService;
 
-    public PayRunsController(IPayrollService payrollService)
+    public PayRunsController(IPayrollService payrollService, IPayslipDocumentService payslipDocumentService)
     {
         _payrollService = payrollService;
+        _payslipDocumentService = payslipDocumentService;
     }
 
     [HttpGet]
@@ -133,5 +135,30 @@ public class PayRunsController : ControllerBase
     {
         var file = await _payrollService.ExportPaySlipAsync(payRunId, paySlipId, format, cancellationToken);
         return file is null ? NotFound() : Ok(file);
+    }
+
+    [HttpPost("{payRunId:guid}/payslips/{employeeId:guid}/generate")]
+    public async Task<IActionResult> GeneratePayslipDocument(
+        Guid payRunId,
+        Guid employeeId,
+        [FromQuery] bool regenerate = false,
+        CancellationToken cancellationToken = default)
+    {
+        var document = await _payslipDocumentService.GenerateAsync(payRunId, employeeId, regenerate, cancellationToken);
+        return document is null ? NotFound() : Ok(document);
+    }
+
+    [HttpPost("{payRunId:guid}/payslips/generate-bulk")]
+    public async Task<IActionResult> GeneratePayslipDocumentsBulk(Guid payRunId, CancellationToken cancellationToken = default)
+    {
+        var result = await _payslipDocumentService.GenerateBulkAsync(payRunId, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("{payRunId:guid}/payslips/documents")]
+    public async Task<IActionResult> GetPayslipDocuments(Guid payRunId, CancellationToken cancellationToken = default)
+    {
+        var documents = await _payslipDocumentService.GetDocumentsForPayRunAsync(payRunId, cancellationToken);
+        return Ok(documents);
     }
 }
