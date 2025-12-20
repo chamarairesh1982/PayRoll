@@ -28,7 +28,7 @@
       <tr *ngFor="let record of records">
         <td>{{ record.periodStart | date: 'yyyy-MM-dd' }}</td>
         <td>{{ record.periodEnd | date: 'yyyy-MM-dd' }}</td>
-        <td>{{ record.employeeId }}</td>
+        <td>{{ record.employeeName || record.employeeId }}</td>
         <td>{{ record.hoursWorked }}</td>
       </tr>
       <tr *ngIf="records.length === 0">
@@ -43,4 +43,3 @@
   <span>Page {{ page }} of {{ totalPages || 1 }}</span>
   <button type="button" (click)="nextPage()" [disabled]="page * pageSize >= totalCount">Next</button>
 </div>
-
