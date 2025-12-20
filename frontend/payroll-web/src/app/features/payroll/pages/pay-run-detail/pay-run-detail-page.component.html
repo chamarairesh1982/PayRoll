@@ -225,7 +225,24 @@
   </div>
 
   <div class="payslips">
-    <h2>Payslips</h2>
+    <div class="payslip-header">
+      <div>
+        <h2>Payslips</h2>
+        <div class="muted">Generate and download PDF payslips once the pay run is locked.</div>
+      </div>
+      <button
+        type="button"
+        (click)="generateAllPayslips()"
+        [disabled]="!canGeneratePayslips || isGeneratingPayslips"
+      >
+        {{ isGeneratingPayslips ? 'Generating...' : 'Generate all PDFs' }}
+      </button>
+    </div>
+    <div *ngIf="!canGeneratePayslips" class="muted">
+      Payslip PDFs are available only after the pay run is locked.
+    </div>
+    <div *ngIf="payslipDocumentsMessage" class="muted">{{ payslipDocumentsMessage }}</div>
+    <div *ngIf="isLoadingPayslipDocuments" class="muted">Loading payslip documents...</div>
     <table class="table" *ngIf="payRun.paySlips?.length; else noPayslips">
       <thead>
         <tr>
@@ -236,7 +253,9 @@
           <th>Net Pay</th>
           <th>Employee EPF</th>
           <th>PAYE</th>
-          <th>Action</th>
+          <th>PDF Status</th>
+          <th>PDF Actions</th>
+          <th>Preview</th>
         </tr>
       </thead>
       <tbody>
@@ -248,6 +267,50 @@
           <td>{{ slip.netPay }}</td>
           <td>{{ slip.employeeEpf }}</td>
           <td>{{ slip.payeTax }}</td>
+          <td>
+            <ng-container *ngIf="getLatestPayslipDocument(slip.employeeId) as doc; else noDoc">
+              <span class="status-pill" [ngClass]="getStatusClass(doc.status)">{{ doc.status }}</span>
+              <div *ngIf="doc.errorSummary" class="error-text">{{ doc.errorSummary }}</div>
+            </ng-container>
+            <ng-template #noDoc>
+              <span class="status-pill status-pending">Not generated</span>
+            </ng-template>
+          </td>
+          <td>
+            <ng-container *ngIf="getLatestPayslipDocument(slip.employeeId) as doc">
+              <button
+                type="button"
+                (click)="generatePayslipForEmployee(slip.employeeId, doc.status !== 'Pending')"
+                [disabled]="!canGeneratePayslips || generatingPayslipEmployeeId === slip.employeeId"
+              >
+                {{
+                  generatingPayslipEmployeeId === slip.employeeId
+                    ? 'Generating...'
+                    : doc.status === 'Failed'
+                      ? 'Retry'
+                      : doc.status === 'Generated'
+                        ? 'Regenerate'
+                        : 'Generate'
+                }}
+              </button>
+              <button
+                type="button"
+                (click)="downloadPayslipDocument(doc.id)"
+                [disabled]="doc.status !== 'Generated'"
+              >
+                Download PDF
+              </button>
+            </ng-container>
+            <ng-container *ngIf="!getLatestPayslipDocument(slip.employeeId)">
+              <button
+                type="button"
+                (click)="generatePayslipForEmployee(slip.employeeId, false)"
+                [disabled]="!canGeneratePayslips || generatingPayslipEmployeeId === slip.employeeId"
+              >
+                {{ generatingPayslipEmployeeId === slip.employeeId ? 'Generating...' : 'Generate' }}
+              </button>
+            </ng-container>
+          </td>
           <td>
             <button type="button" (click)="viewPaySlip(slip.id)">View Payslip</button>
           </td>

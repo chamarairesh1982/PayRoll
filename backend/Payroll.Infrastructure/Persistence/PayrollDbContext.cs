@@ -23,6 +23,7 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public DbSet<EmployeeTaxProfile> EmployeeTaxProfiles => Set<EmployeeTaxProfile>();
     public DbSet<PayRun> PayRuns => Set<PayRun>();
     public DbSet<PaySlip> PaySlips => Set<PaySlip>();
+    public DbSet<PayslipDocument> PayslipDocuments => Set<PayslipDocument>();
     public DbSet<PayRunStatusHistory> PayRunStatusHistories => Set<PayRunStatusHistory>();
     public DbSet<BankExportTemplate> BankExportTemplates => Set<BankExportTemplate>();
     public DbSet<PayRunBankExport> PayRunBankExports => Set<PayRunBankExport>();

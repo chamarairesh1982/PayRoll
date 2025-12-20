@@ -9,6 +9,7 @@ import {
   PayRunBankExport,
 } from '../../models/bank-export.model';
 import { PayRunDetail } from '../../models/pay-run.model';
+import { PayslipDocument, PayslipDocumentStatus } from '../../models/payslip-document.model';
 import { PaySlipEarningLine } from '../../models/payslip.model';
 import { PayRunsApiService } from '../../services/pay-runs-api.service';
 
@@ -37,6 +38,11 @@ export class PayRunDetailPageComponent implements OnInit {
   isLoadingApit = false;
   apitError: string | null = null;
   downloadingCertificateId: string | null = null;
+  payslipDocuments: PayslipDocument[] = [];
+  isLoadingPayslipDocuments = false;
+  isGeneratingPayslips = false;
+  generatingPayslipEmployeeId: string | null = null;
+  payslipDocumentsMessage: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -70,6 +76,7 @@ export class PayRunDetailPageComponent implements OnInit {
         this.payRun = payRun;
         this.isLoading = false;
         this.loadBankExports();
+        this.loadPayslipDocuments();
       },
       error: err => {
         console.error('Failed to load pay run', err);
@@ -291,6 +298,86 @@ export class PayRunDetailPageComponent implements OnInit {
     });
   }
 
+  loadPayslipDocuments(): void {
+    if (!this.payRun) {
+      return;
+    }
+
+    this.isLoadingPayslipDocuments = true;
+    this.payslipDocumentsMessage = null;
+
+    this.payRunsApi.getPayslipDocuments(this.payRun.id).subscribe({
+      next: documents => {
+        this.payslipDocuments = documents;
+        this.isLoadingPayslipDocuments = false;
+      },
+      error: err => {
+        console.error('Failed to load payslip documents', err);
+        this.payslipDocumentsMessage = 'Unable to load payslip documents.';
+        this.isLoadingPayslipDocuments = false;
+      },
+    });
+  }
+
+  generateAllPayslips(): void {
+    if (!this.payRun) {
+      return;
+    }
+
+    if (!confirm('Generate payslip PDFs for all employees?')) {
+      return;
+    }
+
+    this.isGeneratingPayslips = true;
+    this.payslipDocumentsMessage = null;
+
+    this.payRunsApi.generatePayslipDocumentsBulk(this.payRun.id).subscribe({
+      next: result => {
+        this.isGeneratingPayslips = false;
+        this.payslipDocumentsMessage = `Generated ${result.generatedCount}, skipped ${result.skippedCount}, failed ${result.failedCount}.`;
+        this.loadPayslipDocuments();
+      },
+      error: err => {
+        console.error('Failed to generate payslip documents', err);
+        this.isGeneratingPayslips = false;
+        this.payslipDocumentsMessage = err.error?.message || 'Failed to generate payslip documents.';
+      },
+    });
+  }
+
+  generatePayslipForEmployee(employeeId: string, regenerate: boolean): void {
+    if (!this.payRun) {
+      return;
+    }
+
+    this.generatingPayslipEmployeeId = employeeId;
+    this.payslipDocumentsMessage = null;
+
+    this.payRunsApi.generatePayslipDocument(this.payRun.id, employeeId, regenerate).subscribe({
+      next: () => {
+        this.generatingPayslipEmployeeId = null;
+        this.loadPayslipDocuments();
+      },
+      error: err => {
+        console.error('Failed to generate payslip document', err);
+        this.generatingPayslipEmployeeId = null;
+        this.payslipDocumentsMessage = err.error?.message || 'Failed to generate payslip document.';
+      },
+    });
+  }
+
+  downloadPayslipDocument(documentId: string): void {
+    this.payRunsApi.downloadPayslipDocument(documentId).subscribe({
+      next: file => {
+        this.saveBase64File(file, 'payslip.pdf');
+      },
+      error: err => {
+        console.error('Failed to download payslip document', err);
+        this.payslipDocumentsMessage = err.error?.message || 'Failed to download payslip document.';
+      },
+    });
+  }
+
   downloadApitCertificate(paySlipId: string): void {
     if (!this.payRun) {
       return;
@@ -333,6 +420,10 @@ export class PayRunDetailPageComponent implements OnInit {
     this.router.navigate(['/payroll', this.payRun.id, 'payslips', paySlipId]);
   }
 
+  getLatestPayslipDocument(employeeId: string): PayslipDocument | undefined {
+    return this.payslipDocuments.find(doc => doc.employeeId === employeeId);
+  }
+
   getOvertimeEarningsForSlip(paySlipId: string): PaySlipEarningLine[] {
     const slip = this.payRun?.paySlips.find(ps => ps.id === paySlipId);
     return slip?.earnings?.filter(e => e.code === 'OT') ?? [];
@@ -356,6 +447,25 @@ export class PayRunDetailPageComponent implements OnInit {
 
   get canGenerateBankExport(): boolean {
     return !!this.payRun && this.payRun.isLocked && this.payRun.status === 'Locked';
+  }
+
+  get canGeneratePayslips(): boolean {
+    return !!this.payRun && this.payRun.isLocked && this.payRun.status === 'Locked';
+  }
+
+  getStatusClass(status?: PayslipDocumentStatus): string {
+    if (!status) {
+      return 'status-pending';
+    }
+
+    switch (status) {
+      case 'Generated':
+        return 'status-generated';
+      case 'Failed':
+        return 'status-failed';
+      default:
+        return 'status-pending';
+    }
   }
 
   get scopeLabel(): string {

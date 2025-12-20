@@ -1478,6 +1478,77 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.ToTable("PaySlips", (string)null);
                 });
 
+            modelBuilder.Entity("Payroll.Domain.Payroll.PayslipDocument", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ChecksumSha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ErrorSummary")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("FilePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("GeneratedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("GeneratedByUserId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("GeneratedByUserName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("PayRunId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("PayRunId");
+
+                    b.HasIndex("PayRunId", "EmployeeId");
+
+                    b.ToTable("PayslipDocuments", (string)null);
+                });
+
             modelBuilder.Entity("Payroll.Domain.Payroll.RecurringPayItemAssignment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2585,6 +2656,25 @@ namespace Payroll.Infrastructure.Persistence.Migrations
                     b.Navigation("PayRun");
                 });
 
+            modelBuilder.Entity("Payroll.Domain.Payroll.PayslipDocument", b =>
+                {
+                    b.HasOne("Payroll.Domain.Employees.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Payroll.Domain.Payroll.PayRun", "PayRun")
+                        .WithMany("PayslipDocuments")
+                        .HasForeignKey("PayRunId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("PayRun");
+                });
+
             modelBuilder.Entity("Payroll.Domain.Payroll.RecurringPayItemAssignment", b =>
                 {
                     b.HasOne("Payroll.Domain.Employees.Employee", "Employee")
@@ -2680,6 +2770,8 @@ namespace Payroll.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Payroll.Domain.Payroll.PayRun", b =>
                 {
+                    b.Navigation("PayslipDocuments");
+
                     b.Navigation("PaySlips");
 
                     b.Navigation("StatusHistory");

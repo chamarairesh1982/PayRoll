@@ -9,6 +9,7 @@ import {
   BankExportTemplate,
   PayRunBankExport,
 } from '../models/bank-export.model';
+import { PayslipBulkGenerateResult, PayslipDocument } from '../models/payslip-document.model';
 import { PayPeriodType, PayRunDetail, PayRunStatus, PayRunSummary } from '../models/pay-run.model';
 import { PaySlip } from '../models/payslip.model';
 
@@ -156,5 +157,30 @@ export class PayRunsApiService {
 
   downloadApitCertificate(payRunId: string, paySlipId: string): Observable<FileExportResult> {
     return this.http.get<FileExportResult>(`${this.baseUrl}/${payRunId}/payslips/${paySlipId}/apit-certificate`);
+  }
+
+  getPayslipDocuments(payRunId: string): Observable<PayslipDocument[]> {
+    return this.http.get<PayslipDocument[]>(`${this.baseUrl}/${payRunId}/payslips/documents`);
+  }
+
+  generatePayslipDocument(
+    payRunId: string,
+    employeeId: string,
+    regenerate = false,
+  ): Observable<PayslipDocument> {
+    const params = regenerate ? new HttpParams().set('regenerate', 'true') : undefined;
+    return this.http.post<PayslipDocument>(
+      `${this.baseUrl}/${payRunId}/payslips/${employeeId}/generate`,
+      {},
+      { params },
+    );
+  }
+
+  generatePayslipDocumentsBulk(payRunId: string): Observable<PayslipBulkGenerateResult> {
+    return this.http.post<PayslipBulkGenerateResult>(`${this.baseUrl}/${payRunId}/payslips/generate-bulk`, {});
+  }
+
+  downloadPayslipDocument(documentId: string): Observable<FileExportResult> {
+    return this.http.get<FileExportResult>(`${environment.apiBaseUrl}/payslip-documents/${documentId}/download`);
   }
 }

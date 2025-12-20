@@ -23,6 +23,7 @@ public interface IPayrollDbContext
     DbSet<Loan> Loans { get; }
     DbSet<PayRun> PayRuns { get; }
     DbSet<PaySlip> PaySlips { get; }
+    DbSet<PayslipDocument> PayslipDocuments { get; }
     DbSet<PayRunStatusHistory> PayRunStatusHistories { get; }
     DbSet<BankExportTemplate> BankExportTemplates { get; }
     DbSet<PayRunBankExport> PayRunBankExports { get; }
