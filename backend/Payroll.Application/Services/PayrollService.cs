@@ -1133,10 +1133,10 @@ public class PayrollService : IPayrollService
 
         var entries = new List<GlMappingDto>();
 
-        entries.AddRange(allowanceTypes.Select(a => MapGlMapping(a.Code, a.Name, GlPayComponentType.Earning, mappings)));
+        entries.AddRange(allowanceTypes.SelectMany(a => MapGlMapping(a.Code, a.Name, GlPayComponentType.Earning, mappings)));
         entries.AddRange(deductionTypes
             .Where(d => !employerContributionCodes.Contains(d.Code))
-            .Select(d => MapGlMapping(d.Code, d.Name, GlPayComponentType.Deduction, mappings)));
+            .SelectMany(d => MapGlMapping(d.Code, d.Name, GlPayComponentType.Deduction, mappings)));
 
         foreach (var code in employerContributionCodes)
         {
@@ -2674,7 +2674,7 @@ public class PayrollService : IPayrollService
 
         if (!matches.Any())
         {
-            return new[] { MapGlMapping(code, name, type, null) };
+            return new[] { MapGlMapping(code, name, type, (GlMapping?)null) };
         }
 
         return matches.Select(m =>
