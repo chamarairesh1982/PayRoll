@@ -70,7 +70,11 @@ public class EmployeeService : IEmployeeService
 
     public async Task<EmployeeDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var employee = await _dbContext.Employees.AsNoTracking().FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+        var employee = await _dbContext.Employees
+            .AsNoTracking()
+            .Include(e => e.Branch)
+            .Include(e => e.CostCenter)
+            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
         return employee is null ? null : MapToDto(employee);
     }
 
@@ -247,6 +251,8 @@ public class EmployeeService : IEmployeeService
             CompanyId = employee.CompanyId,
             BranchId = employee.BranchId,
             CostCenterId = employee.CostCenterId,
+            BranchName = employee.Branch?.Name,
+            CostCenterName = employee.CostCenter?.Name,
             BankName = employee.BankName,
             BankCode = employee.BankCode,
             BranchCode = employee.BranchCode,

@@ -23,6 +23,8 @@ public class EmployeeDto
     public Guid? CompanyId { get; set; }
     public Guid? BranchId { get; set; }
     public Guid? CostCenterId { get; set; }
+    public string? BranchName { get; set; }
+    public string? CostCenterName { get; set; }
     public string? BankName { get; set; }
     public string? BankCode { get; set; }
     public string? BranchCode { get; set; }
