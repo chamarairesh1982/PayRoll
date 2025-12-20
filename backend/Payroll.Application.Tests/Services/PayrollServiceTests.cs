@@ -260,7 +260,11 @@ public class PayrollServiceTests
         var initialSlip = created.PaySlips.Single();
         var initialOtLines = initialSlip.Earnings.Count(e => e.Code == "OT");
 
-        var recalculated = await payrollService.RecalculatePayRunAsync(created.Id, new RecalculatePayRunRequest());
+        await payrollService.RecalculatePayRunAsync(created.Id, new RecalculatePayRunRequest());
+        var recalculated = await context.DbContext.PayRuns
+            .Include(pr => pr.PaySlips)
+                .ThenInclude(ps => ps.Earnings)
+            .FirstAsync(pr => pr.Id == created.Id);
         var recalculatedSlip = recalculated.PaySlips.Single();
         var recalculatedOtLines = recalculatedSlip.Earnings.Count(e => e.Code == "OT");
 
