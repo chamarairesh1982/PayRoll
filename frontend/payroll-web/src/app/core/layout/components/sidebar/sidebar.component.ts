@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -30,4 +31,10 @@ export class SidebarComponent {
   ];
 
   adminLinks = [{ label: 'Audit Logs', path: '/admin/audit-logs' }];
+
+  constructor(private authService: AuthService) {}
+
+  get isAdmin(): boolean {
+    return this.authService.isAdmin();
+  }
 }

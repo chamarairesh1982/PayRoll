@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { AdminGuard } from './core/guards/admin.guard';
 import { AuthGuard } from './core/guards/auth.guard';
 import { MainLayoutComponent } from './core/layout/main-layout/main-layout.component';
 import { LoginPageComponent } from './pages/login/login-page.component';
@@ -36,10 +37,12 @@ const routes: Routes = [
         path: 'config',
         loadChildren: () =>
           import('./features/payroll-config/payroll-config.module').then(m => m.PayrollConfigModule),
+        canActivate: [AdminGuard],
       },
       {
         path: 'admin',
         loadChildren: () => import('./features/admin/admin.module').then(m => m.AdminModule),
+        canActivate: [AdminGuard],
       },
       {
         path: 'reports',

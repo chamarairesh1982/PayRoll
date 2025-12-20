@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { AuthService } from '../../../../core/services/auth.service';
 import { EmployeesApiService } from '../../services/employees-api.service';
 import { Employee } from '../../models/employee.model';
 
@@ -11,7 +12,16 @@ import { Employee } from '../../models/employee.model';
 export class EmployeeDetailPageComponent implements OnInit {
   employee?: Employee;
 
-  constructor(private route: ActivatedRoute, private router: Router, private employeesApi: EmployeesApiService) {}
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private employeesApi: EmployeesApiService,
+    private authService: AuthService,
+  ) {}
+
+  get isAdmin(): boolean {
+    return this.authService.isAdmin();
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');

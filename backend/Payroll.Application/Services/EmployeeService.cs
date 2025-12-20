@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Payroll.Application.DTOs.Employees;
 using Payroll.Application.Interfaces;
+using Payroll.Application.Security;
 using Payroll.Domain.Employees;
 using Payroll.Shared;
 
@@ -57,7 +58,8 @@ public class EmployeeService : IEmployeeService
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        var items = employees.Select(MapToDto).ToList();
+        var includeSensitive = HasAdminRole();
+        var items = employees.Select(employee => MapToDto(employee, includeSensitive)).ToList();
 
         return new PaginatedResult<EmployeeDto>
         {
@@ -75,7 +77,7 @@ public class EmployeeService : IEmployeeService
             .Include(e => e.Branch)
             .Include(e => e.CostCenter)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
-        return employee is null ? null : MapToDto(employee);
+        return employee is null ? null : MapToDto(employee, HasAdminRole());
     }
 
     public async Task<EmployeeDto> CreateAsync(CreateEmployeeRequestDto request, CancellationToken cancellationToken = default)
@@ -114,7 +116,7 @@ public class EmployeeService : IEmployeeService
         await _dbContext.Employees.AddAsync(employee, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return MapToDto(employee);
+        return MapToDto(employee, HasAdminRole());
     }
 
     public async Task UpdateAsync(Guid id, UpdateEmployeeRequestDto request, CancellationToken cancellationToken = default)
@@ -123,6 +125,23 @@ public class EmployeeService : IEmployeeService
         if (employee is null)
         {
             throw new KeyNotFoundException("Employee not found");
+        }
+
+        var includeSensitive = HasAdminRole();
+        var nicNumber = request.NicNumber;
+        var bankAccountNumber = request.BankAccountNumber;
+
+        if (!includeSensitive)
+        {
+            if (SensitiveDataMasker.IsMasked(nicNumber))
+            {
+                nicNumber = employee.NicNumber;
+            }
+
+            if (!string.IsNullOrWhiteSpace(bankAccountNumber) && SensitiveDataMasker.IsMasked(bankAccountNumber))
+            {
+                bankAccountNumber = employee.BankAccountNumber;
+            }
         }
 
         await EnsureEmployeeCodeIsUniqueAsync(request.EmployeeCode, cancellationToken, id);
@@ -138,7 +157,7 @@ public class EmployeeService : IEmployeeService
             request.EmployeeCode,
             request.FirstName,
             request.LastName,
-            request.NicNumber,
+            nicNumber,
             request.EpfNumber,
             request.DateOfBirth,
             request.Gender,
@@ -157,7 +176,7 @@ public class EmployeeService : IEmployeeService
             request.BankName,
             request.BankCode,
             request.BranchCode,
-            request.BankAccountNumber);
+            bankAccountNumber);
 
         employee.IsActive = request.IsActive;
 
@@ -230,7 +249,7 @@ public class EmployeeService : IEmployeeService
         };
     }
 
-    private static EmployeeDto MapToDto(Employee employee)
+    private EmployeeDto MapToDto(Employee employee, bool includeSensitive)
     {
         return new EmployeeDto
         {
@@ -240,7 +259,8 @@ public class EmployeeService : IEmployeeService
             LastName = employee.LastName,
             Initials = employee.Initials,
             CallingName = employee.CallingName,
-            NicNumber = employee.NicNumber,
+            NicNumber = includeSensitive ? employee.NicNumber : string.Empty,
+            MaskedNicNumber = SensitiveDataMasker.MaskNic(employee.NicNumber),
             EpfNumber = employee.EpfNumber,
             DateOfBirth = employee.DateOfBirth,
             Gender = employee.Gender,
@@ -258,7 +278,8 @@ public class EmployeeService : IEmployeeService
             BankName = employee.BankName,
             BankCode = employee.BankCode,
             BranchCode = employee.BranchCode,
-            BankAccountNumber = employee.BankAccountNumber,
+            BankAccountNumber = includeSensitive ? employee.BankAccountNumber : null,
+            MaskedBankAccountNumber = SensitiveDataMasker.MaskBankAccount(employee.BankAccountNumber),
             IsActive = employee.IsActive,
             CreatedAt = employee.CreatedAt,
             CreatedBy = employee.CreatedBy,
