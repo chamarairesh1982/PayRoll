@@ -64,7 +64,14 @@ export class EmployeeFormComponent implements OnInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['initialValue'] && this.initialValue) {
-      this.form.patchValue(this.initialValue);
+      const normalizedValue: Partial<Employee> = {
+        ...this.initialValue,
+        dateOfBirth: this.normalizeDateInput(this.initialValue.dateOfBirth),
+        employmentStartDate: this.normalizeDateInput(this.initialValue.employmentStartDate),
+        probationEndDate: this.normalizeDateInput(this.initialValue.probationEndDate),
+        confirmationDate: this.normalizeDateInput(this.initialValue.confirmationDate),
+      };
+      this.form.patchValue(normalizedValue);
       const companyId = this.form.get('companyId')?.value || undefined;
       const branchId = this.form.get('branchId')?.value || undefined;
       this.loadBranches(companyId);
@@ -107,5 +114,18 @@ export class EmployeeFormComponent implements OnInit, OnChanges {
     this.organizationApi.getCostCenters(companyId, branchId).subscribe(costCenters => {
       this.costCenters = costCenters;
     });
+  }
+
+  private normalizeDateInput(value?: string | null): string {
+    if (!value) {
+      return '';
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return value;
+    }
+
+    const datePart = value.split('T')[0]?.split(' ')[0];
+    return datePart || '';
   }
 }
