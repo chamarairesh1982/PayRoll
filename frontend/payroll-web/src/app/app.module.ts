@@ -2,7 +2,6 @@ import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ReactiveFormsModule } from '@angular/forms';
-import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -13,7 +12,7 @@ import { LoginPageComponent } from './pages/login/login-page.component';
 @NgModule({
   declarations: [AppComponent, LoginPageComponent],
   imports: [BrowserModule, BrowserAnimationsModule, ReactiveFormsModule, CoreModule, SharedModule, AppRoutingModule],
-  providers: [MessageService, ConfirmationService],
+  providers: [],
   bootstrap: [AppComponent],
 })
 export class AppModule {}

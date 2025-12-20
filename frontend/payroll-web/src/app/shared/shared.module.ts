@@ -7,16 +7,14 @@ import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dial
 import { FormFieldErrorComponent } from './components/form-field-error/form-field-error.component';
 import { DateFormatPipe } from './pipes/date-format.pipe';
 import { AutofocusDirective } from './directives/autofocus.directive';
-import { PrimeNgModule } from './primeng.module';
 
 @NgModule({
   declarations: [DataTableComponent, ConfirmDialogComponent, FormFieldErrorComponent, DateFormatPipe, AutofocusDirective],
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, PrimeNgModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   exports: [
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    PrimeNgModule,
     DataTableComponent,
     ConfirmDialogComponent,
     FormFieldErrorComponent,
