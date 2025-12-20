@@ -3,6 +3,8 @@ import { NgModule } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { SharedModule } from '../../shared/shared.module';
 import { AllowanceTypeFormComponent } from './components/allowance-type-form/allowance-type-form.component';
+import { BankBranchFormComponent } from './components/bank-branch-form/bank-branch-form.component';
+import { BankFormComponent } from './components/bank-form/bank-form.component';
 import { EpfEtfRuleSetFormComponent } from './components/epf-etf-rule-set-form/epf-etf-rule-set-form.component';
 import { TaxRuleSetFormComponent } from './components/tax-rule-set-form/tax-rule-set-form.component';
 import { TaxSlabsEditorComponent } from './components/tax-slabs-editor/tax-slabs-editor.component';
@@ -10,6 +12,14 @@ import { DeductionTypeFormComponent } from './components/deduction-type-form/ded
 import { AllowanceTypeCreatePageComponent } from './pages/allowance-type-create/allowance-type-create-page.component';
 import { AllowanceTypeEditPageComponent } from './pages/allowance-type-edit/allowance-type-edit-page.component';
 import { AllowanceTypesListPageComponent } from './pages/allowance-types-list/allowance-types-list-page.component';
+import { BankBranchCreatePageComponent } from './pages/bank-branch-create/bank-branch-create-page.component';
+import { BankBranchDetailPageComponent } from './pages/bank-branch-detail/bank-branch-detail-page.component';
+import { BankBranchEditPageComponent } from './pages/bank-branch-edit/bank-branch-edit-page.component';
+import { BankBranchesListPageComponent } from './pages/bank-branches-list/bank-branches-list-page.component';
+import { BankCreatePageComponent } from './pages/bank-create/bank-create-page.component';
+import { BankDetailPageComponent } from './pages/bank-detail/bank-detail-page.component';
+import { BankEditPageComponent } from './pages/bank-edit/bank-edit-page.component';
+import { BanksListPageComponent } from './pages/banks-list/banks-list-page.component';
 import { DeductionTypeCreatePageComponent } from './pages/deduction-type-create/deduction-type-create-page.component';
 import { DeductionTypeEditPageComponent } from './pages/deduction-type-edit/deduction-type-edit-page.component';
 import { DeductionTypesListPageComponent } from './pages/deduction-types-list/deduction-types-list-page.component';
@@ -29,8 +39,18 @@ import { OvertimeSettingsFormComponent } from './components/overtime-settings-fo
     DeductionTypesListPageComponent,
     DeductionTypeCreatePageComponent,
     DeductionTypeEditPageComponent,
+    BanksListPageComponent,
+    BankCreatePageComponent,
+    BankEditPageComponent,
+    BankDetailPageComponent,
+    BankBranchesListPageComponent,
+    BankBranchCreatePageComponent,
+    BankBranchEditPageComponent,
+    BankBranchDetailPageComponent,
     AllowanceTypeFormComponent,
     DeductionTypeFormComponent,
+    BankFormComponent,
+    BankBranchFormComponent,
     EpfEtfRulesListPageComponent,
     EpfEtfRuleEditPageComponent,
     EpfEtfRuleSetFormComponent,

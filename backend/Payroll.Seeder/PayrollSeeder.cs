@@ -58,6 +58,7 @@ public sealed class PayrollSeeder
         EnsureBankExportTemplate("Commercial", BankExportFormat.Csv, ",", 1);
         EnsureBankExportTemplate("Sampath", BankExportFormat.Csv, ",", 1);
         EnsureBankExportTemplate("DFCC", BankExportFormat.Csv, ",", 1);
+        EnsureBanks();
         EnsureGlAccounts();
         EnsureGlMappings();
     }
@@ -908,6 +909,75 @@ public sealed class PayrollSeeder
         _context.SaveChanges();
 
         return deduction;
+    }
+
+    private void EnsureBanks()
+    {
+        var banks = new List<(string Code, string Name)>
+        {
+            ("BOC", "Bank of Ceylon"),
+            ("PB", "People's Bank"),
+            ("COMB", "Commercial Bank"),
+            ("HNB", "Hatton National Bank"),
+            ("SAMP", "Sampath Bank"),
+            ("NTB", "Nations Trust Bank"),
+            ("SEY", "Seylan Bank"),
+            ("DFCC", "DFCC Bank"),
+            ("PAB", "Pan Asia Bank"),
+            ("UB", "Union Bank"),
+            ("NSB", "National Savings Bank")
+        };
+
+        foreach (var (code, name) in banks)
+        {
+            var bank = EnsureBank(code, name);
+            EnsureBankBranch(bank.Id, "001", "Colombo");
+            EnsureBankBranch(bank.Id, "002", "Kandy");
+            EnsureBankBranch(bank.Id, "003", "Galle");
+        }
+    }
+
+    private Bank EnsureBank(string code, string name)
+    {
+        var existing = _context.Banks.SingleOrDefault(bank => bank.Code == code);
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        var bank = new Bank
+        {
+            Code = code,
+            Name = name,
+            IsActive = true,
+            CreatedBy = SeedUser
+        };
+
+        _context.Banks.Add(bank);
+        _context.SaveChanges();
+
+        return bank;
+    }
+
+    private void EnsureBankBranch(Guid bankId, string code, string name)
+    {
+        var existing = _context.BankBranches.SingleOrDefault(branch => branch.BankId == bankId && branch.Code == code);
+        if (existing is not null)
+        {
+            return;
+        }
+
+        var branch = new BankBranch
+        {
+            BankId = bankId,
+            Code = code,
+            Name = name,
+            IsActive = true,
+            CreatedBy = SeedUser
+        };
+
+        _context.BankBranches.Add(branch);
+        _context.SaveChanges();
     }
 
     private void EnsureEpfEtfRuleSet()

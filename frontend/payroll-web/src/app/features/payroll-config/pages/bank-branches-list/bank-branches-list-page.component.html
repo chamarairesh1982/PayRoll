@@ -1,0 +1,76 @@
+<div class="page-header">
+  <h1>Bank Branches</h1>
+  <button type="button" (click)="navigateToCreate()">New Branch</button>
+</div>
+
+<div class="filters">
+  <label>
+    Bank
+    <select [(ngModel)]="filterBankId" (change)="handleFilterChange()">
+      <option value="">All banks</option>
+      <option *ngFor="let bank of banks" [value]="bank.id">{{ bank.name }} ({{ bank.code }})</option>
+    </select>
+  </label>
+  <label>
+    Search
+    <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="handleSearch()" placeholder="Search by code or name" />
+  </label>
+  <label>
+    Status
+    <select [(ngModel)]="filterIsActive" (change)="handleFilterChange()">
+      <option value="all">All</option>
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+    </select>
+  </label>
+  <button type="button" (click)="handleSearch()">Apply</button>
+</div>
+
+<ng-template #loading>
+  <div class="loading">Loading bank branches...</div>
+</ng-template>
+
+<div class="table-wrapper" *ngIf="!isLoading; else loading">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Bank</th>
+        <th>Branch Code</th>
+        <th>Branch Name</th>
+        <th>Active?</th>
+        <th class="actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of items">
+        <td>{{ item.bankName }} ({{ item.bankCode }})</td>
+        <td>{{ item.code }}</td>
+        <td>{{ item.name }}</td>
+        <td>{{ item.isActive ? 'Yes' : 'No' }}</td>
+        <td class="actions">
+          <button type="button" (click)="navigateToView(item)">View</button>
+          <button type="button" (click)="navigateToEdit(item)">Edit</button>
+          <button type="button" class="danger" (click)="confirmDelete(item)">Delete</button>
+        </td>
+      </tr>
+      <tr *ngIf="items.length === 0">
+        <td colspan="5" class="empty">No bank branches found.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="pagination">
+  <button type="button" (click)="previousPage()" [disabled]="page === 1">Previous</button>
+  <span>Page {{ page }} of {{ totalPages || 1 }}</span>
+  <button type="button" (click)="nextPage()" [disabled]="page * pageSize >= totalCount">Next</button>
+</div>
+
+<div class="dialog-wrapper" *ngIf="showConfirm">
+  <app-confirm-dialog
+    title="Delete Bank Branch"
+    [message]="'Are you sure you want to delete ' + (selectedItem?.name || 'this branch') + '?'"
+    (confirmed)="deleteItem()"
+    (cancelled)="cancelDelete()"
+  ></app-confirm-dialog>
+</div>

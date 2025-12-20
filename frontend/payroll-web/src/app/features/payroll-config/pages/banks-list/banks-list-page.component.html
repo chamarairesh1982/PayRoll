@@ -1,0 +1,67 @@
+<div class="page-header">
+  <h1>Banks</h1>
+  <button type="button" (click)="navigateToCreate()">New Bank</button>
+</div>
+
+<div class="filters">
+  <label>
+    Search
+    <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="handleSearch()" placeholder="Search by code or name" />
+  </label>
+  <label>
+    Status
+    <select [(ngModel)]="filterIsActive" (change)="handleFilterChange()">
+      <option value="all">All</option>
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+    </select>
+  </label>
+  <button type="button" (click)="handleSearch()">Apply</button>
+</div>
+
+<ng-template #loading>
+  <div class="loading">Loading banks...</div>
+</ng-template>
+
+<div class="table-wrapper" *ngIf="!isLoading; else loading">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Name</th>
+        <th>Active?</th>
+        <th class="actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of items">
+        <td>{{ item.code }}</td>
+        <td>{{ item.name }}</td>
+        <td>{{ item.isActive ? 'Yes' : 'No' }}</td>
+        <td class="actions">
+          <button type="button" (click)="navigateToView(item)">View</button>
+          <button type="button" (click)="navigateToEdit(item)">Edit</button>
+          <button type="button" class="danger" (click)="confirmDelete(item)">Delete</button>
+        </td>
+      </tr>
+      <tr *ngIf="items.length === 0">
+        <td colspan="4" class="empty">No banks found.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="pagination">
+  <button type="button" (click)="previousPage()" [disabled]="page === 1">Previous</button>
+  <span>Page {{ page }} of {{ totalPages || 1 }}</span>
+  <button type="button" (click)="nextPage()" [disabled]="page * pageSize >= totalCount">Next</button>
+</div>
+
+<div class="dialog-wrapper" *ngIf="showConfirm">
+  <app-confirm-dialog
+    title="Delete Bank"
+    [message]="'Are you sure you want to delete ' + (selectedItem?.name || 'this bank') + '?'"
+    (confirmed)="deleteItem()"
+    (cancelled)="cancelDelete()"
+  ></app-confirm-dialog>
+</div>

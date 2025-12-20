@@ -55,6 +55,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRecurringPayItemService, RecurringPayItemService>();
         services.AddScoped<IAllowanceTypeService, AllowanceTypeService>();
         services.AddScoped<IDeductionTypeService, DeductionTypeService>();
+        services.AddScoped<IBankService, BankService>();
+        services.AddScoped<IBankBranchService, BankBranchService>();
         services.AddScoped<IEpfEtfRuleSetService, EpfEtfRuleSetService>();
         services.AddScoped<ITaxRuleSetService, TaxRuleSetService>();
         services.AddScoped<IOvertimeRuleService, OvertimeRuleService>();

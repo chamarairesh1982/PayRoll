@@ -1,0 +1,21 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="form-card">
+  <div class="form-grid">
+    <label>
+      Bank Code
+      <input type="text" formControlName="code" maxlength="10" />
+      <app-form-field-error [control]="form.get('code')"></app-form-field-error>
+    </label>
+    <label>
+      Bank Name
+      <input type="text" formControlName="name" maxlength="100" />
+      <app-form-field-error [control]="form.get('name')"></app-form-field-error>
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" formControlName="isActive" /> Active
+    </label>
+  </div>
+
+  <div class="actions" *ngIf="mode !== 'view'">
+    <button type="submit">{{ mode === 'create' ? 'Create' : 'Save Changes' }}</button>
+  </div>
+</form>

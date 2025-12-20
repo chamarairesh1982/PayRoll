@@ -72,20 +72,29 @@
       <input type="number" formControlName="hourlyRate" step="0.01" />
     </label>
     <label>
-      Bank Name
-      <input type="text" formControlName="bankName" />
+      Bank
+      <select formControlName="bankCode">
+        <option value="">Select bank (optional)</option>
+        <option *ngFor="let bank of banks" [value]="bank.code">
+          {{ bank.name }} ({{ bank.code }})
+        </option>
+      </select>
+      <app-form-field-error [control]="form.get('bankCode')"></app-form-field-error>
     </label>
     <label>
-      Bank Code
-      <input type="text" formControlName="bankCode" />
-    </label>
-    <label>
-      Branch Code
-      <input type="text" formControlName="branchCode" />
+      Bank Branch
+      <select formControlName="branchCode" [disabled]="!form.get('bankCode')?.value">
+        <option value="">Select branch (optional)</option>
+        <option *ngFor="let branch of bankBranches" [value]="branch.code">
+          {{ branch.name }} ({{ branch.code }})
+        </option>
+      </select>
+      <app-form-field-error [control]="form.get('branchCode')"></app-form-field-error>
     </label>
     <label>
       Bank Account Number
       <input type="text" formControlName="bankAccountNumber" />
+      <app-form-field-error [control]="form.get('bankAccountNumber')"></app-form-field-error>
     </label>
     <label>
       Company

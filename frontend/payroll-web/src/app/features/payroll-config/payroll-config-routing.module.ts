@@ -3,6 +3,14 @@ import { RouterModule, Routes } from '@angular/router';
 import { AllowanceTypeCreatePageComponent } from './pages/allowance-type-create/allowance-type-create-page.component';
 import { AllowanceTypeEditPageComponent } from './pages/allowance-type-edit/allowance-type-edit-page.component';
 import { AllowanceTypesListPageComponent } from './pages/allowance-types-list/allowance-types-list-page.component';
+import { BankBranchCreatePageComponent } from './pages/bank-branch-create/bank-branch-create-page.component';
+import { BankBranchDetailPageComponent } from './pages/bank-branch-detail/bank-branch-detail-page.component';
+import { BankBranchEditPageComponent } from './pages/bank-branch-edit/bank-branch-edit-page.component';
+import { BankBranchesListPageComponent } from './pages/bank-branches-list/bank-branches-list-page.component';
+import { BankCreatePageComponent } from './pages/bank-create/bank-create-page.component';
+import { BankDetailPageComponent } from './pages/bank-detail/bank-detail-page.component';
+import { BankEditPageComponent } from './pages/bank-edit/bank-edit-page.component';
+import { BanksListPageComponent } from './pages/banks-list/banks-list-page.component';
 import { DeductionTypeCreatePageComponent } from './pages/deduction-type-create/deduction-type-create-page.component';
 import { DeductionTypeEditPageComponent } from './pages/deduction-type-edit/deduction-type-edit-page.component';
 import { DeductionTypesListPageComponent } from './pages/deduction-types-list/deduction-types-list-page.component';
@@ -24,6 +32,38 @@ const routes: Routes = [
   {
     path: 'allowances/:id/edit',
     component: AllowanceTypeEditPageComponent,
+  },
+  {
+    path: 'banks',
+    component: BanksListPageComponent,
+  },
+  {
+    path: 'banks/new',
+    component: BankCreatePageComponent,
+  },
+  {
+    path: 'banks/:id',
+    component: BankDetailPageComponent,
+  },
+  {
+    path: 'banks/:id/edit',
+    component: BankEditPageComponent,
+  },
+  {
+    path: 'bank-branches',
+    component: BankBranchesListPageComponent,
+  },
+  {
+    path: 'bank-branches/new',
+    component: BankBranchCreatePageComponent,
+  },
+  {
+    path: 'bank-branches/:id',
+    component: BankBranchDetailPageComponent,
+  },
+  {
+    path: 'bank-branches/:id/edit',
+    component: BankBranchEditPageComponent,
   },
   {
     path: 'deductions',

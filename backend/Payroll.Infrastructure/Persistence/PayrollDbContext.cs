@@ -44,6 +44,8 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public DbSet<LoanRepayment> LoanRepayments => Set<LoanRepayment>();
     public DbSet<AllowanceType> AllowanceTypes => Set<AllowanceType>();
     public DbSet<DeductionType> DeductionTypes => Set<DeductionType>();
+    public DbSet<Bank> Banks => Set<Bank>();
+    public DbSet<BankBranch> BankBranches => Set<BankBranch>();
     public DbSet<EmployeeRecurringPayItem> EmployeeRecurringPayItems => Set<EmployeeRecurringPayItem>();
     public DbSet<EpfEtfRuleSet> EpfEtfRuleSets => Set<EpfEtfRuleSet>();
     public DbSet<TaxRuleSet> TaxRuleSets => Set<TaxRuleSet>();

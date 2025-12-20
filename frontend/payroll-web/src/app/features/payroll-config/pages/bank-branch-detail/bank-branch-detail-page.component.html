@@ -1,0 +1,15 @@
+<div class="page-header">
+  <h1>Bank Branch Details</h1>
+  <div class="actions">
+    <button type="button" class="secondary" (click)="goBack()">Back to List</button>
+    <button type="button" (click)="editBranch()">Edit</button>
+  </div>
+</div>
+
+<ng-template #loading>
+  <div class="loading">Loading bank branch...</div>
+</ng-template>
+
+<div *ngIf="branch; else loading">
+  <app-bank-branch-form [banks]="banks" [initialValue]="branch" mode="view"></app-bank-branch-form>
+</div>

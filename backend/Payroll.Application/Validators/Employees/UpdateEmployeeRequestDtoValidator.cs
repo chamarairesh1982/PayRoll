@@ -15,5 +15,27 @@ public class UpdateEmployeeRequestDtoValidator : AbstractValidator<UpdateEmploye
         RuleFor(x => x.EmploymentStartDate).NotEmpty();
         RuleFor(x => x.BaseSalary).GreaterThan(0);
         RuleFor(x => x.HourlyRate).GreaterThan(0).When(x => x.HourlyRate.HasValue);
+
+        RuleFor(x => x.BankAccountNumber)
+            .NotEmpty()
+            .When(x => !string.IsNullOrWhiteSpace(x.BankName)
+                || !string.IsNullOrWhiteSpace(x.BankCode)
+                || !string.IsNullOrWhiteSpace(x.BranchCode))
+            .WithMessage("Bank account number is required when a bank is selected.");
+
+        RuleFor(x => x.BankName)
+            .NotEmpty()
+            .When(x => !string.IsNullOrWhiteSpace(x.BankAccountNumber))
+            .WithMessage("Bank name is required when a bank account number is provided.");
+
+        RuleFor(x => x.BankCode)
+            .NotEmpty()
+            .When(x => !string.IsNullOrWhiteSpace(x.BankAccountNumber))
+            .WithMessage("Bank code is required when a bank account number is provided.");
+
+        RuleFor(x => x.BranchCode)
+            .NotEmpty()
+            .When(x => !string.IsNullOrWhiteSpace(x.BankAccountNumber))
+            .WithMessage("Branch code is required when a bank account number is provided.");
     }
 }
