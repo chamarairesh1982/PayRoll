@@ -865,6 +865,56 @@ public class PayrollServiceTests
         preview.Breakdown.Should().NotBeEmpty();
     }
 
+    [Fact]
+    public async Task CreatePayRun_Should_Use_BaseSalary_For_Salaried_Employees()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP_BASE", "Nia", 55_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+
+        var payrollService = CreatePayrollService(context);
+        var result = await payrollService.CreatePayRunAsync(BuildDefaultRequest(employee.Id));
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        paySlip.BasicSalary.Should().Be(55_000m);
+        paySlip.Earnings.Should().ContainSingle(e => e.Code == "BASIC" && e.Amount == 55_000m);
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Calculate_Hourly_Earnings_From_Attendance()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedHourlyEmployee(context.DbContext, "EMP_HR", "Ira", 40_000m, 1_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+        TestDataSeeder.SeedAttendance(context.DbContext, employee, new DateOnly(2025, 4, 2), 6m);
+        TestDataSeeder.SeedAttendance(context.DbContext, employee, new DateOnly(2025, 4, 3), 4m);
+
+        var payrollService = CreatePayrollService(context);
+        var result = await payrollService.CreatePayRunAsync(BuildDefaultRequest(employee.Id));
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        paySlip.BasicSalary.Should().Be(10_000m);
+        paySlip.Earnings.Should().ContainSingle(e => e.Code == "BASIC" && e.Amount == 10_000m && e.Description.Contains("Hourly Wages"));
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Fail_For_Hourly_Employee_When_Hours_Missing()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedHourlyEmployee(context.DbContext, "EMP_HR_MISS", "Uma", 35_000m, 900m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+
+        var payrollService = CreatePayrollService(context);
+
+        var act = () => payrollService.CreatePayRunAsync(BuildDefaultRequest(employee.Id));
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*approved hours*");
+    }
+
     private static CreatePayRunRequest BuildDefaultRequest(Guid employeeId)
     {
         return new CreatePayRunRequest

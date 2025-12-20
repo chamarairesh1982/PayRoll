@@ -312,6 +312,47 @@ public static class TestDataSeeder
         return employee;
     }
 
+    public static Employee SeedHourlyEmployee(
+        PayrollDbContext context,
+        string code,
+        string name,
+        decimal baseSalary,
+        decimal hourlyRate)
+    {
+        var joinDate = new DateTime(2020, 1, 1);
+        var probationEndDate = joinDate.AddMonths(3);
+
+        var employee = Employee.Create(
+            employeeCode: code,
+            firstName: name,
+            lastName: "Test",
+            nicNumber: $"{code}-NIC",
+            epfNumber: null,
+            dateOfBirth: new DateTime(1990, 1, 1),
+            gender: Gender.Male,
+            maritalStatus: MaritalStatus.Single,
+            employmentStartDate: joinDate,
+            baseSalary: baseSalary,
+            hourlyRate: hourlyRate,
+            companyId: null,
+            branchId: null,
+            costCenterId: null,
+            initials: null,
+            callingName: null,
+            probationEndDate: probationEndDate,
+            confirmationDate: null,
+            createdBy: "seed",
+            bankName: null,
+            bankCode: null,
+            branchCode: null,
+            bankAccountNumber: null);
+
+        context.Employees.Add(employee);
+        context.SaveChanges();
+
+        return employee;
+    }
+
     public static AttendanceRecord SeedAbsence(PayrollDbContext context, Employee employee, DateOnly date)
     {
         var record = new AttendanceRecord
