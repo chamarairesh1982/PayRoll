@@ -1,0 +1,87 @@
+<div class="report-table">
+  <ng-container *ngIf="loading; else tableContent">
+    <div class="skeleton-row" *ngFor="let row of [0, 1, 2, 3, 4]">
+      <p-skeleton height="2rem"></p-skeleton>
+    </div>
+  </ng-container>
+
+  <ng-template #tableContent>
+    <div class="empty-state" *ngIf="!rows?.length">
+      No data available for the selected filters.
+    </div>
+
+    <p-table
+      *ngIf="rows?.length"
+      [value]="rows"
+      [scrollable]="true"
+      scrollHeight="420px"
+      [rowGroupMode]="groupBy ? 'subheader' : null"
+      [groupRowsBy]="groupBy"
+      [tableStyle]="{ 'min-width': '60rem' }"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th *ngFor="let column of columns" [ngClass]="getColumnClass(column)">
+            {{ column.header }}
+          </th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="rowgroupheader" let-rowData>
+        <tr class="group-header">
+          <td [attr.colspan]="columns.length">
+            {{ groupByLabel || 'Group' }}: {{ rowData[groupBy || ''] }}
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-rowData>
+        <tr>
+          <td *ngFor="let column of columns" [ngClass]="getColumnClass(column)">
+            <ng-container [ngSwitch]="column.type">
+              <span *ngSwitchCase="'currency'">{{ rowData[column.field] | currency: 'LKR':'symbol':'1.2-2' }}</span>
+              <span *ngSwitchCase="'number'">{{ rowData[column.field] | number: '1.0-2' }}</span>
+              <span *ngSwitchDefault>{{ rowData[column.field] }}</span>
+            </ng-container>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="rowgroupfooter" let-rowData>
+        <tr class="group-footer">
+          <td *ngFor="let column of columns; let i = index" [ngClass]="getColumnClass(column)">
+            <ng-container *ngIf="i === 0">Group Total</ng-container>
+            <ng-container *ngIf="i !== 0">
+              <ng-container *ngIf="isNumericColumn(column)" [ngSwitch]="column.type">
+                <span *ngSwitchCase="'currency'">
+                  {{ groupedTotals[rowData[groupBy || '']]?.[column.field] | currency: 'LKR':'symbol':'1.2-2' }}
+                </span>
+                <span *ngSwitchCase="'number'">
+                  {{ groupedTotals[rowData[groupBy || '']]?.[column.field] | number: '1.0-2' }}
+                </span>
+              </ng-container>
+            </ng-container>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="footer">
+        <tr class="overall-footer">
+          <td *ngFor="let column of columns; let i = index" [ngClass]="getColumnClass(column)">
+            <ng-container *ngIf="i === 0">Overall Total</ng-container>
+            <ng-container *ngIf="i !== 0">
+              <ng-container *ngIf="isNumericColumn(column)" [ngSwitch]="column.type">
+                <span *ngSwitchCase="'currency'">
+                  {{ overallTotals[column.field] | currency: 'LKR':'symbol':'1.2-2' }}
+                </span>
+                <span *ngSwitchCase="'number'">
+                  {{ overallTotals[column.field] | number: '1.0-2' }}
+                </span>
+              </ng-container>
+            </ng-container>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </ng-template>
+</div>

@@ -1,0 +1,40 @@
+.report-table {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.skeleton-row {
+  margin-bottom: 0.75rem;
+}
+
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.group-header td {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.group-footer td,
+.overall-footer td {
+  background: #f1f5f9;
+  font-weight: 600;
+}
+
+.text-right {
+  text-align: right;
+}
+
+:host ::ng-deep .p-datatable-scrollable .p-datatable-thead > tr > th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #fff;
+}

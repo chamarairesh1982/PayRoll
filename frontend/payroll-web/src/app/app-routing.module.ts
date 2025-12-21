@@ -50,6 +50,11 @@ const routes: Routes = [
         loadChildren: () => import('./features/reports/reports.module').then(m => m.ReportsModule),
       },
       {
+        path: 'statutory-reports',
+        loadChildren: () =>
+          import('./features/statutory-reports/statutory-reports.module').then(m => m.StatutoryReportsModule),
+      },
+      {
         path: 'approvals',
         loadChildren: () => import('./features/approvals/approvals.module').then(m => m.ApprovalsModule),
         canActivate: [ApproverGuard],
