@@ -14,7 +14,8 @@ export class AuthService {
     const fakeToken = btoa(`${username}-token`);
     localStorage.setItem(TOKEN_KEY, fakeToken);
     localStorage.setItem(USERNAME_KEY, username);
-    const roles = username.trim().toLowerCase() === 'admin' ? ['Admin'] : [];
+    const isAdmin = username.trim().toLowerCase() === 'admin';
+    const roles = isAdmin ? ['Admin', 'Approver'] : ['Approver'];
     localStorage.setItem(ROLES_KEY, JSON.stringify(roles));
     this.isAuthenticatedSubject.next(true);
   }
@@ -49,10 +50,18 @@ export class AuthService {
   }
 
   isAdmin(): boolean {
-    return this.getRoles().some(role => role.toLowerCase() === 'admin');
+    return this.hasRole('admin');
+  }
+
+  isApprover(): boolean {
+    return this.hasRole('approver') || this.hasRole('admin');
   }
 
   private hasToken(): boolean {
     return !!localStorage.getItem(TOKEN_KEY);
+  }
+
+  private hasRole(roleName: string): boolean {
+    return this.getRoles().some(role => role.toLowerCase() === roleName);
   }
 }

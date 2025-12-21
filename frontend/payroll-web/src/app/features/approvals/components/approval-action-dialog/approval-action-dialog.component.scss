@@ -1,0 +1,29 @@
+.dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.dialog-summary {
+  margin: 0;
+  font-weight: 600;
+}
+
+.dialog-meta {
+  margin: 0;
+  color: #64748b;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.required {
+  color: #ef4444;
+}
+
+.hint {
+  color: #94a3b8;
+}

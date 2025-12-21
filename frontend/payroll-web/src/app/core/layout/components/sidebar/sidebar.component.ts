@@ -16,6 +16,7 @@ export class SidebarComponent {
     { label: 'Leave', path: '/leave' },
     { label: 'Overtime', path: '/overtime' },
     { label: 'Overtime Approvals', path: '/overtime/approvals' },
+    { label: 'Approvals Inbox', path: '/approvals/inbox' },
     { label: 'Reports', path: '/reports' },
     { label: 'Tax Reports', path: '/reports/tax' },
   ];
@@ -28,6 +29,7 @@ export class SidebarComponent {
     { label: 'EPF/ETF Rules', path: '/config/epf-etf' },
     { label: 'Overtime Rules', path: '/config/overtime' },
     { label: 'Tax Configuration', path: '/config/tax-rules' },
+    { label: 'Approval Routes', path: '/approvals/config' },
   ];
 
   adminLinks = [{ label: 'Audit Logs', path: '/admin/audit-logs' }];

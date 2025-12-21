@@ -1,0 +1,24 @@
+<div *ngIf="hasHistory; else noHistory" class="history">
+  <p-timeline [value]="history" layout="vertical" align="left">
+    <ng-template pTemplate="content" let-entry>
+      <div class="history__card">
+        <div class="history__header">
+          <div class="history__title">
+            <strong>{{ entry.action }}</strong>
+            <span *ngIf="entry.level" class="history__level">{{ entry.level }}</span>
+          </div>
+          <p-tag *ngIf="entry.status" [value]="entry.status" [severity]="getStatusSeverity(entry.status)"></p-tag>
+        </div>
+        <div class="history__meta">
+          <span>{{ entry.actor }}</span>
+          <span>{{ entry.date | date: 'medium' }}</span>
+        </div>
+        <p class="history__comment" *ngIf="entry.comment">{{ entry.comment }}</p>
+      </div>
+    </ng-template>
+  </p-timeline>
+</div>
+
+<ng-template #noHistory>
+  <p class="empty">No approval activity yet.</p>
+</ng-template>

@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AdminGuard } from './core/guards/admin.guard';
 import { AuthGuard } from './core/guards/auth.guard';
+import { ApproverGuard } from './core/guards/approver.guard';
 import { MainLayoutComponent } from './core/layout/main-layout/main-layout.component';
 import { LoginPageComponent } from './pages/login/login-page.component';
 
@@ -47,6 +48,11 @@ const routes: Routes = [
       {
         path: 'reports',
         loadChildren: () => import('./features/reports/reports.module').then(m => m.ReportsModule),
+      },
+      {
+        path: 'approvals',
+        loadChildren: () => import('./features/approvals/approvals.module').then(m => m.ApprovalsModule),
+        canActivate: [ApproverGuard],
       },
     ],
   },
