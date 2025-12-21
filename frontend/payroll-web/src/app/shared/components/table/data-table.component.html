@@ -1,16 +1,88 @@
-<table class="table">
-  <thead>
-    <tr>
-      <th *ngFor="let column of columns">{{ column.header }}</th>
-      <th class="actions" *ngIf="actionsTemplate">Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let item of data">
-      <td *ngFor="let column of columns">{{ item[column.field] }}</td>
-      <td class="actions" *ngIf="actionsTemplate">
-        <ng-container *ngTemplateOutlet="actionsTemplate; context: { $implicit: item }"></ng-container>
-      </td>
-    </tr>
-  </tbody>
-</table>
+<div class="table-shell">
+  <div class="table-toolbar" *ngIf="showGlobalFilter">
+    <span class="p-input-icon-left">
+      <i class="pi pi-search"></i>
+      <input
+        pInputText
+        type="text"
+        [placeholder]="globalFilterPlaceholder"
+        (input)="onGlobalFilter($event)"
+      />
+    </span>
+  </div>
+
+  <p-table
+    #dt
+    [value]="data"
+    [columns]="columns"
+    [paginator]="paginator"
+    [rows]="rows"
+    [first]="first"
+    [totalRecords]="totalRecords"
+    [rowsPerPageOptions]="rowsPerPageOptions"
+    [lazy]="lazy"
+    [loading]="loading"
+    [globalFilterFields]="resolvedGlobalFilterFields"
+    [rowHover]="true"
+    (onLazyLoad)="handleLazyLoad($event)"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th *ngFor="let column of columns" [pSortableColumn]="column.sortable ? column.field : null">
+          <span class="header-label">{{ column.header }}</span>
+          <p-sortIcon *ngIf="column.sortable" [field]="column.field"></p-sortIcon>
+        </th>
+        <th *ngIf="actionsTemplate" class="actions-header">Actions</th>
+      </tr>
+      <tr *ngIf="showColumnFilters">
+        <th *ngFor="let column of columns">
+          <p-columnFilter
+            *ngIf="column.filter !== false"
+            [field]="column.field"
+            [matchMode]="column.filterMatchMode || 'contains'"
+            [showMenu]="false"
+            [showClearButton]="false"
+            [type]="resolveFilterType(column)"
+          ></p-columnFilter>
+        </th>
+        <th *ngIf="actionsTemplate"></th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-rowData>
+      <tr>
+        <td *ngFor="let column of columns">
+          <ng-container [ngSwitch]="column.type">
+            <span *ngSwitchCase="'date'">{{ rowData[column.field] | date: column.format || 'yyyy-MM-dd' }}</span>
+            <span *ngSwitchCase="'datetime'">{{ rowData[column.field] | date: column.format || 'medium' }}</span>
+            <span *ngSwitchCase="'currency'">{{ rowData[column.field] | currency: column.format }}</span>
+            <span *ngSwitchCase="'number'">{{ rowData[column.field] | number: column.format }}</span>
+            <span *ngSwitchDefault>{{ rowData[column.field] }}</span>
+          </ng-container>
+        </td>
+        <td *ngIf="actionsTemplate" class="actions-cell">
+          <ng-container *ngTemplateOutlet="actionsTemplate; context: { $implicit: rowData }"></ng-container>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="loadingbody">
+      <tr *ngFor="let _ of skeletonRowsArray">
+        <td *ngFor="let column of columns">
+          <p-skeleton height="1.25rem"></p-skeleton>
+        </td>
+        <td *ngIf="actionsTemplate">
+          <p-skeleton height="1.25rem"></p-skeleton>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td [attr.colspan]="columns.length + (actionsTemplate ? 1 : 0)">
+          <div class="empty-state">{{ emptyMessage }}</div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>

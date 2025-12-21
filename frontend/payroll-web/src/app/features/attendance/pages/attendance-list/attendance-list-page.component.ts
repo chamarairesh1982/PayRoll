@@ -1,7 +1,12 @@
 import { Component, OnInit } from '@angular/core';
+import { LazyLoadEvent } from 'primeng/api';
 import { AttendanceApiService } from '../../services/attendance-api.service';
 import { AttendanceRecord } from '../../models/attendance-record.model';
 import { PaginatedResult } from '../../../employees/models/employee.model';
+
+interface AttendanceRecordRow extends AttendanceRecord {
+  employeeDisplay: string;
+}
 
 @Component({
   selector: 'app-attendance-list-page',
@@ -9,7 +14,13 @@ import { PaginatedResult } from '../../../employees/models/employee.model';
   styleUrls: ['./attendance-list-page.component.scss'],
 })
 export class AttendanceListPageComponent implements OnInit {
-  records: AttendanceRecord[] = [];
+  records: AttendanceRecordRow[] = [];
+  columns = [
+    { field: 'periodStart', header: 'Period Start', type: 'date' },
+    { field: 'periodEnd', header: 'Period End', type: 'date' },
+    { field: 'employeeDisplay', header: 'Employee' },
+    { field: 'hoursWorked', header: 'Hours Worked', type: 'number' },
+  ];
   page = 1;
   pageSize = 25;
   totalCount = 0;
@@ -31,7 +42,10 @@ export class AttendanceListPageComponent implements OnInit {
       .getAttendanceRecords({ page: this.page, pageSize: this.pageSize })
       .subscribe({
         next: (result: PaginatedResult<AttendanceRecord>) => {
-          this.records = result.items;
+          this.records = result.items.map(item => ({
+            ...item,
+            employeeDisplay: item.employeeName || item.employeeId,
+          }));
           this.totalCount = result.totalCount;
           this.page = result.page;
           this.pageSize = result.pageSize;
@@ -63,21 +77,21 @@ export class AttendanceListPageComponent implements OnInit {
     });
   }
 
-  nextPage(): void {
-    if (this.page * this.pageSize < this.totalCount) {
-      this.page++;
-      this.loadRecords();
+  handleLazyLoad(event: LazyLoadEvent): void {
+    const nextRows = event.rows ?? this.pageSize;
+    const nextFirst = event.first ?? 0;
+    const nextPage = Math.floor(nextFirst / nextRows) + 1;
+
+    if (nextPage === this.page && nextRows === this.pageSize) {
+      return;
     }
+
+    this.page = nextPage;
+    this.pageSize = nextRows;
+    this.loadRecords();
   }
 
-  previousPage(): void {
-    if (this.page > 1) {
-      this.page--;
-      this.loadRecords();
-    }
-  }
-
-  get totalPages(): number {
-    return this.pageSize ? Math.ceil(this.totalCount / this.pageSize) : 1;
+  get tableFirst(): number {
+    return (this.page - 1) * this.pageSize;
   }
 }
