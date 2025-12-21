@@ -1,52 +1,67 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { PaginatorState } from 'primeng/paginator';
+import { Table } from 'primeng/table';
+import { Subject } from 'rxjs';
+import { debounceTime, takeUntil } from 'rxjs/operators';
 import { AuthService } from '../../../../core/services/auth.service';
 import { OrganizationApiService } from '../../../../shared/services/organization-api.service';
 import { BranchOption, CompanyOption, CostCenterOption } from '../../../../shared/models/organization.model';
 import { EmployeesApiService } from '../../services/employees-api.service';
 import { Employee, PaginatedResult } from '../../models/employee.model';
 
-type EmployeeRow = Employee & { fullName: string; nicDisplay: string };
+type EmployeeRow = Employee & { nicDisplay: string };
 
 @Component({
   selector: 'app-employees-list-page',
   templateUrl: './employees-list-page.component.html',
   styleUrls: ['./employees-list-page.component.scss'],
+  providers: [ConfirmationService, MessageService],
 })
-export class EmployeesListPageComponent implements OnInit {
+export class EmployeesListPageComponent implements OnInit, OnDestroy {
+  @ViewChild('employeesTable') employeesTable?: Table;
+
   employees: EmployeeRow[] = [];
   totalCount = 0;
   page = 1;
   pageSize = 25;
+  searchTerm = '';
   companyFilter = '';
   branchFilter = '';
   costCenterFilter = '';
   companies: CompanyOption[] = [];
   branches: BranchOption[] = [];
   costCenters: CostCenterOption[] = [];
-  columns = [
-    { field: 'employeeCode' as const, header: 'Employee Code' },
-    { field: 'fullName' as const, header: 'Name' },
-    { field: 'nicDisplay' as const, header: 'NIC' },
-    { field: 'epfNumber' as const, header: 'EPF Number' },
-    { field: 'employmentStartDate' as const, header: 'Employment Start' },
-    { field: 'baseSalary' as const, header: 'Base Salary' },
-    { field: 'isActive' as const, header: 'Active' },
+  activeOptions = [
+    { label: 'Active', value: true },
+    { label: 'Inactive', value: false },
   ];
-
-  showConfirm = false;
   employeeToDelete: Employee | null = null;
+  private destroy$ = new Subject<void>();
+  private searchSubject = new Subject<string>();
 
   constructor(
     private employeesApi: EmployeesApiService,
     private organizationApi: OrganizationApiService,
     private router: Router,
     private authService: AuthService,
+    private confirmationService: ConfirmationService,
+    private messageService: MessageService,
   ) {}
 
   ngOnInit(): void {
     this.loadCompanies();
     this.loadEmployees();
+    this.searchSubject.pipe(debounceTime(300), takeUntil(this.destroy$)).subscribe(value => {
+      this.searchTerm = value;
+      this.applyGlobalFilter(value);
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   loadCompanies(): void {
@@ -82,15 +97,15 @@ export class EmployeesListPageComponent implements OnInit {
         const isAdmin = this.authService.isAdmin();
         this.employees = result.items.map(item => ({
           ...item,
-          fullName: `${item.firstName} ${item.lastName}`,
           nicDisplay: isAdmin ? item.nicNumber : item.maskedNicNumber || '',
         }));
         this.totalCount = result.totalCount;
+        this.applyGlobalFilter(this.searchTerm);
       });
   }
 
-  onCompanyChange(value: string): void {
-    this.companyFilter = value;
+  onCompanyChange(value: string | null): void {
+    this.companyFilter = value ?? '';
     this.branchFilter = '';
     this.costCenterFilter = '';
     this.loadBranches();
@@ -98,15 +113,15 @@ export class EmployeesListPageComponent implements OnInit {
     this.onScopeChange();
   }
 
-  onBranchChange(value: string): void {
-    this.branchFilter = value;
+  onBranchChange(value: string | null): void {
+    this.branchFilter = value ?? '';
     this.costCenterFilter = '';
     this.loadCostCenters();
     this.onScopeChange();
   }
 
-  onCostCenterChange(value: string): void {
-    this.costCenterFilter = value;
+  onCostCenterChange(value: string | null): void {
+    this.costCenterFilter = value ?? '';
     this.onScopeChange();
   }
 
@@ -124,34 +139,52 @@ export class EmployeesListPageComponent implements OnInit {
 
   confirmDelete(employee: Employee): void {
     this.employeeToDelete = employee;
-    this.showConfirm = true;
-  }
-
-  cancelDelete(): void {
-    this.employeeToDelete = null;
-    this.showConfirm = false;
+    this.confirmationService.confirm({
+      header: 'Delete Employee',
+      icon: 'pi pi-exclamation-triangle',
+      message: `Are you sure you want to delete ${employee.firstName} ${employee.lastName}?`,
+      acceptLabel: 'Delete',
+      rejectLabel: 'Cancel',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => this.deleteEmployee(),
+      reject: () => {
+        this.employeeToDelete = null;
+      },
+    });
   }
 
   deleteEmployee(): void {
     if (!this.employeeToDelete) {
       return;
     }
-    this.employeesApi.deleteEmployee(this.employeeToDelete.id).subscribe(() => {
-      this.cancelDelete();
-      this.loadEmployees();
+    const employee = this.employeeToDelete;
+    this.employeesApi.deleteEmployee(employee.id).subscribe({
+      next: () => {
+        this.employeeToDelete = null;
+        this.loadEmployees();
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Employee deleted',
+          detail: `${employee.firstName} ${employee.lastName} was removed.`,
+        });
+      },
+      error: () => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Delete failed',
+          detail: 'Unable to delete the employee. Please try again.',
+        });
+      },
     });
   }
 
-  nextPage(): void {
-    if (this.page * this.pageSize < this.totalCount) {
-      this.page++;
-      this.loadEmployees();
-    }
-  }
-
-  previousPage(): void {
-    if (this.page > 1) {
-      this.page--;
+  onPageChange(event: PaginatorState): void {
+    const nextPage = (event.page ?? 0) + 1;
+    const nextRows = event.rows ?? this.pageSize;
+    const shouldReload = nextPage !== this.page || nextRows !== this.pageSize;
+    this.page = nextPage;
+    this.pageSize = nextRows;
+    if (shouldReload) {
       this.loadEmployees();
     }
   }
@@ -159,5 +192,15 @@ export class EmployeesListPageComponent implements OnInit {
   onScopeChange(): void {
     this.page = 1;
     this.loadEmployees();
+  }
+
+  onGlobalSearch(value: string): void {
+    this.searchSubject.next(value);
+  }
+
+  private applyGlobalFilter(value: string): void {
+    if (this.employeesTable) {
+      this.employeesTable.filterGlobal(value, 'contains');
+    }
   }
 }
