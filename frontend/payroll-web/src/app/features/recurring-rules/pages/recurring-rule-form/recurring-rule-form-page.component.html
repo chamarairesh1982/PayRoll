@@ -1,0 +1,65 @@
+<p-toast></p-toast>
+
+<div class="page-header">
+  <div>
+    <h2>{{ isEditMode ? 'Edit recurring rule' : isViewMode ? 'Recurring rule details' : 'Create recurring rule' }}</h2>
+    <p class="subtitle">Configure recurring earnings or deductions for payroll runs.</p>
+  </div>
+  <div class="page-actions">
+    <button
+      pButton
+      type="button"
+      label="Edit"
+      icon="pi pi-pencil"
+      class="p-button-outlined"
+      *ngIf="isViewMode"
+      (click)="enableEdit()"
+    ></button>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="col-12 lg:col-8">
+    <app-rule-form
+      [form]="form"
+      [companies]="companies"
+      [branches]="branches"
+      [costCenters]="costCenters"
+      [employees]="employees"
+      [isReadOnly]="isViewMode"
+      (companyChange)="onCompanyChange($event)"
+      (branchChange)="onBranchChange($event)"
+    ></app-rule-form>
+
+    <div class="form-errors" *ngIf="form.errors?.invalidRange">
+      End date must be on or after the start date.
+    </div>
+
+    <div class="form-actions" *ngIf="!isViewMode">
+      <button pButton type="button" label="Cancel" class="p-button-text" (click)="cancel()"></button>
+      <button pButton type="button" label="Save rule" icon="pi pi-save" (click)="save()"></button>
+    </div>
+  </div>
+
+  <div class="col-12 lg:col-4">
+    <p-card header="Rule Preview">
+      <div class="preview">
+        <div class="preview-row">
+          <span>Sample base salary</span>
+          <strong>{{ sampleSalary | number : '1.0-0' }} LKR</strong>
+        </div>
+        <div class="preview-row">
+          <span>Calculation</span>
+          <strong>{{ previewLabel }}</strong>
+        </div>
+        <div class="preview-row highlight">
+          <span>Estimated impact</span>
+          <strong>{{ previewAmount | number : '1.0-2' }} LKR</strong>
+        </div>
+        <p class="note">
+          Preview is illustrative only and does not change actual payroll calculations until integrated.
+        </p>
+      </div>
+    </p-card>
+  </div>
+</div>

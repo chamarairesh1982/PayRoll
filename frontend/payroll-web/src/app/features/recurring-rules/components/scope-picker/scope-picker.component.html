@@ -1,0 +1,89 @@
+<div class="scope-picker" [formGroup]="form">
+  <div class="field">
+    <label for="scopeType">Apply to</label>
+    <p-dropdown
+      inputId="scopeType"
+      formControlName="scopeType"
+      [options]="scopeOptions"
+      optionLabel="label"
+      optionValue="value"
+      [disabled]="isReadOnly"
+      placeholder="Select scope"
+    ></p-dropdown>
+  </div>
+
+  <div class="grid" *ngIf="scopeType === 'Group'">
+    <div class="col-12 md:col-6 lg:col-4 field">
+      <label for="companyId">Company</label>
+      <p-dropdown
+        inputId="companyId"
+        formControlName="companyId"
+        [options]="companies"
+        optionLabel="name"
+        optionValue="id"
+        [showClear]="true"
+        [disabled]="isReadOnly"
+        placeholder="All companies"
+        (onChange)="onCompanyChange($event.value)"
+      ></p-dropdown>
+    </div>
+    <div class="col-12 md:col-6 lg:col-4 field">
+      <label for="branchId">Branch</label>
+      <p-dropdown
+        inputId="branchId"
+        formControlName="branchId"
+        [options]="branches"
+        optionLabel="name"
+        optionValue="id"
+        [showClear]="true"
+        [disabled]="isReadOnly"
+        placeholder="All branches"
+        (onChange)="onBranchChange($event.value)"
+      ></p-dropdown>
+    </div>
+    <div class="col-12 md:col-6 lg:col-4 field">
+      <label for="costCenterId">Cost Center</label>
+      <p-dropdown
+        inputId="costCenterId"
+        formControlName="costCenterId"
+        [options]="costCenters"
+        optionLabel="name"
+        optionValue="id"
+        [showClear]="true"
+        [disabled]="isReadOnly"
+        placeholder="All cost centers"
+      ></p-dropdown>
+    </div>
+    <div class="col-12 md:col-6 lg:col-4 field">
+      <label for="employeeCategory">Employee category</label>
+      <p-dropdown
+        inputId="employeeCategory"
+        formControlName="employeeCategory"
+        [options]="categoryOptions"
+        optionLabel="label"
+        optionValue="value"
+        [showClear]="true"
+        [disabled]="isReadOnly"
+        placeholder="Any category"
+      ></p-dropdown>
+    </div>
+  </div>
+
+  <div class="field" *ngIf="scopeType === 'Selected'">
+    <label for="employeeIds">Employees</label>
+    <p-multiSelect
+      inputId="employeeIds"
+      formControlName="employeeIds"
+      [options]="employeeOptions"
+      defaultLabel="Select employees"
+      [disabled]="isReadOnly"
+      [maxSelectedLabels]="3"
+      [filter]="true"
+    ></p-multiSelect>
+    <app-form-field-error [control]="form.get('employeeIds')"></app-form-field-error>
+  </div>
+
+  <p class="hint" *ngIf="scopeType === 'All'">
+    This rule will apply to all employees in every payroll run.
+  </p>
+</div>
