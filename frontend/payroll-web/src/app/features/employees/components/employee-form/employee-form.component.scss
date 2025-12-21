@@ -1,47 +1,68 @@
 .employee-form {
-  background: #ffffff;
-  padding: 1.5rem;
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
-  display: grid;
-  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1rem;
+.form-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-label {
-  display: grid;
-  gap: 0.35rem;
+.section-card {
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  border-radius: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field label {
   font-weight: 600;
+  color: #1f2937;
 }
 
-input,
-select {
-  padding: 0.65rem 0.75rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 1rem;
+.field-hint {
+  color: #6b7280;
+  font-size: 0.85rem;
 }
 
-.checkbox {
-  align-items: center;
-  grid-template-columns: auto 1fr;
+.masked-value {
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #475569;
+  border: 1px dashed #cbd5f5;
+  font-size: 0.9rem;
 }
 
-.actions {
+.checkbox-field {
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.action-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
   display: flex;
   justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 0;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
 }
 
-button {
-  padding: 0.75rem 1.25rem;
-  border: none;
-  border-radius: 8px;
-  background: #2563eb;
-  color: #ffffff;
+:host ::ng-deep .section-card .p-card-body {
+  padding: 1.5rem;
+}
+
+:host ::ng-deep .section-card .p-card-title {
+  font-size: 1.1rem;
   font-weight: 700;
+  color: #0f172a;
 }

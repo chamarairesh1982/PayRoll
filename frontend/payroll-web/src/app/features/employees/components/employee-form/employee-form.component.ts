@@ -17,6 +17,7 @@ export class EmployeeFormComponent implements OnInit, OnChanges {
   @Input() initialValue: Partial<Employee> | null | undefined;
   @Input() mode: 'create' | 'edit' = 'create';
   @Output() submitted = new EventEmitter<Partial<Employee>>();
+  @Output() cancelled = new EventEmitter<void>();
 
   form: FormGroup;
 
@@ -160,6 +161,15 @@ export class EmployeeFormComponent implements OnInit, OnChanges {
       costCenterId: value.costCenterId || null,
     };
     this.submitted.emit(payload);
+  }
+
+  cancel(): void {
+    this.cancelled.emit();
+  }
+
+  isInvalid(controlName: string): boolean {
+    const control = this.form.get(controlName);
+    return !!control && control.invalid && (control.dirty || control.touched);
   }
 
   private loadCompanies(): void {
