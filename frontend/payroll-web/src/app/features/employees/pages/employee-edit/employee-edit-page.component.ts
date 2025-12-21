@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { MessageService } from 'primeng/api';
 import { AuthService } from '../../../../core/services/auth.service';
 import { EmployeesApiService } from '../../services/employees-api.service';
 import { Employee } from '../../models/employee.model';
@@ -17,6 +18,7 @@ export class EmployeeEditPageComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private authService: AuthService,
+    private messageService: MessageService,
   ) {}
 
   ngOnInit(): void {
@@ -43,8 +45,31 @@ export class EmployeeEditPageComponent implements OnInit {
       return;
     }
     this.employeesApi.updateEmployee(id, payload).subscribe({
-      next: () => this.router.navigate(['/employees', id]),
-      error: err => console.error('Failed to update employee', err),
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Employee updated',
+          detail: 'Changes have been saved successfully.',
+        });
+        this.router.navigate(['/employees', id]);
+      },
+      error: err => {
+        console.error('Failed to update employee', err);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Update failed',
+          detail: 'Unable to save changes. Please try again.',
+        });
+      },
     });
+  }
+
+  handleCancel(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.router.navigate(['/employees', id]);
+      return;
+    }
+    this.router.navigate(['/employees']);
   }
 }

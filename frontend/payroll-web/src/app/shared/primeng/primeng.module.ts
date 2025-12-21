@@ -7,6 +7,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { DropdownModule } from 'primeng/dropdown';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { CalendarModule } from 'primeng/calendar';
+import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { ToastModule } from 'primeng/toast';
@@ -16,6 +17,7 @@ import { MenuModule } from 'primeng/menu';
 import { RippleModule } from 'primeng/ripple';
 import { CheckboxModule } from 'primeng/checkbox';
 import { SkeletonModule } from 'primeng/skeleton';
+import { InputNumberModule } from 'primeng/inputnumber';
 
 const PRIMENG_MODULES = [
   TableModule,
@@ -25,6 +27,7 @@ const PRIMENG_MODULES = [
   DropdownModule,
   MultiSelectModule,
   CalendarModule,
+  CardModule,
   TagModule,
   TooltipModule,
   ToastModule,
@@ -34,6 +37,7 @@ const PRIMENG_MODULES = [
   RippleModule,
   CheckboxModule,
   SkeletonModule,
+  InputNumberModule,
 ];
 
 @NgModule({
