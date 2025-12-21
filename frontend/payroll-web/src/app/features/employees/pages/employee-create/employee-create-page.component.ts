@@ -37,7 +37,7 @@ export class EmployeeCreatePageComponent {
     });
   }
 
-  handleCancel(): void {
+  public handleCancel(): void {
     this.router.navigate(['/employees']);
   }
 }
