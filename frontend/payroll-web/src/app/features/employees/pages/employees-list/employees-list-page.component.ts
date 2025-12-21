@@ -26,7 +26,7 @@ export class EmployeesListPageComponent implements OnInit, OnDestroy {
   totalCount = 0;
   page = 1;
   pageSize = 25;
-  searchTerm = '';
+  public searchTerm = '';
   companyFilter = '';
   branchFilter = '';
   costCenterFilter = '';
@@ -178,7 +178,7 @@ export class EmployeesListPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  onPageChange(event: PaginatorState): void {
+  public onPageChange(event: PaginatorState): void {
     const nextPage = (event.page ?? 0) + 1;
     const nextRows = event.rows ?? this.pageSize;
     const shouldReload = nextPage !== this.page || nextRows !== this.pageSize;
@@ -194,7 +194,7 @@ export class EmployeesListPageComponent implements OnInit, OnDestroy {
     this.loadEmployees();
   }
 
-  onGlobalSearch(value: string): void {
+  public onGlobalSearch(value: string): void {
     this.searchSubject.next(value);
   }
 
