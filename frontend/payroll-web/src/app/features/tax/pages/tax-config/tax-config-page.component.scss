@@ -1,0 +1,59 @@
+.tax-config {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.tax-config__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.tax-config__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.tax-config__section {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1.5rem;
+}
+
+.tax-config__section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.tax-config__slab,
+.tax-config__relief {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.tax-config__slab-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-top: 1.5rem;
+}
+
+.tax-config__error {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #9f1239;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+:host ::ng-deep .p-chip {
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+}

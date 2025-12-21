@@ -35,6 +35,10 @@ const routes: Routes = [
         loadChildren: () => import('./features/payroll/payroll.module').then(m => m.PayrollModule),
       },
       {
+        path: 'tax',
+        loadChildren: () => import('./features/tax/tax.module').then(m => m.TaxModule),
+      },
+      {
         path: 'config',
         loadChildren: () =>
           import('./features/payroll-config/payroll-config.module').then(m => m.PayrollConfigModule),

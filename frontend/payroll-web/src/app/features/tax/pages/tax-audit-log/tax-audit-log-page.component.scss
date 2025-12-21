@@ -1,0 +1,11 @@
+.tax-audit {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.tax-audit__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

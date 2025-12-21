@@ -1,0 +1,17 @@
+.tax-shell {
+  display: block;
+
+  :host ::ng-deep .p-card {
+    margin-bottom: 1.5rem;
+  }
+}
+
+.tax-shell__header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+:host ::ng-deep .p-tabmenu {
+  border: none;
+}
