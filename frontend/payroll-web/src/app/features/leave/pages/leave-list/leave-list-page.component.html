@@ -1,77 +1,75 @@
 <div class="page-header">
-  <h1>Leave Requests</h1>
-  <button type="button" (click)="goToCreate()">Create Leave Request</button>
+  <div>
+    <h1>Leave Requests</h1>
+    <p class="subtitle">Review and manage leave requests across teams.</p>
+  </div>
+  <button pButton type="button" label="Create Leave Request" icon="pi pi-plus" class="p-button-raised" (click)="goToCreate()"></button>
 </div>
 
-<div class="filters">
-  <label>
-    Employee
-    <input type="text" [(ngModel)]="selectedEmployeeId" placeholder="Employee ID or Code" />
-  </label>
+<div class="filters p-fluid">
+  <div class="field">
+    <label for="employeeFilter">Employee</label>
+    <input
+      pInputText
+      id="employeeFilter"
+      type="text"
+      [(ngModel)]="selectedEmployeeId"
+      placeholder="Employee ID or Code"
+    />
+  </div>
 
-  <label>
-    Status
-    <select [(ngModel)]="selectedStatus">
-      <option [ngValue]="''">All</option>
-      <option [ngValue]="'Pending'">Pending</option>
-      <option [ngValue]="'Approved'">Approved</option>
-      <option [ngValue]="'Rejected'">Rejected</option>
-      <option [ngValue]="'Cancelled'">Cancelled</option>
-    </select>
-  </label>
+  <div class="field">
+    <label for="statusFilter">Status</label>
+    <p-dropdown
+      id="statusFilter"
+      [options]="statusOptions"
+      [(ngModel)]="selectedStatus"
+      placeholder="All"
+      [showClear]="true"
+    ></p-dropdown>
+  </div>
 
   <div class="filter-actions">
-    <button type="button" (click)="applyFilters()">Apply</button>
-    <button type="button" class="secondary" (click)="resetFilters()">Reset</button>
+    <button pButton type="button" label="Apply" icon="pi pi-filter" (click)="applyFilters()"></button>
+    <button
+      pButton
+      type="button"
+      label="Reset"
+      icon="pi pi-refresh"
+      class="p-button-outlined"
+      (click)="resetFilters()"
+    ></button>
   </div>
 </div>
 
-<ng-template #loading>
-  <div class="loading">Loading leave requests...</div>
+<ng-template #actions let-request>
+  <div class="actions">
+    <button pButton type="button" label="View" class="p-button-text" (click)="viewRequest(request)"></button>
+    <button pButton type="button" label="Edit" class="p-button-text" (click)="editRequest(request)"></button>
+    <button
+      pButton
+      type="button"
+      label="Delete"
+      class="p-button-text p-button-danger"
+      (click)="confirmDelete(request)"
+    ></button>
+  </div>
 </ng-template>
 
-<div class="table-wrapper" *ngIf="!isLoading; else loading">
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Requested At</th>
-        <th>Employee</th>
-        <th>Leave Type</th>
-        <th>Period</th>
-        <th>Status</th>
-        <th class="actions">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let request of requests">
-        <td>{{ request.requestedAt | date: 'medium' }}</td>
-        <td>
-          <div class="employee-cell">
-            <span class="code">{{ request.employeeCode || request.employeeId }}</span>
-            <span class="name" *ngIf="request.employeeName">{{ request.employeeName }}</span>
-          </div>
-        </td>
-        <td>{{ request.leaveType }}</td>
-        <td>{{ request.startDate | date: 'yyyy-MM-dd' }} – {{ request.endDate | date: 'yyyy-MM-dd' }}</td>
-        <td>{{ request.status }}</td>
-        <td class="actions">
-          <button type="button" (click)="viewRequest(request)">View</button>
-          <button type="button" (click)="editRequest(request)">Edit</button>
-          <button type="button" class="danger" (click)="confirmDelete(request)">Delete</button>
-        </td>
-      </tr>
-      <tr *ngIf="requests.length === 0">
-        <td colspan="6" class="empty">No leave requests found.</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-<div class="pagination">
-  <button type="button" (click)="previousPage()" [disabled]="page === 1">Previous</button>
-  <span>Page {{ page }} of {{ totalPages || 1 }}</span>
-  <button type="button" (click)="nextPage()" [disabled]="page * pageSize >= totalCount">Next</button>
-</div>
+<app-data-table
+  [columns]="columns"
+  [data]="requests"
+  [actionsTemplate]="actions"
+  [loading]="isLoading"
+  [totalRecords]="totalCount"
+  [rows]="pageSize"
+  [first]="tableFirst"
+  [paginator]="true"
+  [lazy]="true"
+  [showColumnFilters]="false"
+  [emptyMessage]="'No leave requests found.'"
+  (lazyLoad)="handleLazyLoad($event)"
+></app-data-table>
 
 <div class="dialog-wrapper" *ngIf="showConfirm">
   <app-confirm-dialog

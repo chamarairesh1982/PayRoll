@@ -1,8 +1,15 @@
+import { formatDate } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { LazyLoadEvent } from 'primeng/api';
 import { PaginatedResult } from '../../../employees/models/employee.model';
 import { LeaveRequestsApiService } from '../../services/leave-requests-api.service';
 import { LeaveRequest, LeaveStatus } from '../../models/leave-request.model';
+
+interface LeaveRequestRow extends LeaveRequest {
+  employeeDisplay: string;
+  periodDisplay: string;
+}
 
 @Component({
   selector: 'app-leave-list-page',
@@ -10,7 +17,15 @@ import { LeaveRequest, LeaveStatus } from '../../models/leave-request.model';
   styleUrls: ['./leave-list-page.component.scss'],
 })
 export class LeaveListPageComponent implements OnInit {
-  requests: LeaveRequest[] = [];
+  requests: LeaveRequestRow[] = [];
+  columns = [
+    { field: 'requestedAt', header: 'Requested At', type: 'datetime' },
+    { field: 'employeeDisplay', header: 'Employee' },
+    { field: 'leaveType', header: 'Leave Type' },
+    { field: 'periodDisplay', header: 'Period' },
+    { field: 'status', header: 'Status' },
+  ];
+  statusOptions = ['Pending', 'Approved', 'Rejected', 'Cancelled'];
   page = 1;
   pageSize = 25;
   totalCount = 0;
@@ -41,7 +56,11 @@ export class LeaveListPageComponent implements OnInit {
       })
       .subscribe({
         next: (result: PaginatedResult<LeaveRequest>) => {
-          this.requests = result.items;
+          this.requests = result.items.map(item => ({
+            ...item,
+            employeeDisplay: item.employeeName || item.employeeCode || item.employeeId,
+            periodDisplay: `${this.formatDisplayDate(item.startDate)} – ${this.formatDisplayDate(item.endDate)}`,
+          }));
           this.totalCount = result.totalCount;
           this.page = result.page;
           this.pageSize = result.pageSize;
@@ -106,21 +125,29 @@ export class LeaveListPageComponent implements OnInit {
     });
   }
 
-  nextPage(): void {
-    if (this.page * this.pageSize < this.totalCount) {
-      this.page++;
-      this.loadRequests();
+  handleLazyLoad(event: LazyLoadEvent): void {
+    const nextRows = event.rows ?? this.pageSize;
+    const nextFirst = event.first ?? 0;
+    const nextPage = Math.floor(nextFirst / nextRows) + 1;
+
+    if (nextPage === this.page && nextRows === this.pageSize) {
+      return;
     }
+
+    this.page = nextPage;
+    this.pageSize = nextRows;
+    this.loadRequests();
   }
 
-  previousPage(): void {
-    if (this.page > 1) {
-      this.page--;
-      this.loadRequests();
-    }
+  get tableFirst(): number {
+    return (this.page - 1) * this.pageSize;
   }
 
-  get totalPages(): number {
-    return this.pageSize ? Math.ceil(this.totalCount / this.pageSize) : 1;
+  private formatDisplayDate(value?: string): string {
+    if (!value) {
+      return '--';
+    }
+
+    return formatDate(value, 'yyyy-MM-dd', 'en-US');
   }
 }

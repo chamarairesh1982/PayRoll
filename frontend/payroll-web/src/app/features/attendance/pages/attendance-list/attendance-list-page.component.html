@@ -1,6 +1,16 @@
 <div class="page-header">
-  <h1>Attendance</h1>
-  <button type="button" (click)="toggleCreateForm()">{{ showCreateForm ? 'Close Form' : 'Add Attendance' }}</button>
+  <div>
+    <h1>Attendance</h1>
+    <p class="subtitle">Track hours worked and attendance periods.</p>
+  </div>
+  <button
+    pButton
+    type="button"
+    [label]="showCreateForm ? 'Close Form' : 'Add Attendance'"
+    icon="pi pi-plus"
+    class="p-button-raised"
+    (click)="toggleCreateForm()"
+  ></button>
 </div>
 
 <div class="create-section" *ngIf="showCreateForm">
@@ -10,36 +20,16 @@
 
 <div class="error" *ngIf="errorMessage">{{ errorMessage }}</div>
 
-<ng-template #loading>
-  <div class="loading">Loading attendance records...</div>
-</ng-template>
-
-<div class="table-wrapper" *ngIf="!isLoading; else loading">
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Period Start</th>
-        <th>Period End</th>
-        <th>Employee</th>
-        <th>Hours Worked</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let record of records">
-        <td>{{ record.periodStart | date: 'yyyy-MM-dd' }}</td>
-        <td>{{ record.periodEnd | date: 'yyyy-MM-dd' }}</td>
-        <td>{{ record.employeeName || record.employeeId }}</td>
-        <td>{{ record.hoursWorked }}</td>
-      </tr>
-      <tr *ngIf="records.length === 0">
-        <td colspan="4" class="empty">No attendance records found.</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-<div class="pagination">
-  <button type="button" (click)="previousPage()" [disabled]="page === 1">Previous</button>
-  <span>Page {{ page }} of {{ totalPages || 1 }}</span>
-  <button type="button" (click)="nextPage()" [disabled]="page * pageSize >= totalCount">Next</button>
-</div>
+<app-data-table
+  [columns]="columns"
+  [data]="records"
+  [loading]="isLoading"
+  [totalRecords]="totalCount"
+  [rows]="pageSize"
+  [first]="tableFirst"
+  [paginator]="true"
+  [lazy]="true"
+  [showColumnFilters]="false"
+  [emptyMessage]="'No attendance records found.'"
+  (lazyLoad)="handleLazyLoad($event)"
+></app-data-table>
