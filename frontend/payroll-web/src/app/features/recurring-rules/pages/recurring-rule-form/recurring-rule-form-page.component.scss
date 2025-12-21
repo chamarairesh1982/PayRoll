@@ -1,0 +1,49 @@
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  .subtitle {
+    margin: 0.25rem 0 0;
+    color: #6b7280;
+  }
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.form-errors {
+  color: #b91c1c;
+  margin-top: 0.5rem;
+  font-weight: 500;
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.preview-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+
+  &.highlight {
+    padding-top: 0.5rem;
+    border-top: 1px solid #e5e7eb;
+  }
+}
+
+.note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}

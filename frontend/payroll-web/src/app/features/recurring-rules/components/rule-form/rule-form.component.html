@@ -1,0 +1,144 @@
+<div [formGroup]="form" class="rule-form">
+  <p-card header="Basic Info">
+    <div class="grid">
+      <div class="col-12 md:col-6 lg:col-4 field">
+        <label for="name">Rule name</label>
+        <input
+          pInputText
+          id="name"
+          formControlName="name"
+          [readonly]="isReadOnly"
+          [ngClass]="{ 'ng-invalid ng-dirty': isInvalid('name') }"
+          placeholder="e.g. Transport allowance"
+        />
+        <app-form-field-error [control]="form.get('name')"></app-form-field-error>
+      </div>
+      <div class="col-12 md:col-6 lg:col-4 field">
+        <label for="type">Type</label>
+        <p-dropdown
+          inputId="type"
+          formControlName="type"
+          [options]="typeOptions"
+          optionLabel="label"
+          optionValue="value"
+          [disabled]="isReadOnly"
+          placeholder="Select type"
+          [styleClass]="isInvalid('type') ? 'ng-invalid ng-dirty' : ''"
+        ></p-dropdown>
+        <app-form-field-error [control]="form.get('type')"></app-form-field-error>
+      </div>
+      <div class="col-12 md:col-6 lg:col-4 field">
+        <label for="status">Status</label>
+        <p-dropdown
+          inputId="status"
+          formControlName="status"
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          [disabled]="isReadOnly"
+          placeholder="Select status"
+        ></p-dropdown>
+      </div>
+      <div class="col-12 md:col-6 lg:col-4 field">
+        <label for="priority">Priority</label>
+        <p-inputNumber
+          inputId="priority"
+          formControlName="priority"
+          [readonly]="isReadOnly"
+          [min]="1"
+          [useGrouping]="false"
+          [inputStyleClass]="isInvalid('priority') ? 'ng-invalid ng-dirty' : ''"
+          placeholder="1"
+        ></p-inputNumber>
+        <app-form-field-error [control]="form.get('priority')"></app-form-field-error>
+      </div>
+      <div class="col-12 md:col-6 lg:col-4 field">
+        <label for="frequency">Frequency</label>
+        <p-dropdown
+          inputId="frequency"
+          formControlName="frequency"
+          [options]="frequencyOptions"
+          optionLabel="label"
+          optionValue="value"
+          [disabled]="isReadOnly"
+          placeholder="Monthly"
+        ></p-dropdown>
+      </div>
+    </div>
+  </p-card>
+
+  <p-card header="Amount">
+    <div class="grid">
+      <div class="col-12 md:col-6 lg:col-4 field">
+        <label for="amountType">Amount type</label>
+        <p-dropdown
+          inputId="amountType"
+          formControlName="amountType"
+          [options]="amountTypeOptions"
+          optionLabel="label"
+          optionValue="value"
+          [disabled]="isReadOnly"
+        ></p-dropdown>
+      </div>
+      <div class="col-12 md:col-6 lg:col-4 field">
+        <label for="amountValue">Amount</label>
+        <p-inputNumber
+          inputId="amountValue"
+          formControlName="amountValue"
+          [readonly]="isReadOnly"
+          [min]="0"
+          mode="decimal"
+          [minFractionDigits]="0"
+          [maxFractionDigits]="2"
+          [inputStyleClass]="isInvalid('amountValue') ? 'ng-invalid ng-dirty' : ''"
+          placeholder="Enter amount"
+        ></p-inputNumber>
+        <app-form-field-error [control]="form.get('amountValue')"></app-form-field-error>
+      </div>
+    </div>
+  </p-card>
+
+  <p-card header="Applicability">
+    <app-scope-picker
+      [form]="form"
+      [companies]="companies"
+      [branches]="branches"
+      [costCenters]="costCenters"
+      [employees]="employees"
+      [isReadOnly]="isReadOnly"
+      (companyChange)="handleCompanyChange($event)"
+      (branchChange)="handleBranchChange($event)"
+    ></app-scope-picker>
+  </p-card>
+
+  <p-card header="Effective period">
+    <div class="grid">
+      <div class="col-12 md:col-6 lg:col-4 field">
+        <label for="startDate">Start date</label>
+        <p-calendar
+          inputId="startDate"
+          formControlName="startDate"
+          showIcon="true"
+          dateFormat="yy-mm-dd"
+          dataType="string"
+          placeholder="YYYY-MM-DD"
+          [disabled]="isReadOnly"
+          [inputStyleClass]="isInvalid('startDate') ? 'ng-invalid ng-dirty' : ''"
+        ></p-calendar>
+        <app-form-field-error [control]="form.get('startDate')"></app-form-field-error>
+      </div>
+      <div class="col-12 md:col-6 lg:col-4 field">
+        <label for="endDate">End date (optional)</label>
+        <p-calendar
+          inputId="endDate"
+          formControlName="endDate"
+          showIcon="true"
+          dateFormat="yy-mm-dd"
+          dataType="string"
+          placeholder="YYYY-MM-DD"
+          [disabled]="isReadOnly"
+        ></p-calendar>
+      </div>
+    </div>
+  </p-card>
+</div>
