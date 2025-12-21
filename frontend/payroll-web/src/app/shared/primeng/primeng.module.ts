@@ -18,6 +18,9 @@ import { RippleModule } from 'primeng/ripple';
 import { CheckboxModule } from 'primeng/checkbox';
 import { SkeletonModule } from 'primeng/skeleton';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { ChipModule } from 'primeng/chip';
+import { TimelineModule } from 'primeng/timeline';
 
 const PRIMENG_MODULES = [
   TableModule,
@@ -38,6 +41,9 @@ const PRIMENG_MODULES = [
   CheckboxModule,
   SkeletonModule,
   InputNumberModule,
+  InputTextareaModule,
+  ChipModule,
+  TimelineModule,
 ];
 
 @NgModule({

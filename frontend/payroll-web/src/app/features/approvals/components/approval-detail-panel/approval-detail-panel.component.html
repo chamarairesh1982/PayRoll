@@ -1,0 +1,92 @@
+<p-dialog
+  [(visible)]="visible"
+  [modal]="true"
+  [position]="right"
+  [draggable]="false"
+  [dismissableMask]="true"
+  [style]="{ width: '480px' }"
+  header="Approval Details"
+  (onHide)="closePanel()"
+>
+  <ng-container *ngIf="request">
+    <div class="panel-section">
+      <h3>Request Summary</h3>
+      <div class="summary-grid">
+        <div>
+          <span class="label">Type</span>
+          <span>{{ request.type }}</span>
+        </div>
+        <div>
+          <span class="label">Status</span>
+          <p-tag [value]="request.status"></p-tag>
+        </div>
+        <div>
+          <span class="label">Requested By</span>
+          <span>{{ request.requestedBy }}</span>
+        </div>
+        <div>
+          <span class="label">Requested Date</span>
+          <span>{{ request.requestedDate | date: 'medium' }}</span>
+        </div>
+        <div>
+          <span class="label">Employee</span>
+          <span>{{ request.employee }}</span>
+        </div>
+        <div *ngIf="hasAmount">
+          <span class="label">Amount</span>
+          <span>{{ request.amount | number: '1.0-0' }} {{ request.currency || 'LKR' }}</span>
+        </div>
+        <div>
+          <span class="label">Current Level</span>
+          <span>{{ request.currentLevel || '-' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h3>Actions</h3>
+      <div class="actions">
+        <button pButton type="button" label="Approve" icon="pi pi-check" (click)="triggerAction('Approve')"></button>
+        <button
+          pButton
+          type="button"
+          label="Reject"
+          class="p-button-danger"
+          icon="pi pi-times"
+          (click)="triggerAction('Reject')"
+        ></button>
+        <button
+          pButton
+          type="button"
+          label="Send Back"
+          class="p-button-warning"
+          icon="pi pi-replay"
+          (click)="triggerAction('Send Back')"
+        ></button>
+        <button
+          pButton
+          type="button"
+          label="Comment"
+          class="p-button-outlined"
+          icon="pi pi-comment"
+          (click)="triggerAction('Comment')"
+        ></button>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h3>Request Payload</h3>
+      <pre class="payload">{{ request.payload | json }}</pre>
+    </div>
+
+    <div class="panel-section">
+      <h3>Attachments</h3>
+      <p class="muted">Attachments will appear here once the API supports uploads.</p>
+    </div>
+
+    <div class="panel-section">
+      <h3>Approval History</h3>
+      <app-approval-history [history]="request.history"></app-approval-history>
+    </div>
+  </ng-container>
+</p-dialog>

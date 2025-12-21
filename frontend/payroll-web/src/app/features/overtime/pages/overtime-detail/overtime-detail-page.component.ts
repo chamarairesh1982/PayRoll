@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { MessageService } from 'primeng/api';
+import { ApprovalService } from '../../../approvals/services/approval.service';
 import { OTEntry } from '../../models/ot-entry.model';
 import { OvertimeApiService } from '../../services/overtime-api.service';
 
@@ -12,7 +14,13 @@ export class OvertimeDetailPageComponent implements OnInit {
   overtimeRecord?: OTEntry;
   isLoading = false;
 
-  constructor(private route: ActivatedRoute, private overtimeApi: OvertimeApiService, private router: Router) {}
+  constructor(
+    private route: ActivatedRoute,
+    private overtimeApi: OvertimeApiService,
+    private router: Router,
+    private approvalService: ApprovalService,
+    private messageService: MessageService
+  ) {}
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -49,6 +57,27 @@ export class OvertimeDetailPageComponent implements OnInit {
     this.overtimeApi.submitOvertimeRecord(this.overtimeRecord.id).subscribe({
       next: () => this.ngOnInit(),
       error: err => console.error('Failed to submit overtime record', err),
+    });
+  }
+
+  submitForApproval(): void {
+    if (!this.overtimeRecord) {
+      return;
+    }
+    this.approvalService.submitRequest({
+      type: 'Overtime',
+      employee: this.overtimeRecord.employeeName || this.overtimeRecord.employeeCode || this.overtimeRecord.employeeId,
+      payload: {
+        workDate: this.overtimeRecord.workDate,
+        minutes: this.overtimeRecord.rawMinutes,
+        type: this.overtimeRecord.type,
+        comment: this.overtimeRecord.comment,
+      },
+    });
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Submitted',
+      detail: 'Overtime entry sent for approval.',
     });
   }
 }

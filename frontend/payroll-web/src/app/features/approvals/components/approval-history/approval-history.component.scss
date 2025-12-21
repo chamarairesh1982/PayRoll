@@ -1,0 +1,47 @@
+.history {
+  margin-top: 1rem;
+}
+
+.history__card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.08);
+}
+
+.history__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.history__title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.history__level {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.history__meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.history__comment {
+  margin-top: 0.75rem;
+  color: #334155;
+}
+
+.empty {
+  color: #94a3b8;
+  font-style: italic;
+  margin: 0.5rem 0;
+}

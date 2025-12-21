@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LeaveRequest } from '../../models/leave-request.model';
+import { MessageService } from 'primeng/api';
+import { ApprovalService } from '../../../approvals/services/approval.service';
 import { LeaveRequestsApiService } from '../../services/leave-requests-api.service';
 
 @Component({
@@ -12,7 +14,13 @@ export class LeaveDetailPageComponent implements OnInit {
   leaveRequest?: LeaveRequest;
   isLoading = false;
 
-  constructor(private route: ActivatedRoute, private leaveRequestsApi: LeaveRequestsApiService, private router: Router) {}
+  constructor(
+    private route: ActivatedRoute,
+    private leaveRequestsApi: LeaveRequestsApiService,
+    private router: Router,
+    private approvalService: ApprovalService,
+    private messageService: MessageService
+  ) {}
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -39,5 +47,27 @@ export class LeaveDetailPageComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/leave']);
+  }
+
+  submitForApproval(): void {
+    if (!this.leaveRequest) {
+      return;
+    }
+    this.approvalService.submitRequest({
+      type: 'Leave Request',
+      employee: this.leaveRequest.employeeName || this.leaveRequest.employeeCode || this.leaveRequest.employeeId,
+      payload: {
+        leaveType: this.leaveRequest.leaveType,
+        startDate: this.leaveRequest.startDate,
+        endDate: this.leaveRequest.endDate,
+        totalDays: this.leaveRequest.totalDays,
+        reason: this.leaveRequest.reason,
+      },
+    });
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Submitted',
+      detail: 'Leave request sent for approval.',
+    });
   }
 }
