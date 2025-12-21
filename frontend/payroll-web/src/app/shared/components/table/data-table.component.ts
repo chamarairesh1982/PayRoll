@@ -24,8 +24,8 @@ export class DataTableComponent<T extends Record<string, unknown>> {
   @Input() data: T[] = [];
   @Input() actionsTemplate?: TemplateRef<T>;
   @Input() loading = false;
-  @Input() totalRecords = 0;
-  @Input() rows = 25;
+  @Input('totalRecords') totalRecords = 0;
+  @Input('rows') rows = 25;
   @Input() first = 0;
   @Input() rowsPerPageOptions: number[] = [10, 25, 50];
   @Input() paginator = false;
