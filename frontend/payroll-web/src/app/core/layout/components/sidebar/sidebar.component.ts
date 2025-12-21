@@ -19,6 +19,7 @@ export class SidebarComponent {
     { label: 'Approvals Inbox', path: '/approvals/inbox' },
     { label: 'Reports', path: '/reports' },
     { label: 'Tax Reports', path: '/reports/tax' },
+    { label: 'Statutory Reports', path: '/statutory-reports' },
   ];
 
   configLinks = [

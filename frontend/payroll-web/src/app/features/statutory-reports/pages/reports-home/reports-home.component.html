@@ -1,0 +1,26 @@
+<section class="reports-home">
+  <div class="page-header">
+    <div>
+      <h1>Statutory Reports</h1>
+      <p>Export-ready monthly reports tailored for Sri Lanka statutory reporting and audits.</p>
+    </div>
+  </div>
+
+  <div class="cards-grid">
+    <p-card *ngFor="let report of reports" class="report-card">
+      <ng-template pTemplate="header">
+        <div class="card-header">
+          <div>
+            <h2>{{ report.title }}</h2>
+            <span class="cadence">{{ report.cadence }}</span>
+          </div>
+          <i class="pi pi-file"></i>
+        </div>
+      </ng-template>
+      <p>{{ report.description }}</p>
+      <div class="card-actions">
+        <button pButton type="button" label="Generate" icon="pi pi-arrow-right" [routerLink]="['/statutory-reports/view', report.key]"></button>
+      </div>
+    </p-card>
+  </div>
+</section>
