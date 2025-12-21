@@ -1,0 +1,173 @@
+<p-toast></p-toast>
+<section class="tax-config">
+  <div class="tax-config__header">
+    <div>
+      <h2 class="m-0">Tax Schemes</h2>
+      <p class="text-600 mt-2 mb-0">Maintain PAYE slabs, reliefs, and effective dates.</p>
+    </div>
+    <button pButton type="button" label="New Scheme" icon="pi pi-plus" class="p-button-rounded" (click)="openCreate()"></button>
+  </div>
+
+  <p-card>
+    <p-table [value]="schemes" [paginator]="true" [rows]="5" dataKey="id">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Scheme</th>
+          <th>Effective Period</th>
+          <th>Slabs</th>
+          <th>Reliefs</th>
+          <th>Status</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-scheme>
+        <tr>
+          <td>
+            <div class="font-semibold">{{ scheme.name }}</div>
+          </td>
+          <td>
+            <div>{{ scheme.effectiveFrom | dateFormat }} → {{ scheme.effectiveTo ? (scheme.effectiveTo | dateFormat) : 'Open ended' }}</div>
+          </td>
+          <td>{{ scheme.slabs.length }} slabs</td>
+          <td>
+            <ng-container *ngIf="scheme.reliefs.length; else noRelief">
+              <p-chip *ngFor="let relief of scheme.reliefs" [label]="relief.description"></p-chip>
+            </ng-container>
+            <ng-template #noRelief>
+              <span class="text-500">None</span>
+            </ng-template>
+          </td>
+          <td>
+            <p-tag [value]="scheme.isActive ? 'Active' : 'Inactive'" [severity]="scheme.isActive ? 'success' : 'warning'"></p-tag>
+          </td>
+          <td class="text-right">
+            <button pButton type="button" class="p-button-text" icon="pi pi-pencil" (click)="openEdit(scheme)"></button>
+            <button pButton type="button" class="p-button-text" icon="pi pi-copy" (click)="openClone(scheme)"></button>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6">No tax schemes configured yet.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+
+  <p-dialog
+    [(visible)]="dialogVisible"
+    [modal]="true"
+    [style]="{ width: '65vw' }"
+    [breakpoints]="{ '960px': '95vw' }"
+    [header]="dialogMode === 'create' ? 'Create Tax Scheme' : dialogMode === 'clone' ? 'Clone Tax Scheme' : 'Edit Tax Scheme'"
+  >
+    <form [formGroup]="form" class="tax-config__form">
+      <div class="p-fluid grid">
+        <div class="col-12 md:col-6">
+          <label for="schemeName">Scheme name</label>
+          <input pInputText id="schemeName" formControlName="name" />
+          <app-form-field-error [control]="form.get('name')"></app-form-field-error>
+        </div>
+        <div class="col-12 md:col-3">
+          <label for="effectiveFrom">Effective from</label>
+          <p-calendar id="effectiveFrom" formControlName="effectiveFrom" dateFormat="yy-mm-dd"></p-calendar>
+          <app-form-field-error [control]="form.get('effectiveFrom')"></app-form-field-error>
+        </div>
+        <div class="col-12 md:col-3">
+          <label for="effectiveTo">Effective to</label>
+          <p-calendar id="effectiveTo" formControlName="effectiveTo" dateFormat="yy-mm-dd"></p-calendar>
+        </div>
+        <div class="col-12 md:col-3">
+          <label for="active">Active?</label>
+          <p-checkbox formControlName="isActive" binary="true"></p-checkbox>
+        </div>
+      </div>
+
+      <div class="tax-config__section">
+        <div class="tax-config__section-header">
+          <h3 class="m-0">Tax Slabs</h3>
+          <button pButton type="button" label="Add slab" icon="pi pi-plus" class="p-button-text" (click)="addSlab()"></button>
+        </div>
+        <div class="tax-config__error" *ngIf="form.get('slabs')?.errors?.['slabError']">
+          {{ form.get('slabs')?.errors?.['slabError'] }}
+        </div>
+        <div formArrayName="slabs" class="tax-config__slabs">
+          <div class="tax-config__slab" *ngFor="let slab of slabs.controls; let i = index" [formGroupName]="i">
+            <div class="grid p-fluid">
+              <div class="col-12 md:col-3">
+                <label>From</label>
+                <p-inputNumber formControlName="from" [min]="0" mode="decimal" [useGrouping]="false"></p-inputNumber>
+              </div>
+              <div class="col-12 md:col-3">
+                <label>To</label>
+                <p-inputNumber formControlName="to" [min]="0" mode="decimal" [useGrouping]="false"></p-inputNumber>
+              </div>
+              <div class="col-12 md:col-3">
+                <label>Rate (%)</label>
+                <p-inputNumber formControlName="rate" [min]="0" [max]="100" mode="decimal" [useGrouping]="false"></p-inputNumber>
+              </div>
+              <div class="col-12 md:col-2">
+                <label>Open ended</label>
+                <p-checkbox formControlName="openEnded" binary="true" (onChange)="toggleOpenEnded(i)"></p-checkbox>
+              </div>
+              <div class="col-12 md:col-1 tax-config__slab-actions">
+                <button
+                  pButton
+                  type="button"
+                  icon="pi pi-trash"
+                  class="p-button-rounded p-button-text"
+                  (click)="removeSlab(i)"
+                  [disabled]="slabs.length === 1"
+                ></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tax-config__section">
+        <div class="tax-config__section-header">
+          <h3 class="m-0">Reliefs &amp; Rebates</h3>
+          <button pButton type="button" label="Add relief" icon="pi pi-plus" class="p-button-text" (click)="addRelief()"></button>
+        </div>
+        <div formArrayName="reliefs" class="tax-config__reliefs">
+          <div class="tax-config__relief" *ngFor="let relief of reliefs.controls; let i = index" [formGroupName]="i">
+            <div class="grid p-fluid">
+              <div class="col-12 md:col-4">
+                <label>Description</label>
+                <input pInputText formControlName="description" />
+              </div>
+              <div class="col-12 md:col-2">
+                <label>Amount</label>
+                <p-inputNumber formControlName="amount" [min]="0" mode="decimal" [useGrouping]="false"></p-inputNumber>
+              </div>
+              <div class="col-12 md:col-3">
+                <label>Type</label>
+                <p-dropdown [options]="reliefTypes" formControlName="reliefType"></p-dropdown>
+              </div>
+              <div class="col-12 md:col-2">
+                <label>Frequency</label>
+                <p-dropdown [options]="reliefFrequencies" formControlName="frequency"></p-dropdown>
+              </div>
+              <div class="col-12 md:col-1 tax-config__slab-actions">
+                <button
+                  pButton
+                  type="button"
+                  icon="pi pi-trash"
+                  class="p-button-rounded p-button-text"
+                  (click)="removeRelief(i)"
+                ></button>
+              </div>
+            </div>
+          </div>
+          <p *ngIf="!reliefs.length" class="text-500 mt-0">No reliefs added for this scheme.</p>
+        </div>
+      </div>
+    </form>
+
+    <ng-template pTemplate="footer">
+      <button pButton type="button" label="Cancel" class="p-button-text" (click)="dialogVisible = false"></button>
+      <button pButton type="button" label="Save" (click)="saveScheme()"></button>
+    </ng-template>
+  </p-dialog>
+</section>

@@ -11,6 +11,7 @@ export class SidebarComponent {
     { label: 'Dashboard', path: '/' },
     { label: 'Employees', path: '/employees' },
     { label: 'Payroll', path: '/payroll' },
+    { label: 'Tax Workspace', path: '/tax/preview' },
     { label: 'Recurring Pay Items', path: '/payroll/recurring-rules' },
     { label: 'Attendance', path: '/attendance' },
     { label: 'Leave', path: '/leave' },

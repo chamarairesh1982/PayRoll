@@ -21,6 +21,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { ChipModule } from 'primeng/chip';
 import { TimelineModule } from 'primeng/timeline';
+import { TabMenuModule } from 'primeng/tabmenu';
 
 const PRIMENG_MODULES = [
   TableModule,
@@ -44,6 +45,7 @@ const PRIMENG_MODULES = [
   InputTextareaModule,
   ChipModule,
   TimelineModule,
+  TabMenuModule,
 ];
 
 @NgModule({

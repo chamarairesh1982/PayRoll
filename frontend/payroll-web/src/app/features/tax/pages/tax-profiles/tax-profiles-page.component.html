@@ -1,0 +1,96 @@
+<p-toast></p-toast>
+<section class="tax-profiles">
+  <div class="tax-profiles__header">
+    <div>
+      <h2 class="m-0">Employee Tax Profiles</h2>
+      <p class="text-600 mt-2 mb-0">Track residency, category, and exemption details per employee.</p>
+    </div>
+  </div>
+
+  <p-card>
+    <p-table [value]="rows" [paginator]="true" [rows]="8" dataKey="employee.id">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Employee</th>
+          <th>Tax Category</th>
+          <th>Residency</th>
+          <th>Exemptions</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <td>
+            <div class="font-semibold">{{ row.employee.firstName }} {{ row.employee.lastName }}</div>
+            <div class="text-500">{{ row.employee.employeeCode }}</div>
+          </td>
+          <td>{{ row.profile?.taxCategory || 'Not set' }}</td>
+          <td>
+            <ng-container *ngIf="row.profile; else noProfile">
+              <p-tag
+                [value]="row.profile.isResident ? 'Resident' : 'Non-resident'"
+                [severity]="row.profile.isResident ? 'success' : 'warning'"
+              ></p-tag>
+            </ng-container>
+            <ng-template #noProfile>
+              <span class="text-500">Not set</span>
+            </ng-template>
+          </td>
+          <td>
+            <ng-container *ngIf="row.profile; else noExemptions">
+              <ng-container *ngFor="let option of exemptionOptions">
+                <p-chip *ngIf="row.profile.exemptions[option.key]" [label]="option.label"></p-chip>
+              </ng-container>
+            </ng-container>
+            <ng-template #noExemptions>
+              <span class="text-500">None</span>
+            </ng-template>
+          </td>
+          <td class="text-right">
+            <button pButton type="button" class="p-button-text" icon="pi pi-pencil" (click)="openEditor(row)"></button>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="5">No employees found.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+
+  <p-dialog
+    [(visible)]="dialogVisible"
+    [modal]="true"
+    [style]="{ width: '40vw' }"
+    [breakpoints]="{ '960px': '95vw' }"
+    header="Edit Tax Profile"
+  >
+    <form [formGroup]="form" class="p-fluid">
+      <label>Tax category</label>
+      <p-dropdown [options]="taxCategories" formControlName="taxCategory"></p-dropdown>
+      <app-form-field-error [control]="form.get('taxCategory')"></app-form-field-error>
+
+      <div class="mt-3">
+        <label>Residency</label>
+        <div class="tax-profiles__toggle">
+          <p-checkbox formControlName="isResident" binary="true"></p-checkbox>
+          <span>{{ form.value.isResident ? 'Resident' : 'Non-resident' }}</span>
+        </div>
+      </div>
+
+      <div class="tax-profiles__exemptions">
+        <h4 class="mt-4">Exemptions</h4>
+        <div class="tax-profiles__exemption" *ngFor="let option of exemptionOptions">
+          <p-checkbox [formControlName]="option.key" binary="true"></p-checkbox>
+          <span>{{ option.label }}</span>
+        </div>
+      </div>
+    </form>
+
+    <ng-template pTemplate="footer">
+      <button pButton type="button" label="Cancel" class="p-button-text" (click)="dialogVisible = false"></button>
+      <button pButton type="button" label="Save" (click)="saveProfile()"></button>
+    </ng-template>
+  </p-dialog>
+</section>

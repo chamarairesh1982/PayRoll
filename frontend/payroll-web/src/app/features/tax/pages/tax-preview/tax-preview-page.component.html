@@ -1,0 +1,99 @@
+<section class="tax-preview">
+  <div class="tax-preview__header">
+    <div>
+      <h2 class="m-0">Monthly Tax Preview</h2>
+      <p class="text-600 mt-2 mb-0">Run PAYE previews before payroll engine integration.</p>
+    </div>
+    <button pButton type="button" label="Refresh Preview" icon="pi pi-refresh" class="p-button-text" (click)="runPreview()"></button>
+  </div>
+
+  <p-card>
+    <form [formGroup]="form" class="grid p-fluid">
+      <div class="col-12 md:col-4">
+        <label for="previewMonth">Payroll month</label>
+        <p-calendar
+          id="previewMonth"
+          formControlName="month"
+          [showIcon]="true"
+          view="month"
+          dateFormat="yy-mm"
+          (onSelect)="updateActiveScheme(); runPreview()"
+        ></p-calendar>
+      </div>
+      <div class="col-12 md:col-4">
+        <label for="scopeType">Scope</label>
+        <p-dropdown
+          id="scopeType"
+          [options]="[
+            { label: 'All employees', value: 'All' },
+            { label: 'Single employee', value: 'Employee' }
+          ]"
+          formControlName="scopeType"
+          (onChange)="runPreview()"
+        ></p-dropdown>
+      </div>
+      <div class="col-12 md:col-4">
+        <label for="employeeId">Employee</label>
+        <p-dropdown
+          id="employeeId"
+          [options]="employeeOptions"
+          [filter]="true"
+          [showClear]="true"
+          placeholder="Select an employee"
+          formControlName="employeeId"
+          (onChange)="runPreview()"
+          [disabled]="form.value.scopeType !== 'Employee'"
+        ></p-dropdown>
+      </div>
+    </form>
+
+    <div class="tax-preview__scheme" *ngIf="activeScheme; else noScheme">
+      <p-tag severity="info" [value]="activeScheme.name"></p-tag>
+      <span class="text-500">
+        Effective: {{ activeScheme.effectiveFrom | dateFormat }} → {{ activeScheme.effectiveTo ? (activeScheme.effectiveTo | dateFormat) : 'Open ended' }}
+      </span>
+    </div>
+    <ng-template #noScheme>
+      <div class="tax-preview__scheme warning">No active tax scheme for the selected month.</div>
+    </ng-template>
+  </p-card>
+
+  <p-card>
+    <p-table [value]="previewRows" [paginator]="true" [rows]="8" dataKey="employeeId">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Employee</th>
+          <th>Tax Category</th>
+          <th class="text-right">Gross Taxable</th>
+          <th class="text-right">Reliefs</th>
+          <th class="text-right">Taxable Income</th>
+          <th class="text-right">Calculated PAYE</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <td>{{ row.employeeName }}</td>
+          <td>{{ row.taxCategory }}</td>
+          <td class="text-right">{{ row.grossTaxable | currency: 'LKR':'symbol':'1.0-0' }}</td>
+          <td class="text-right">{{ row.reliefTotal | currency: 'LKR':'symbol':'1.0-0' }}</td>
+          <td class="text-right">{{ row.taxableIncome | currency: 'LKR':'symbol':'1.0-0' }}</td>
+          <td class="text-right font-semibold">{{ row.calculatedTax | currency: 'LKR':'symbol':'1.0-0' }}</td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6">No preview data available.</td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="footer">
+        <tr>
+          <td colspan="2" class="font-semibold">Totals</td>
+          <td class="text-right font-semibold">{{ totals.grossTaxable | currency: 'LKR':'symbol':'1.0-0' }}</td>
+          <td class="text-right font-semibold">{{ totals.reliefTotal | currency: 'LKR':'symbol':'1.0-0' }}</td>
+          <td class="text-right font-semibold">{{ totals.taxableIncome | currency: 'LKR':'symbol':'1.0-0' }}</td>
+          <td class="text-right font-semibold">{{ totals.calculatedTax | currency: 'LKR':'symbol':'1.0-0' }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</section>
