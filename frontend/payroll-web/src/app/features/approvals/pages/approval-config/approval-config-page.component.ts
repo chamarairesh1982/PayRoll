@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormBuilder, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, Validators } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 import { ApprovalRouteConfig, ApprovalRequestType } from '../../models/approval.models';
 import { ApprovalService } from '../../services/approval.service';
@@ -25,11 +25,11 @@ export class ApprovalConfigPageComponent implements OnInit, OnDestroy {
   levelOptions = LEVEL_OPTIONS;
 
   configForm = this.fb.group({
-    id: [''],
-    type: ['', Validators.required],
-    levels: [[], Validators.required],
-    approvers: ['', Validators.required],
-    threshold: [null],
+    id: new FormControl('', { nonNullable: true }),
+    type: new FormControl('', { nonNullable: true, validators: Validators.required }),
+    levels: new FormControl<string[]>([], { nonNullable: true, validators: Validators.required }),
+    approvers: new FormControl('', { nonNullable: true, validators: Validators.required }),
+    threshold: new FormControl<number | null>(null),
   });
 
   private destroy$ = new Subject<void>();
