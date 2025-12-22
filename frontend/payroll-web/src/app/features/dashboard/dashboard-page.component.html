@@ -1,0 +1,24 @@
+<div class="page">
+  <div class="page__header">
+    <div>
+      <h1>Payroll Dashboard</h1>
+      <p>Track pay runs, statutory compliance, and approvals across tenants.</p>
+    </div>
+    <p-tag [value]="payRunStatus" severity="info"></p-tag>
+  </div>
+
+  <div class="page__grid">
+    <p-card header="Current Pay Period">
+      <p>April 2024 · Monthly</p>
+      <p>Employees: 248 · Contractors: 12</p>
+    </p-card>
+    <p-card header="Statutory Reminders">
+      <p>EPF/ETF schedules due in 7 days.</p>
+      <p>PAYE/APIT summary placeholder ready.</p>
+    </p-card>
+    <p-card header="Approvals">
+      <p>3 pay runs awaiting approval.</p>
+      <p>Audit log clean for the last 24 hours.</p>
+    </p-card>
+  </div>
+</div>
