@@ -10,12 +10,13 @@ const routes: Routes = [
   {
     path: '',
     component: TaxShellComponent,
+    data: { breadcrumb: 'Tax' },
     children: [
       { path: '', redirectTo: 'preview', pathMatch: 'full' },
-      { path: 'preview', component: TaxPreviewPageComponent },
-      { path: 'config', component: TaxConfigPageComponent },
-      { path: 'profiles', component: TaxProfilesPageComponent },
-      { path: 'audit', component: TaxAuditLogPageComponent },
+      { path: 'preview', component: TaxPreviewPageComponent, data: { breadcrumb: 'Tax Preview' } },
+      { path: 'config', component: TaxConfigPageComponent, data: { breadcrumb: 'Tax Configuration' } },
+      { path: 'profiles', component: TaxProfilesPageComponent, data: { breadcrumb: 'Tax Profiles' } },
+      { path: 'audit', component: TaxAuditLogPageComponent, data: { breadcrumb: 'Tax Audit Log' } },
     ],
   },
 ];

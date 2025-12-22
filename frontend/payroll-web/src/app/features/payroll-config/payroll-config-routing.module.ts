@@ -24,86 +24,107 @@ const routes: Routes = [
   {
     path: 'allowances',
     component: AllowanceTypesListPageComponent,
+    data: { breadcrumb: 'Allowances' },
   },
   {
     path: 'allowances/new',
     component: AllowanceTypeCreatePageComponent,
+    data: { breadcrumb: 'New Allowance' },
   },
   {
     path: 'allowances/:id/edit',
     component: AllowanceTypeEditPageComponent,
+    data: { breadcrumb: 'Edit Allowance' },
   },
   {
     path: 'banks',
     component: BanksListPageComponent,
+    data: { breadcrumb: 'Banks' },
   },
   {
     path: 'banks/new',
     component: BankCreatePageComponent,
+    data: { breadcrumb: 'New Bank' },
   },
   {
     path: 'banks/:id',
     component: BankDetailPageComponent,
+    data: { breadcrumb: 'Bank Details' },
   },
   {
     path: 'banks/:id/edit',
     component: BankEditPageComponent,
+    data: { breadcrumb: 'Edit Bank' },
   },
   {
     path: 'bank-branches',
     component: BankBranchesListPageComponent,
+    data: { breadcrumb: 'Bank Branches' },
   },
   {
     path: 'bank-branches/new',
     component: BankBranchCreatePageComponent,
+    data: { breadcrumb: 'New Bank Branch' },
   },
   {
     path: 'bank-branches/:id',
     component: BankBranchDetailPageComponent,
+    data: { breadcrumb: 'Bank Branch Details' },
   },
   {
     path: 'bank-branches/:id/edit',
     component: BankBranchEditPageComponent,
+    data: { breadcrumb: 'Edit Bank Branch' },
   },
   {
     path: 'deductions',
     component: DeductionTypesListPageComponent,
+    data: { breadcrumb: 'Deductions' },
   },
   {
     path: 'deductions/new',
     component: DeductionTypeCreatePageComponent,
+    data: { breadcrumb: 'New Deduction' },
   },
   {
     path: 'deductions/:id/edit',
     component: DeductionTypeEditPageComponent,
+    data: { breadcrumb: 'Edit Deduction' },
   },
   {
     path: 'epf-etf',
     component: EpfEtfRulesListPageComponent,
+    data: { breadcrumb: 'EPF/ETF Rules' },
   },
   {
     path: 'epf-etf/new',
     component: EpfEtfRuleEditPageComponent,
+    data: { breadcrumb: 'New EPF/ETF Rule' },
   },
   {
     path: 'epf-etf/:id/edit',
     component: EpfEtfRuleEditPageComponent,
+    data: { breadcrumb: 'Edit EPF/ETF Rule' },
   },
   {
     path: 'tax-rules',
     component: TaxRuleSetsListPageComponent,
+    data: { breadcrumb: 'Tax Rules' },
   },
   {
     path: 'overtime',
     component: OvertimeSettingsPageComponent,
+    data: { breadcrumb: 'Overtime Rules' },
   },
   {
     path: 'tax-rules/new',
     component: TaxRuleSetEditPageComponent,
+    data: { breadcrumb: 'New Tax Rule' },
   },
   {
     path: 'tax-rules/:id/edit',
     component: TaxRuleSetEditPageComponent,
+    data: { breadcrumb: 'Edit Tax Rule' },
   },
 ];
 

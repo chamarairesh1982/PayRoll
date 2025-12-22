@@ -9,18 +9,22 @@ const routes: Routes = [
   {
     path: '',
     component: LeaveListPageComponent,
+    data: { breadcrumb: 'Leave Requests' },
   },
   {
     path: 'new',
     component: LeaveCreatePageComponent,
+    data: { breadcrumb: 'New Leave Request' },
   },
   {
     path: ':id',
     component: LeaveDetailPageComponent,
+    data: { breadcrumb: 'Leave Details' },
   },
   {
     path: ':id/edit',
     component: LeaveEditPageComponent,
+    data: { breadcrumb: 'Edit Leave' },
   },
 ];
 

@@ -6,8 +6,8 @@ import { ApprovalsInboxPageComponent } from './pages/approvals-inbox/approvals-i
 
 const routes: Routes = [
   { path: '', redirectTo: 'inbox', pathMatch: 'full' },
-  { path: 'inbox', component: ApprovalsInboxPageComponent },
-  { path: 'config', component: ApprovalConfigPageComponent, canActivate: [AdminGuard] },
+  { path: 'inbox', component: ApprovalsInboxPageComponent, data: { breadcrumb: 'Approvals Inbox' } },
+  { path: 'config', component: ApprovalConfigPageComponent, canActivate: [AdminGuard], data: { breadcrumb: 'Approval Routes' } },
 ];
 
 @NgModule({

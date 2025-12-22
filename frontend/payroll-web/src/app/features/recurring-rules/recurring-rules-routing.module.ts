@@ -7,18 +7,22 @@ const routes: Routes = [
   {
     path: '',
     component: RecurringRulesListPageComponent,
+    data: { breadcrumb: 'Recurring Pay Items' },
   },
   {
     path: 'new',
     component: RecurringRuleFormPageComponent,
+    data: { breadcrumb: 'New Recurring Pay Item' },
   },
   {
     path: ':id',
     component: RecurringRuleFormPageComponent,
+    data: { breadcrumb: 'Recurring Pay Item' },
   },
   {
     path: ':id/edit',
     component: RecurringRuleFormPageComponent,
+    data: { breadcrumb: 'Edit Recurring Pay Item' },
   },
 ];
 
