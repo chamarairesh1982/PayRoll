@@ -49,6 +49,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAttendanceService, AttendanceService>();
         services.AddScoped<ILeaveRequestService, LeaveRequestService>();
         services.AddScoped<IOvertimeService, OvertimeService>();
+        services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<ILoanService, LoanService>();
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<IStatutoryReportService, StatutoryReportService>();
