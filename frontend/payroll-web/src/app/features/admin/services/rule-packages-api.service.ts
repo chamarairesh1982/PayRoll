@@ -6,7 +6,7 @@ import { RulePackage, RulePackageType, RulePackageVersion } from '../models/rule
 
 @Injectable({ providedIn: 'root' })
 export class RulePackagesApiService {
-  private baseUrl = `${environment.apiUrl}/rule-packages`;
+  private baseUrl = `${environment.apiBaseUrl}/rule-packages`;
 
   constructor(private http: HttpClient) {}
 
