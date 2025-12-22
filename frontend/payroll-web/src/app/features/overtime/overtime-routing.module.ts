@@ -10,22 +10,27 @@ const routes: Routes = [
   {
     path: '',
     component: OvertimeListPageComponent,
+    data: { breadcrumb: 'Overtime' },
   },
   {
     path: 'new',
     component: OvertimeCreatePageComponent,
+    data: { breadcrumb: 'New Overtime' },
   },
   {
     path: 'approvals',
     component: OvertimeApprovalsPageComponent,
+    data: { breadcrumb: 'Overtime Approvals' },
   },
   {
     path: ':id',
     component: OvertimeDetailPageComponent,
+    data: { breadcrumb: 'Overtime Details' },
   },
   {
     path: ':id/edit',
     component: OvertimeEditPageComponent,
+    data: { breadcrumb: 'Edit Overtime' },
   },
 ];
 

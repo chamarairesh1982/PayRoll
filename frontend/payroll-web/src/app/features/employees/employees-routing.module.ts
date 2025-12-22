@@ -6,10 +6,10 @@ import { EmployeeDetailPageComponent } from './pages/employee-detail/employee-de
 import { EmployeeEditPageComponent } from './pages/employee-edit/employee-edit-page.component';
 
 const routes: Routes = [
-  { path: '', component: EmployeesListPageComponent },
-  { path: 'new', component: EmployeeCreatePageComponent },
-  { path: ':id', component: EmployeeDetailPageComponent },
-  { path: ':id/edit', component: EmployeeEditPageComponent },
+  { path: '', component: EmployeesListPageComponent, data: { breadcrumb: 'Employees' } },
+  { path: 'new', component: EmployeeCreatePageComponent, data: { breadcrumb: 'New Employee' } },
+  { path: ':id', component: EmployeeDetailPageComponent, data: { breadcrumb: 'Employee Details' } },
+  { path: ':id/edit', component: EmployeeEditPageComponent, data: { breadcrumb: 'Edit Employee' } },
 ];
 
 @NgModule({

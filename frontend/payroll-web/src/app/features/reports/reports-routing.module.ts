@@ -5,8 +5,8 @@ import { TaxReportsPageComponent } from './pages/tax-reports-page/tax-reports-pa
 
 const routes: Routes = [
   { path: '', redirectTo: 'statutory', pathMatch: 'full' },
-  { path: 'statutory', component: StatutoryReportsPageComponent },
-  { path: 'tax', component: TaxReportsPageComponent },
+  { path: 'statutory', component: StatutoryReportsPageComponent, data: { breadcrumb: 'Statutory Reports' } },
+  { path: 'tax', component: TaxReportsPageComponent, data: { breadcrumb: 'Tax Reports' } },
 ];
 
 @NgModule({
