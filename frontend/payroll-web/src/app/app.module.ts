@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
@@ -17,6 +17,7 @@ import { LoginPageComponent } from './pages/login/login-page.component';
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
+    FormsModule,
     ReactiveFormsModule,
     ToastModule,
     ConfirmDialogModule,
