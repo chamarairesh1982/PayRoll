@@ -32,6 +32,13 @@ public class PayRunsController : ControllerBase
         return payRun is null ? NotFound() : Ok(payRun);
     }
 
+    [HttpGet("{id:guid}/rule-snapshot")]
+    public async Task<IActionResult> GetRuleSnapshot(Guid id, CancellationToken cancellationToken = default)
+    {
+        var snapshot = await _payrollService.GetPayRunRuleSnapshotAsync(id, cancellationToken);
+        return snapshot is null ? NotFound() : Ok(snapshot);
+    }
+
     [HttpGet("{id:guid}/time-reconciliation")]
     public async Task<IActionResult> GetTimeReconciliation(Guid id, CancellationToken cancellationToken = default)
     {

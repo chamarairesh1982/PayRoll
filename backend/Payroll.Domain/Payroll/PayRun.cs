@@ -43,6 +43,10 @@ public class PayRun : AuditableEntity, IAggregateRoot
     public DateTime? LockedAt { get; set; }
     public string? LockedByUserId { get; set; }
     public string? LockedByUserName { get; set; }
+    public Guid? TaxRuleVersionId { get; set; }
+    public Guid? EpfRuleVersionId { get; set; }
+    public Guid? EtfRuleVersionId { get; set; }
+    public string? RulesSnapshotJson { get; set; }
     public ICollection<PaySlip> PaySlips { get; set; } = new List<PaySlip>();
     public ICollection<PayslipDocument> PayslipDocuments { get; set; } = new List<PayslipDocument>();
     public ICollection<PayRunStatusHistory> StatusHistory { get; set; } = new List<PayRunStatusHistory>();

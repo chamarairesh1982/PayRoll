@@ -1,4 +1,7 @@
-﻿using Payroll.Application.Interfaces;
+﻿using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using Payroll.Application.Interfaces;
 using Payroll.Domain.Attendance;
 using Payroll.Domain.Employees;
 using Payroll.Domain.Loans;
@@ -39,6 +42,28 @@ public static class TestDataSeeder
 
         context.EpfEtfRuleSets.Add(rule);
         context.SaveChanges();
+
+        var ruleDto = new Payroll.Application.PayrollConfig.DTOs.EpfEtfRuleSetDto
+        {
+            Id = rule.Id,
+            Name = rule.Name,
+            EffectiveFrom = rule.EffectiveFrom.ToDateTime(TimeOnly.MinValue),
+            EffectiveTo = rule.EffectiveTo?.ToDateTime(TimeOnly.MinValue),
+            EmployeeEpfRate = rule.EmployeeEpfRate,
+            EmployerEpfRate = rule.EmployerEpfRate,
+            EmployerEtfRate = rule.EmployerEtfRate,
+            MinimumWageForEpf = rule.MinimumWageForEpf,
+            MaximumEarningForEpf = rule.MaximumEarningForEpf,
+            MaximumEarningForEtf = rule.MaximumEarningForEtf,
+            IsDefault = rule.IsDefault,
+            IsActive = rule.IsActive
+        };
+
+        var contentJson = JsonSerializer.Serialize(ruleDto);
+        var epfPackage = EnsureRulePackage(context, RulePackageType.Epf, "Default EPF Rules");
+        var etfPackage = EnsureRulePackage(context, RulePackageType.Etf, "Default ETF Rules");
+        EnsureRulePackageVersion(context, epfPackage, contentJson, rule.EffectiveFrom);
+        EnsureRulePackageVersion(context, etfPackage, contentJson, rule.EffectiveFrom);
     }
 
     public static void SeedSimpleTaxRuleSet(PayrollDbContext context)
@@ -110,6 +135,30 @@ public static class TestDataSeeder
         context.TaxRuleSets.Add(ruleSet);
         context.TaxSlabs.AddRange(slabs);
         context.SaveChanges();
+
+        var ruleDto = new Payroll.Application.PayrollConfig.DTOs.TaxRuleSetDto
+        {
+            Id = ruleSet.Id,
+            Name = ruleSet.Name,
+            YearOfAssessment = ruleSet.YearOfAssessment,
+            EffectiveFrom = ruleSet.EffectiveFrom.ToDateTime(TimeOnly.MinValue),
+            EffectiveTo = ruleSet.EffectiveTo?.ToDateTime(TimeOnly.MinValue),
+            IsDefault = ruleSet.IsDefault,
+            IsActive = ruleSet.IsActive,
+            Frequency = ruleSet.Frequency,
+            Slabs = slabs.Select(s => new Payroll.Application.PayrollConfig.DTOs.TaxSlabDto
+            {
+                Id = s.Id,
+                FromAmount = s.FromAmount,
+                ToAmount = s.ToAmount,
+                Rate = s.Rate,
+                Order = s.Order
+            }).ToList()
+        };
+
+        var contentJson = JsonSerializer.Serialize(ruleDto);
+        var taxPackage = EnsureRulePackage(context, RulePackageType.Tax, "Default Tax Rules");
+        EnsureRulePackageVersion(context, taxPackage, contentJson, ruleSet.EffectiveFrom);
     }
 
     public static void SeedAllowanceAndDeductionTypes(PayrollDbContext context)
@@ -211,6 +260,59 @@ public static class TestDataSeeder
         });
 
         context.SaveChanges();
+    }
+
+    private static RulePackage EnsureRulePackage(PayrollDbContext context, RulePackageType type, string name)
+    {
+        var existing = context.RulePackages
+            .FirstOrDefault(p => p.CompanyId == Guid.Empty && p.RuleType == type && p.Name == name);
+
+        if (existing != null)
+        {
+            return existing;
+        }
+
+        var package = new RulePackage
+        {
+            CompanyId = Guid.Empty,
+            RuleType = type,
+            Name = name,
+            CreatedBy = "seed"
+        };
+
+        context.RulePackages.Add(package);
+        context.SaveChanges();
+        return package;
+    }
+
+    private static void EnsureRulePackageVersion(PayrollDbContext context, RulePackage package, string contentJson, DateOnly effectiveFrom)
+    {
+        if (context.RulePackageVersions.Any(v => v.RulePackageId == package.Id))
+        {
+            return;
+        }
+
+        var version = new RulePackageVersion
+        {
+            RulePackageId = package.Id,
+            VersionNumber = 1,
+            EffectiveFrom = effectiveFrom,
+            EffectiveTo = null,
+            Status = RulePackageVersionStatus.Active,
+            ContentJson = contentJson,
+            ContentHash = ComputeHash(contentJson),
+            CreatedBy = "seed"
+        };
+
+        context.RulePackageVersions.Add(version);
+        context.SaveChanges();
+    }
+
+    private static string ComputeHash(string content)
+    {
+        using var sha = SHA256.Create();
+        var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(content));
+        return Convert.ToHexString(bytes);
     }
 
     public static AllowanceType SeedAllowanceType(

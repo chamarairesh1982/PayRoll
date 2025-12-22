@@ -1,0 +1,108 @@
+<div class="rule-versions">
+  <div class="page-header">
+    <div>
+      <h2>Rule Versions</h2>
+      <p class="muted">Manage versioned statutory rule packages by effective date.</p>
+    </div>
+    <div class="type-filter">
+      <label for="ruleType">Rule Type</label>
+      <select id="ruleType" [(ngModel)]="selectedType" (change)="onTypeChange()">
+        <option *ngFor="let type of ruleTypes" [value]="type">{{ type }}</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+  <div class="content-grid">
+    <section class="card">
+      <h3>Packages</h3>
+      <div class="form-row">
+        <input
+          type="text"
+          placeholder="Company Id"
+          [(ngModel)]="packageForm.companyId"
+          aria-label="Company Id"
+        />
+        <input
+          type="text"
+          placeholder="Package name"
+          [(ngModel)]="packageForm.name"
+          aria-label="Package name"
+        />
+        <button type="button" (click)="createPackage()">Create</button>
+      </div>
+
+      <div class="loading" *ngIf="isLoadingPackages">Loading packages...</div>
+      <div class="empty" *ngIf="!isLoadingPackages && packages.length === 0">No packages found.</div>
+
+      <ul class="package-list" *ngIf="packages.length > 0">
+        <li
+          *ngFor="let pkg of packages"
+          [class.active]="pkg.id === selectedPackageId"
+          (click)="selectPackage(pkg.id)"
+        >
+          <div class="package-name">{{ pkg.name }}</div>
+          <div class="muted">Company {{ pkg.companyId }}</div>
+        </li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h3>Versions</h3>
+      <div class="empty" *ngIf="!selectedPackageId">Select a package to view versions.</div>
+
+      <div *ngIf="selectedPackageId">
+        <div class="form-column">
+          <div class="form-row">
+            <label>
+              Effective From
+              <input type="date" [(ngModel)]="versionForm.effectiveFrom" />
+            </label>
+            <label>
+              Effective To
+              <input type="date" [(ngModel)]="versionForm.effectiveTo" />
+            </label>
+          </div>
+          <label class="json-label">
+            Rules JSON
+            <textarea
+              rows="6"
+              [(ngModel)]="versionForm.contentJson"
+              placeholder="Paste rule JSON payload"
+            ></textarea>
+          </label>
+          <button type="button" (click)="createVersion()">Add Version</button>
+        </div>
+
+        <div class="loading" *ngIf="isLoadingVersions">Loading versions...</div>
+        <div class="empty" *ngIf="!isLoadingVersions && versions.length === 0">No versions yet.</div>
+
+        <table class="versions-table" *ngIf="versions.length > 0">
+          <thead>
+            <tr>
+              <th>Version</th>
+              <th>Effective</th>
+              <th>Status</th>
+              <th>Hash</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let version of versions">
+              <td>#{{ version.versionNumber }}</td>
+              <td>{{ version.effectiveFrom }} → {{ version.effectiveTo || 'Open' }}</td>
+              <td>{{ version.status }}</td>
+              <td class="hash">{{ version.contentHash }}</td>
+              <td>
+                <button type="button" (click)="activateVersion(version)" [disabled]="version.status === 'Active'">
+                  Activate
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>

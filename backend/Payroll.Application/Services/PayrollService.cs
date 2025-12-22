@@ -9,6 +9,7 @@ using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Payroll.Application.DTOs;
+using Payroll.Application.DTOs.RulePackages;
 using Payroll.Application.Interfaces;
 using Payroll.Application.Utilities;
 using Payroll.Application.PayrollConfig;
@@ -32,14 +33,17 @@ public class PayrollService : IPayrollService
     private readonly IPayrollDbContext _dbContext;
     private readonly IEpfEtfRuleSetService _epfEtfRuleSetService;
     private readonly ITaxRuleSetService _taxRuleSetService;
+    private readonly IRuleVersionResolver _ruleVersionResolver;
     private readonly IAuditLogger _auditLogger;
     private readonly ICurrentUserService _currentUserService;
     private readonly ITimeReconciliationService _timeReconciliationService;
+    private static readonly JsonSerializerOptions RuleVersionSerializerOptions = new(JsonSerializerDefaults.Web);
 
     public PayrollService(
         IPayrollDbContext dbContext,
         IEpfEtfRuleSetService epfEtfRuleSetService,
         ITaxRuleSetService taxRuleSetService,
+        IRuleVersionResolver ruleVersionResolver,
         IAuditLogger auditLogger,
         ICurrentUserService currentUserService,
         ITimeReconciliationService timeReconciliationService)
@@ -47,6 +51,7 @@ public class PayrollService : IPayrollService
         _dbContext = dbContext;
         _epfEtfRuleSetService = epfEtfRuleSetService;
         _taxRuleSetService = taxRuleSetService;
+        _ruleVersionResolver = ruleVersionResolver;
         _auditLogger = auditLogger;
         _currentUserService = currentUserService;
         _timeReconciliationService = timeReconciliationService;
@@ -448,6 +453,10 @@ public class PayrollService : IPayrollService
             payRun.PeriodStart,
             payRun.PeriodEnd,
             payRun.PayDate,
+            payRun.TaxRuleVersionId,
+            payRun.EpfRuleVersionId,
+            payRun.EtfRuleVersionId,
+            payRun.RulesSnapshotJson,
             PaySlipCount = payRun.PaySlips.Count,
             PaySlips = payRun.PaySlips.Select(ps => new
             {
@@ -729,12 +738,17 @@ public class PayrollService : IPayrollService
             .FirstOrDefaultAsync(p => p.EmployeeId == employee.Id, cancellationToken);
 
         var periodEndDate = DateOnly.FromDateTime(payRun.PeriodEnd);
-        var defaultTaxRuleSet = await _taxRuleSetService.GetActiveRuleForDateAsync(periodEndDate);
+        var ruleVersions = await ResolveRuleVersionsForPayRunAsync(payRun, periodEndDate, cancellationToken);
+        var defaultTaxRuleSet = ResolveTaxRuleSet(ruleVersions);
         var overrideRuleSets = taxProfile?.SlabSetOverrideId.HasValue == true
             ? await _taxRuleSetService.GetByIdsAsync(new[] { taxProfile.SlabSetOverrideId.Value })
             : new Dictionary<Guid, TaxRuleSetDto>();
         var taxRuleSet = ResolveTaxRuleSetForEmployee(taxProfile, defaultTaxRuleSet, overrideRuleSets);
-        var epfEtfRule = await _epfEtfRuleSetService.GetActiveRuleForDateAsync(periodEndDate);
+        var epfEtfRule = ResolveEpfEtfRule(ruleVersions);
+        if (epfEtfRule is null || taxRuleSet is null)
+        {
+            throw new InvalidOperationException("Active rule package versions are required to preview payroll tax.");
+        }
 
         var ctx = new PaySlipCalculationContext
         {
@@ -1216,7 +1230,7 @@ public class PayrollService : IPayrollService
             return null;
         }
 
-        var taxRuleSet = await _taxRuleSetService.GetActiveRuleForDateAsync(DateOnly.FromDateTime(payRun.PeriodEnd));
+        var taxRuleSet = await ResolveTaxRuleSetForPayRunAsync(payRun, cancellationToken);
         var yearStart = new DateTime(payRun.PayDate.Year, 1, 1);
         var employeeIds = payRun.PaySlips.Select(ps => ps.EmployeeId).Distinct().ToList();
 
@@ -1274,6 +1288,27 @@ public class PayrollService : IPayrollService
         return report;
     }
 
+    public async Task<PayRunRuleSnapshotDto?> GetPayRunRuleSnapshotAsync(Guid payRunId, CancellationToken cancellationToken = default)
+    {
+        var payRun = await _dbContext.PayRuns
+            .AsNoTracking()
+            .FirstOrDefaultAsync(pr => pr.Id == payRunId, cancellationToken);
+
+        if (payRun is null)
+        {
+            return null;
+        }
+
+        return new PayRunRuleSnapshotDto
+        {
+            PayRunId = payRun.Id,
+            TaxRuleVersionId = payRun.TaxRuleVersionId,
+            EpfRuleVersionId = payRun.EpfRuleVersionId,
+            EtfRuleVersionId = payRun.EtfRuleVersionId,
+            RulesSnapshotJson = payRun.RulesSnapshotJson
+        };
+    }
+
     public async Task<FileExportResultDto?> GenerateApitCertificateAsync(Guid payRunId, Guid paySlipId, CancellationToken cancellationToken = default)
     {
         var payRun = await LoadPayRunWithSlipsAsync(payRunId, cancellationToken);
@@ -1288,7 +1323,7 @@ public class PayrollService : IPayrollService
             return null;
         }
 
-        var taxRuleSet = await _taxRuleSetService.GetActiveRuleForDateAsync(DateOnly.FromDateTime(payRun.PeriodEnd));
+        var taxRuleSet = await ResolveTaxRuleSetForPayRunAsync(payRun, cancellationToken);
         var taxableEarnings = paySlip.Earnings.Where(e => e.IsTaxable).Sum(e => e.Amount);
         var preTaxDeductions = paySlip.Deductions.Where(d => d.IsPreTax).Sum(d => d.Amount);
         var payeResult = CalculatePaye(taxRuleSet, taxableEarnings, payRun.PeriodType);
@@ -1423,8 +1458,13 @@ public class PayrollService : IPayrollService
             .ToListAsync(ct);
 
         var payDateOnly = DateOnly.FromDateTime(payRun.PeriodEnd);
-        var epfEtfRule = await _epfEtfRuleSetService.GetActiveRuleForDateAsync(payDateOnly);
-        var taxRuleSet = await _taxRuleSetService.GetActiveRuleForDateAsync(payDateOnly);
+        var ruleVersions = await ResolveRuleVersionsForPayRunAsync(payRun, payDateOnly, ct);
+        var epfEtfRule = ResolveEpfEtfRule(ruleVersions);
+        var taxRuleSet = ResolveTaxRuleSet(ruleVersions);
+        if (epfEtfRule is null || taxRuleSet is null)
+        {
+            throw new InvalidOperationException("Active rule package versions are required to calculate payroll.");
+        }
         var taxProfiles = await _dbContext.EmployeeTaxProfiles
             .AsNoTracking()
             .Where(p => employeeIds.Contains(p.EmployeeId))
@@ -3183,6 +3223,126 @@ public class PayrollService : IPayrollService
         }
 
         return (validatedCompanyId, validatedBranchId, costCenterId);
+    }
+
+    private async Task<RuleVersionResolutionResult> ResolveRuleVersionsForPayRunAsync(
+        PayRun payRun,
+        DateOnly periodEndDate,
+        CancellationToken cancellationToken)
+    {
+        RuleVersionResolutionResult resolution;
+
+        if (payRun.TaxRuleVersionId.HasValue || payRun.EpfRuleVersionId.HasValue || payRun.EtfRuleVersionId.HasValue)
+        {
+            resolution = await _ruleVersionResolver.ResolveRuleVersionsByIdsAsync(
+                payRun.TaxRuleVersionId,
+                payRun.EpfRuleVersionId,
+                payRun.EtfRuleVersionId,
+                cancellationToken);
+        }
+        else
+        {
+            resolution = await _ruleVersionResolver.ResolveRuleVersionsAsync(payRun.CompanyId, periodEndDate, cancellationToken);
+            payRun.TaxRuleVersionId = resolution.TaxVersion?.Id;
+            payRun.EpfRuleVersionId = resolution.EpfVersion?.Id;
+            payRun.EtfRuleVersionId = resolution.EtfVersion?.Id;
+        }
+
+        if (string.IsNullOrWhiteSpace(payRun.RulesSnapshotJson))
+        {
+            payRun.RulesSnapshotJson = resolution.SnapshotJson;
+        }
+
+        return resolution;
+    }
+
+    private async Task<TaxRuleSetDto> ResolveTaxRuleSetForPayRunAsync(PayRun payRun, CancellationToken cancellationToken)
+    {
+        var resolution = await ResolveRuleVersionsForPayRunAsync(payRun, DateOnly.FromDateTime(payRun.PeriodEnd), cancellationToken);
+        var taxRuleSet = ResolveTaxRuleSet(resolution);
+        return taxRuleSet ?? throw new InvalidOperationException("Active tax rule package version is required.");
+    }
+
+    private static TaxRuleSetDto? ResolveTaxRuleSet(RuleVersionResolutionResult ruleVersions)
+    {
+        return DeserializeTaxRuleSet(ruleVersions.TaxVersion);
+    }
+
+    private static EpfEtfRuleSetDto? ResolveEpfEtfRule(RuleVersionResolutionResult ruleVersions)
+    {
+        return BuildEpfEtfRuleSet(ruleVersions.EpfVersion, ruleVersions.EtfVersion);
+    }
+
+    private static TaxRuleSetDto? DeserializeTaxRuleSet(RulePackageVersion? version)
+    {
+        if (version is null || string.IsNullOrWhiteSpace(version.ContentJson))
+        {
+            return null;
+        }
+
+        var ruleSet = JsonSerializer.Deserialize<TaxRuleSetDto>(version.ContentJson, RuleVersionSerializerOptions);
+        if (ruleSet is null)
+        {
+            return null;
+        }
+
+        ruleSet.Id = version.Id;
+        ruleSet.EffectiveFrom = version.EffectiveFrom.ToDateTime(TimeOnly.MinValue);
+        ruleSet.EffectiveTo = version.EffectiveTo?.ToDateTime(TimeOnly.MinValue);
+        ruleSet.IsActive = version.Status == RulePackageVersionStatus.Active;
+        return ruleSet;
+    }
+
+    private static EpfEtfRuleSetDto? DeserializeEpfEtfRuleSet(RulePackageVersion? version)
+    {
+        if (version is null || string.IsNullOrWhiteSpace(version.ContentJson))
+        {
+            return null;
+        }
+
+        var ruleSet = JsonSerializer.Deserialize<EpfEtfRuleSetDto>(version.ContentJson, RuleVersionSerializerOptions);
+        if (ruleSet is null)
+        {
+            return null;
+        }
+
+        ruleSet.Id = version.Id;
+        ruleSet.EffectiveFrom = version.EffectiveFrom.ToDateTime(TimeOnly.MinValue);
+        ruleSet.EffectiveTo = version.EffectiveTo?.ToDateTime(TimeOnly.MinValue);
+        ruleSet.IsActive = version.Status == RulePackageVersionStatus.Active;
+        return ruleSet;
+    }
+
+    private static EpfEtfRuleSetDto? BuildEpfEtfRuleSet(RulePackageVersion? epfVersion, RulePackageVersion? etfVersion)
+    {
+        var epfRule = DeserializeEpfEtfRuleSet(epfVersion);
+        var etfRule = DeserializeEpfEtfRuleSet(etfVersion);
+
+        if (epfRule is null)
+        {
+            return etfRule;
+        }
+
+        if (etfRule is null)
+        {
+            return epfRule;
+        }
+
+        return new EpfEtfRuleSetDto
+        {
+            Id = epfRule.Id,
+            Name = epfRule.Name,
+            EffectiveFrom = epfRule.EffectiveFrom,
+            EffectiveTo = epfRule.EffectiveTo,
+            EmployeeEpfRate = epfRule.EmployeeEpfRate,
+            EmployerEpfRate = epfRule.EmployerEpfRate,
+            EmployerEtfRate = etfRule.EmployerEtfRate,
+            MinimumWageForEpf = epfRule.MinimumWageForEpf,
+            MaximumEarningForEpf = epfRule.MaximumEarningForEpf,
+            MaximumEarningForEtf = etfRule.MaximumEarningForEtf,
+            IsDefault = epfRule.IsDefault,
+            IsActive = epfRule.IsActive
+        };
     }
 
     private sealed record PaySlipGenerationResult(

@@ -987,7 +987,7 @@ public sealed class PayrollSeeder
             return;
         }
 
-        _context.EpfEtfRuleSets.Add(new EpfEtfRuleSet
+        var rule = new EpfEtfRuleSet
         {
             Name = "Sri Lanka Default EPF/ETF (Sample)",
             EffectiveFrom = new DateOnly(2020, 1, 1),
@@ -1000,9 +1000,34 @@ public sealed class PayrollSeeder
             MaximumEarningForEtf = null,
             IsDefault = true,
             CreatedBy = SeedUser
-        });
+        };
+
+        _context.EpfEtfRuleSets.Add(rule);
 
         _context.SaveChanges();
+
+        var companyId = ResolveDefaultCompanyId();
+        var payload = new
+        {
+            rule.Id,
+            rule.Name,
+            EffectiveFrom = rule.EffectiveFrom.ToDateTime(TimeOnly.MinValue),
+            EffectiveTo = rule.EffectiveTo?.ToDateTime(TimeOnly.MinValue),
+            rule.EmployeeEpfRate,
+            rule.EmployerEpfRate,
+            rule.EmployerEtfRate,
+            rule.MinimumWageForEpf,
+            rule.MaximumEarningForEpf,
+            rule.MaximumEarningForEtf,
+            IsDefault = rule.IsDefault,
+            IsActive = true
+        };
+
+        var contentJson = JsonSerializer.Serialize(payload);
+        var epfPackage = EnsureRulePackage(companyId, RulePackageType.Epf, "Default EPF Rules");
+        var etfPackage = EnsureRulePackage(companyId, RulePackageType.Etf, "Default ETF Rules");
+        EnsureRulePackageVersion(epfPackage, contentJson, rule.EffectiveFrom);
+        EnsureRulePackageVersion(etfPackage, contentJson, rule.EffectiveFrom);
     }
 
     private void EnsureTaxRuleSet()
@@ -1076,6 +1101,99 @@ public sealed class PayrollSeeder
             CreatedBy = SeedUser
         });
         _context.SaveChanges();
+
+        var companyId = ResolveDefaultCompanyId();
+        var payload = new
+        {
+            ruleSet.Id,
+            ruleSet.Name,
+            ruleSet.YearOfAssessment,
+            EffectiveFrom = ruleSet.EffectiveFrom.ToDateTime(TimeOnly.MinValue),
+            EffectiveTo = ruleSet.EffectiveTo?.ToDateTime(TimeOnly.MinValue),
+            IsDefault = ruleSet.IsDefault,
+            IsActive = ruleSet.IsActive,
+            ruleSet.Frequency,
+            Slabs = slabs.Select(s => new
+            {
+                s.Id,
+                s.FromAmount,
+                s.ToAmount,
+                s.Rate,
+                s.Order
+            }).ToList(),
+            Reliefs = new[]
+            {
+                new
+                {
+                    Name = "Monthly Relief",
+                    Amount = 10_000m,
+                    ReliefType = TaxReliefType.IncomeRelief,
+                    Frequency = TaxReliefFrequency.Monthly
+                }
+            }
+        };
+
+        var contentJson = JsonSerializer.Serialize(payload);
+        var taxPackage = EnsureRulePackage(companyId, RulePackageType.Tax, "Default Tax Rules");
+        EnsureRulePackageVersion(taxPackage, contentJson, ruleSet.EffectiveFrom);
+    }
+
+    private Guid ResolveDefaultCompanyId()
+    {
+        var companyId = _context.Companies.Select(c => c.Id).FirstOrDefault();
+        return companyId == Guid.Empty ? Guid.Empty : companyId;
+    }
+
+    private RulePackage EnsureRulePackage(Guid companyId, RulePackageType type, string name)
+    {
+        var existing = _context.RulePackages.FirstOrDefault(p => p.CompanyId == companyId && p.RuleType == type && p.Name == name);
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        var package = new RulePackage
+        {
+            CompanyId = companyId,
+            RuleType = type,
+            Name = name,
+            CreatedBy = SeedUser,
+            IsActive = true
+        };
+
+        _context.RulePackages.Add(package);
+        _context.SaveChanges();
+        return package;
+    }
+
+    private void EnsureRulePackageVersion(RulePackage package, string contentJson, DateOnly effectiveFrom)
+    {
+        if (_context.RulePackageVersions.Any(v => v.RulePackageId == package.Id))
+        {
+            return;
+        }
+
+        var version = new RulePackageVersion
+        {
+            RulePackageId = package.Id,
+            VersionNumber = 1,
+            EffectiveFrom = effectiveFrom,
+            Status = RulePackageVersionStatus.Active,
+            ContentJson = contentJson,
+            ContentHash = ComputeHash(contentJson),
+            CreatedBy = SeedUser,
+            IsActive = true
+        };
+
+        _context.RulePackageVersions.Add(version);
+        _context.SaveChanges();
+    }
+
+    private static string ComputeHash(string content)
+    {
+        using var sha = SHA256.Create();
+        var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(content));
+        return Convert.ToHexString(bytes);
     }
 
     private void EnsureBankExportTemplate(string name, BankExportFormat format, string delimiter, int headerRowCount)

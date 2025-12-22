@@ -44,6 +44,8 @@ public interface IPayrollDbContext
     DbSet<Bank> Banks { get; }
     DbSet<BankBranch> BankBranches { get; }
     DbSet<EmployeeRecurringPayItem> EmployeeRecurringPayItems { get; }
+    DbSet<RulePackage> RulePackages { get; }
+    DbSet<RulePackageVersion> RulePackageVersions { get; }
     DbSet<EpfEtfRuleSet> EpfEtfRuleSets { get; }
     DbSet<TaxRuleSet> TaxRuleSets { get; }
     DbSet<TaxSlab> TaxSlabs { get; }
