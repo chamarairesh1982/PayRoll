@@ -1,0 +1,10 @@
+:host {
+  display: block;
+}
+
+:host ::ng-deep .p-breadcrumb {
+  background: #ffffff;
+  border: 1px solid #e3e6ea;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+}

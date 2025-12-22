@@ -1,0 +1,65 @@
+<div class="app-layout">
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
+
+  <p-toolbar class="app-layout__topbar">
+    <div class="app-layout__topbar-left">
+      <button pButton class="app-layout__menu-btn" icon="pi pi-bars" (click)="toggleSidebar()"></button>
+      <span class="app-layout__logo">WorldBets Payroll</span>
+      <p-dropdown
+        class="app-layout__tenant"
+        [options]="tenantOptions"
+        [(ngModel)]="selectedTenant"
+        optionLabel="label"
+        placeholder="Select tenant"
+      ></p-dropdown>
+    </div>
+    <div class="app-layout__topbar-center">
+      <span class="p-input-icon-left app-layout__search">
+        <i class="pi pi-search"></i>
+        <input pInputText type="text" placeholder="Search employees, pay runs, reports" />
+      </span>
+    </div>
+    <div class="app-layout__topbar-right">
+      <div class="app-layout__density">
+        <span class="app-layout__density-label">Density</span>
+        <p-dropdown
+          [options]="densityOptions"
+          [(ngModel)]="selectedDensity"
+          optionLabel="label"
+          (onChange)="onDensityChange($event.value)"
+        ></p-dropdown>
+      </div>
+      <button
+        pButton
+        type="button"
+        class="p-button-text p-button-rounded"
+        icon="pi pi-user"
+        (click)="userMenu.toggle($event)"
+      ></button>
+      <p-menu #userMenu [popup]="true" [model]="userMenuItems"></p-menu>
+    </div>
+  </p-toolbar>
+
+  <div class="app-layout__body">
+    <aside class="app-layout__sidebar">
+      <p-panelMenu [model]="menuItems"></p-panelMenu>
+    </aside>
+
+    <main class="app-layout__content">
+      <app-breadcrumb></app-breadcrumb>
+      <section class="app-layout__page">
+        <router-outlet></router-outlet>
+      </section>
+    </main>
+  </div>
+
+  <p-sidebar
+    [(visible)]="sidebarVisible"
+    [modal]="true"
+    position="left"
+    styleClass="app-layout__mobile-sidebar"
+  >
+    <p-panelMenu [model]="menuItems"></p-panelMenu>
+  </p-sidebar>
+</div>
