@@ -17,12 +17,12 @@ export const appRoutes: Routes = [
       {
         path: 'employees',
         loadChildren: () => import('./features/employees/employees.module').then(m => m.EmployeesModule),
-        data: { breadcrumb: 'Employees' },
+        data: { breadcrumb: 'People' },
       },
       {
         path: 'attendance',
         loadChildren: () => import('./features/attendance/attendance.module').then(m => m.AttendanceModule),
-        data: { breadcrumb: 'Attendance' },
+        data: { breadcrumb: 'Time' },
       },
       {
         path: 'payroll',
@@ -38,37 +38,37 @@ export const appRoutes: Routes = [
         path: 'statutory-reports',
         loadChildren: () =>
           import('./features/statutory-reports/statutory-reports.module').then(m => m.StatutoryReportsModule),
-        data: { breadcrumb: 'Statutory Reports' },
+        data: { breadcrumb: 'Statutory' },
       },
       {
         path: 'config',
         loadChildren: () => import('./features/payroll-config/payroll-config.module').then(m => m.PayrollConfigModule),
-        data: { breadcrumb: 'Configuration' },
+        data: { breadcrumb: 'Settings' },
       },
       {
         path: 'approvals',
         loadChildren: () => import('./features/approvals/approvals.module').then(m => m.ApprovalsModule),
-        data: { breadcrumb: 'Approvals' },
+        data: { breadcrumb: 'Settings' },
       },
       {
         path: 'overtime',
         loadChildren: () => import('./features/overtime/overtime.module').then(m => m.OvertimeModule),
-        data: { breadcrumb: 'Overtime' },
+        data: { breadcrumb: 'Time' },
       },
       {
         path: 'leave',
         loadChildren: () => import('./features/leave/leave.module').then(m => m.LeaveModule),
-        data: { breadcrumb: 'Leave' },
+        data: { breadcrumb: 'Time' },
       },
       {
         path: 'tax',
         loadChildren: () => import('./features/tax/tax.module').then(m => m.TaxModule),
-        data: { breadcrumb: 'Tax' },
+        data: { breadcrumb: 'Statutory' },
       },
       {
         path: 'admin',
         loadChildren: () => import('./features/admin/admin.module').then(m => m.AdminModule),
-        data: { breadcrumb: 'Admin' },
+        data: { breadcrumb: 'Settings' },
       },
       { path: '**', redirectTo: 'dashboard' },
     ],

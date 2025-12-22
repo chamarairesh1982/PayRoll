@@ -4,9 +4,9 @@ import { ReportsHomeComponent } from './pages/reports-home/reports-home.componen
 import { ReportViewerComponent } from './pages/report-viewer/report-viewer.component';
 
 const routes: Routes = [
-  { path: '', component: ReportsHomeComponent },
-  { path: 'view/:reportKey', component: ReportViewerComponent },
-  { path: 'print/:reportKey', component: ReportViewerComponent, data: { print: true } },
+  { path: '', component: ReportsHomeComponent, data: { breadcrumb: 'Statutory Reports' } },
+  { path: 'view/:reportKey', component: ReportViewerComponent, data: { breadcrumb: 'Report Viewer' } },
+  { path: 'print/:reportKey', component: ReportViewerComponent, data: { breadcrumb: 'Print Report', print: true } },
 ];
 
 @NgModule({
