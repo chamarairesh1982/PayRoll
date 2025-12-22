@@ -4,20 +4,48 @@
 
   <p-toolbar class="app-layout__topbar">
     <div class="app-layout__topbar-left">
-      <button pButton class="app-layout__menu-btn" icon="pi pi-bars" (click)="toggleSidebar()"></button>
+      <button
+        pButton
+        class="app-layout__menu-btn"
+        icon="pi pi-bars"
+        (click)="toggleSidebar()"
+        aria-label="Toggle menu"
+      ></button>
       <span class="app-layout__logo">WorldBets Payroll</span>
       <p-dropdown
         class="app-layout__tenant"
-        [options]="tenantOptions"
-        [(ngModel)]="selectedTenant"
+        [options]="companyOptions"
+        [(ngModel)]="selectedCompany"
         optionLabel="label"
-        placeholder="Select tenant"
+        placeholder="Company"
+        aria-label="Select company"
+      ></p-dropdown>
+      <p-dropdown
+        class="app-layout__tenant"
+        [options]="branchOptions"
+        [(ngModel)]="selectedBranch"
+        optionLabel="label"
+        placeholder="Branch"
+        aria-label="Select branch"
+      ></p-dropdown>
+      <p-dropdown
+        class="app-layout__tenant"
+        [options]="costCenterOptions"
+        [(ngModel)]="selectedCostCenter"
+        optionLabel="label"
+        placeholder="Cost Center"
+        aria-label="Select cost center"
       ></p-dropdown>
     </div>
     <div class="app-layout__topbar-center">
       <span class="p-input-icon-left app-layout__search">
         <i class="pi pi-search"></i>
-        <input pInputText type="text" placeholder="Search employees, pay runs, reports" />
+        <input
+          pInputText
+          type="text"
+          placeholder="Search employees, pay runs, payslips"
+          aria-label="Global search"
+        />
       </span>
     </div>
     <div class="app-layout__topbar-right">
@@ -34,8 +62,16 @@
         pButton
         type="button"
         class="p-button-text p-button-rounded"
+        icon="pi pi-bell"
+        aria-label="Notifications"
+      ></button>
+      <button
+        pButton
+        type="button"
+        class="p-button-text p-button-rounded"
         icon="pi pi-user"
         (click)="userMenu.toggle($event)"
+        aria-label="User menu"
       ></button>
       <p-menu #userMenu [popup]="true" [model]="userMenuItems"></p-menu>
     </div>

@@ -1,0 +1,53 @@
+<div class="table-toolbar" role="region" aria-label="Table toolbar">
+  <div class="table-toolbar__search">
+    <span class="p-input-icon-left">
+      <i class="pi pi-search" aria-hidden="true"></i>
+      <input
+        pInputText
+        type="text"
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="onSearchChange($event)"
+        [placeholder]="searchPlaceholder"
+        aria-label="Global search"
+      />
+    </span>
+  </div>
+  <div class="table-toolbar__actions">
+    <button
+      pButton
+      type="button"
+      class="p-button-text"
+      icon="pi pi-filter"
+      [label]="filterLabel"
+      (click)="toggleFilters.emit()"
+      aria-label="Toggle filters"
+    ></button>
+    <button
+      pButton
+      type="button"
+      class="p-button-text"
+      icon="pi pi-table"
+      [label]="columnsLabel"
+      (click)="openColumnChooser.emit()"
+      aria-label="Choose columns"
+    ></button>
+    <button
+      pButton
+      type="button"
+      class="p-button-text"
+      icon="pi pi-bookmark"
+      [label]="viewsLabel"
+      (click)="openSavedViews.emit()"
+      aria-label="Saved views"
+    ></button>
+    <button
+      pButton
+      type="button"
+      class="p-button-text"
+      icon="pi pi-download"
+      [label]="exportLabel"
+      (click)="exportData.emit()"
+      aria-label="Export table"
+    ></button>
+  </div>
+</div>
