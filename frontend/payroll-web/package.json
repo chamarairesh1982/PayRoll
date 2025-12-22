@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
-    "test": "ng test"
+    "start": "ng serve payroll-web-angular",
+    "build": "ng build payroll-web-angular",
+    "test": "ng test payroll-web-angular"
   },
   "dependencies": {
     "@angular/animations": "^17.3.8",

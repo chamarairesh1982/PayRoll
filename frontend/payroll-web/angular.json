@@ -50,7 +50,6 @@
       }
     }
   },
-  "defaultProject": "payroll-web-angular",
   "cli": {
     "analytics": false
   }
