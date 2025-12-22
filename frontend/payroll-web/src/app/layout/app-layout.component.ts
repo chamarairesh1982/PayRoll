@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, Renderer2 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -68,7 +68,7 @@ export class AppLayoutComponent implements OnInit {
   userMenuItems: MenuItem[] = [
     { label: 'Profile', icon: 'pi pi-user' },
     { label: 'Notifications', icon: 'pi pi-bell' },
-    { label: 'Sign Out', icon: 'pi pi-sign-out' },
+    { label: 'Sign Out', icon: 'pi pi-sign-out', command: () => this.signOut() },
   ];
 
   menuItems: AppMenuItem[] = [
@@ -135,7 +135,10 @@ export class AppLayoutComponent implements OnInit {
     },
   ];
 
-  constructor(private renderer: Renderer2) {}
+  constructor(
+    private renderer: Renderer2,
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
     this.applyDensity(this.selectedDensity.value);
@@ -155,5 +158,9 @@ export class AppLayoutComponent implements OnInit {
     if (value === 'compact') {
       this.renderer.addClass(body, 'density-compact');
     }
+  }
+
+  private signOut(): void {
+    this.router.navigateByUrl('/login');
   }
 }
