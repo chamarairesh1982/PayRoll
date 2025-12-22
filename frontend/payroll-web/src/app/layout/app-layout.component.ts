@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, Renderer2 } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, Renderer2 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { MenuItem } from 'primeng/api';
@@ -41,6 +41,7 @@ interface DensityOption {
   ],
   templateUrl: './app-layout.component.html',
   styleUrls: ['./app-layout.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppLayoutComponent implements OnInit {
   sidebarVisible = false;
@@ -49,11 +50,21 @@ export class AppLayoutComponent implements OnInit {
     { label: 'Compact', value: 'compact' },
   ];
   selectedDensity: DensityOption = this.densityOptions[0];
-  tenantOptions = [
+  companyOptions = [
     { label: 'WorldBets Holdings', value: 'worldbets' },
     { label: 'WorldBets Retail', value: 'worldbets-retail' },
   ];
-  selectedTenant = this.tenantOptions[0];
+  branchOptions = [
+    { label: 'Colombo HQ', value: 'colombo-hq' },
+    { label: 'Kandy Branch', value: 'kandy-branch' },
+  ];
+  costCenterOptions = [
+    { label: 'Finance', value: 'finance' },
+    { label: 'Operations', value: 'operations' },
+  ];
+  selectedCompany = this.companyOptions[0];
+  selectedBranch = this.branchOptions[0];
+  selectedCostCenter = this.costCenterOptions[0];
   userMenuItems: MenuItem[] = [
     { label: 'Profile', icon: 'pi pi-user' },
     { label: 'Notifications', icon: 'pi pi-bell' },
@@ -71,7 +82,6 @@ export class AppLayoutComponent implements OnInit {
       icon: 'pi pi-users',
       items: [
         { label: 'Employees', icon: 'pi pi-id-card', routerLink: '/people/employees' },
-        { label: 'Contractors', icon: 'pi pi-briefcase', disabled: true },
       ],
     },
     {
@@ -79,7 +89,7 @@ export class AppLayoutComponent implements OnInit {
       icon: 'pi pi-clock',
       items: [
         { label: 'Attendance', icon: 'pi pi-calendar', routerLink: '/time/attendance' },
-        { label: 'OT', icon: 'pi pi-stopwatch', disabled: true },
+        { label: 'Overtime', icon: 'pi pi-stopwatch', disabled: true },
         { label: 'Leave', icon: 'pi pi-sun', disabled: true },
         { label: 'No-Pay', icon: 'pi pi-ban', disabled: true },
       ],
@@ -90,8 +100,7 @@ export class AppLayoutComponent implements OnInit {
       items: [
         { label: 'Pay Runs', icon: 'pi pi-calculator', routerLink: '/payroll/pay-runs' },
         { label: 'Payslips', icon: 'pi pi-file', routerLink: '/payroll/payslips' },
-        { label: 'Earnings & Allowances', icon: 'pi pi-plus-circle', disabled: true },
-        { label: 'Deductions', icon: 'pi pi-minus-circle', disabled: true },
+        { label: 'Pay Items', icon: 'pi pi-plus-circle', disabled: true },
         { label: 'Loans & Advances', icon: 'pi pi-wallet', disabled: true },
       ],
     },
@@ -101,7 +110,6 @@ export class AppLayoutComponent implements OnInit {
       items: [
         { label: 'EPF/ETF', icon: 'pi pi-bookmark', routerLink: '/statutory/epf-etf' },
         { label: 'PAYE/APIT', icon: 'pi pi-file-excel', disabled: true },
-        { label: 'Gratuity', icon: 'pi pi-star', disabled: true },
       ],
     },
     {

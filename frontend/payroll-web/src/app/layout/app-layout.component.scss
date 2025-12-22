@@ -22,7 +22,8 @@
 }
 
 .app-layout__topbar-left {
-  min-width: 320px;
+  min-width: 420px;
+  flex-wrap: wrap;
 }
 
 .app-layout__logo {
@@ -32,7 +33,7 @@
 }
 
 .app-layout__tenant {
-  min-width: 220px;
+  min-width: 180px;
 }
 
 .app-layout__search input {
@@ -64,6 +65,10 @@
   border-right: 1px solid #e3e6ea;
   padding: 1rem;
   background: #ffffff;
+  position: sticky;
+  top: 4rem;
+  height: calc(100vh - 4rem);
+  overflow-y: auto;
 }
 
 .app-layout__content {
@@ -98,6 +103,14 @@
 
   .app-layout__menu-btn {
     display: inline-flex;
+  }
+
+  .app-layout__topbar-left {
+    min-width: auto;
+  }
+
+  .app-layout__tenant {
+    min-width: 160px;
   }
 
   .app-layout__search input {
