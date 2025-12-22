@@ -26,7 +26,19 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$),
       )
       .subscribe(() => {
-        this.items = this.buildBreadcrumbs(this.route.root);
+        const breadcrumbs = this.buildBreadcrumbs(this.route.root);
+        const deduped = breadcrumbs.filter((item, index) => {
+          const next = breadcrumbs[index + 1];
+          if (next?.routerLink && item.routerLink && item.routerLink === next.routerLink) {
+            return false;
+          }
+          return true;
+        });
+        const lastIndex = deduped.length - 1;
+        if (lastIndex >= 0) {
+          deduped[lastIndex] = { ...deduped[lastIndex], routerLink: undefined };
+        }
+        this.items = deduped;
       });
   }
 
