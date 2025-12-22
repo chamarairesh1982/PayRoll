@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, Renderer2 } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, Renderer2 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { MenuItem } from 'primeng/api';
@@ -147,13 +147,16 @@ export class AppLayoutComponent implements OnInit {
   constructor(
     private renderer: Renderer2,
     private router: Router,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
     this.applyDensity(this.selectedDensity.value);
     this.syncMenuState();
+    this.cdr.markForCheck();
     this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(() => {
       this.syncMenuState();
+      this.cdr.markForCheck();
     });
   }
 
