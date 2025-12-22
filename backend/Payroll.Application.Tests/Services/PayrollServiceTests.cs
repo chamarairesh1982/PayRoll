@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Payroll.Application.DTOs;
@@ -9,6 +10,7 @@ using Payroll.Domain.Payroll;
 using Payroll.Domain.PayrollConfig;
 using Payroll.Domain.Overtime;
 using Payroll.Application.Tests.TestInfrastructure;
+using Payroll.Infrastructure.RulePackages;
 using Xunit;
 
 namespace Payroll.Application.Tests.Services;
@@ -21,10 +23,12 @@ public class PayrollServiceTests
         var taxService = new TaxRuleSetService(context.DbContext, context.CurrentUserService);
         var auditLogger = new AuditLogger(context.DbContext, context.CurrentUserService);
         var timeReconciliationService = new TimeReconciliationService();
+        var ruleVersionResolver = new RuleVersionResolver(context.DbContext);
         return new PayrollService(
             context.DbContext,
             epfService,
             taxService,
+            ruleVersionResolver,
             auditLogger,
             new FakeCurrentUserService(),
             timeReconciliationService);
@@ -913,6 +917,104 @@ public class PayrollServiceTests
 
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*approved hours*");
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Use_Latest_Rule_Version_By_Period_End()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP_RULE_1", "Mara", 85_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+
+        var taxPackage = context.DbContext.RulePackages.Single(p => p.RuleType == RulePackageType.Tax);
+        var currentVersion = context.DbContext.RulePackageVersions.Single(v => v.RulePackageId == taxPackage.Id);
+        currentVersion.Status = RulePackageVersionStatus.Retired;
+
+        var newRule = new Payroll.Application.PayrollConfig.DTOs.TaxRuleSetDto
+        {
+            Id = Guid.NewGuid(),
+            Name = "Tax Rules v2",
+            YearOfAssessment = 2025,
+            EffectiveFrom = new DateTime(2025, 6, 1),
+            EffectiveTo = null,
+            IsDefault = true,
+            IsActive = true,
+            Frequency = TaxRuleSetFrequency.Monthly,
+            Slabs = new List<Payroll.Application.PayrollConfig.DTOs.TaxSlabDto>
+            {
+                new() { Id = Guid.NewGuid(), FromAmount = 0m, ToAmount = 200000m, Rate = 0m, Order = 1 }
+            }
+        };
+
+        var newVersion = new RulePackageVersion
+        {
+            RulePackageId = taxPackage.Id,
+            VersionNumber = 2,
+            EffectiveFrom = new DateOnly(2025, 6, 1),
+            EffectiveTo = null,
+            Status = RulePackageVersionStatus.Active,
+            ContentJson = JsonSerializer.Serialize(newRule),
+            ContentHash = "HASH",
+            CreatedBy = "seed"
+        };
+
+        context.DbContext.RulePackageVersions.Add(newVersion);
+        await context.DbContext.SaveChangesAsync();
+
+        var payrollService = CreatePayrollService(context);
+        var request = new CreatePayRunRequest
+        {
+            Name = "June Payroll",
+            PeriodType = PayPeriodType.Monthly,
+            PeriodStart = new DateTime(2025, 6, 1),
+            PeriodEnd = new DateTime(2025, 6, 30),
+            PayDate = new DateTime(2025, 6, 30),
+            EmployeeIds = new List<Guid> { employee.Id },
+            IncludeActiveEmployeesOnly = true
+        };
+
+        var result = await payrollService.CreatePayRunAsync(request);
+
+        var storedPayRun = await context.DbContext.PayRuns.FirstAsync(pr => pr.Id == result.Id);
+        storedPayRun.TaxRuleVersionId.Should().Be(newVersion.Id);
+    }
+
+    [Fact]
+    public async Task RecalculatePayRun_Should_Reuse_Existing_Rule_Versions()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP_RULE_2", "Nolan", 92_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+
+        var payrollService = CreatePayrollService(context);
+        var request = BuildDefaultRequest(employee.Id);
+        var created = await payrollService.CreatePayRunAsync(request);
+        var originalPayRun = await context.DbContext.PayRuns.FirstAsync(pr => pr.Id == created.Id);
+
+        var taxPackage = context.DbContext.RulePackages.Single(p => p.RuleType == RulePackageType.Tax);
+        var currentVersion = context.DbContext.RulePackageVersions.Single(v => v.RulePackageId == taxPackage.Id);
+        currentVersion.Status = RulePackageVersionStatus.Retired;
+
+        var newVersion = new RulePackageVersion
+        {
+            RulePackageId = taxPackage.Id,
+            VersionNumber = 2,
+            EffectiveFrom = new DateOnly(2025, 5, 1),
+            EffectiveTo = null,
+            Status = RulePackageVersionStatus.Active,
+            ContentJson = currentVersion.ContentJson,
+            ContentHash = "HASH",
+            CreatedBy = "seed"
+        };
+        context.DbContext.RulePackageVersions.Add(newVersion);
+        await context.DbContext.SaveChangesAsync();
+
+        await payrollService.RecalculatePayRunAsync(created.Id, new RecalculatePayRunRequest());
+
+        var recalculated = await context.DbContext.PayRuns.FirstAsync(pr => pr.Id == created.Id);
+        recalculated.TaxRuleVersionId.Should().Be(originalPayRun.TaxRuleVersionId);
     }
 
     private static CreatePayRunRequest BuildDefaultRequest(Guid employeeId)

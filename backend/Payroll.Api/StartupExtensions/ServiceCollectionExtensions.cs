@@ -13,10 +13,12 @@ using Payroll.Application.RecurringPayItems;
 using Payroll.Application.Services;
 using Payroll.Application.TimeReconciliation;
 using Payroll.Application.RecurringRules;
+using Payroll.Application.RulePackages;
 using Payroll.Application.Validators.Employees;
 using Payroll.Infrastructure.Identity;
 using Payroll.Infrastructure.Logging;
 using Payroll.Infrastructure.Persistence;
+using Payroll.Infrastructure.RulePackages;
 using Payroll.Infrastructure.Storage;
 using Payroll.Shared;
 
@@ -53,6 +55,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IOrganizationService, OrganizationService>();
         services.AddScoped<IRecurringRuleService, RecurringRuleService>();
         services.AddScoped<IRecurringPayItemService, RecurringPayItemService>();
+        services.AddScoped<IRulePackageService, RulePackageService>();
         services.AddScoped<IAllowanceTypeService, AllowanceTypeService>();
         services.AddScoped<IDeductionTypeService, DeductionTypeService>();
         services.AddScoped<IBankService, BankService>();
@@ -66,6 +69,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuditLogger, AuditLogger>();
         services.AddScoped<IAuditLogQueryService, AuditLogQueryService>();
         services.AddScoped<ICurrentUserService, SimpleCurrentUserService>();
+        services.AddScoped<IRuleVersionResolver, RuleVersionResolver>();
 
         services.AddControllers(options => options.Filters.Add<ApiExceptionFilter>());
         return services;

@@ -10,6 +10,7 @@ using Payroll.Application.Tests.TestInfrastructure;
 using Payroll.Application.TimeReconciliation;
 using Payroll.Domain.Payroll;
 using Payroll.Domain.PayrollConfig;
+using Payroll.Infrastructure.RulePackages;
 using Xunit;
 
 namespace Payroll.Application.Tests.TaxDocuments;
@@ -178,10 +179,12 @@ public class TaxDocumentServiceTests
         var taxService = new TaxRuleSetService(context.DbContext, new FakeCurrentUserService());
         var auditLogger = new AuditLogger(context.DbContext, new FakeCurrentUserService());
         var timeReconciliationService = new TimeReconciliationService();
+        var ruleVersionResolver = new RuleVersionResolver(context.DbContext);
         return new PayrollService(
             context.DbContext,
             epfService,
             taxService,
+            ruleVersionResolver,
             auditLogger,
             new FakeCurrentUserService(),
             timeReconciliationService);

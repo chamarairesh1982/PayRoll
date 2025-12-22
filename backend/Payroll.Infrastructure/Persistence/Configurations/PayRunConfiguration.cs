@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Payroll.Domain.Payroll;
+using Payroll.Domain.PayrollConfig;
 using Payroll.Domain.Organizations;
 
 namespace Payroll.Infrastructure.Persistence.Configurations;
@@ -28,6 +29,7 @@ public class PayRunConfiguration : IEntityTypeConfiguration<PayRun>
         builder.Property(pr => pr.ApprovedByUserName).HasMaxLength(200);
         builder.Property(pr => pr.LockedByUserId).HasMaxLength(100);
         builder.Property(pr => pr.LockedByUserName).HasMaxLength(200);
+        builder.Property(pr => pr.RulesSnapshotJson).HasColumnType("nvarchar(max)");
 
         builder.HasIndex(pr => pr.Reference).IsUnique();
         builder.HasIndex(pr => pr.Code).IsUnique();
@@ -61,6 +63,21 @@ public class PayRunConfiguration : IEntityTypeConfiguration<PayRun>
                .WithMany()
                .HasForeignKey(p => p.CostCenterId)
                .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<RulePackageVersion>()
+            .WithMany()
+            .HasForeignKey(pr => pr.TaxRuleVersionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<RulePackageVersion>()
+            .WithMany()
+            .HasForeignKey(pr => pr.EpfRuleVersionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<RulePackageVersion>()
+            .WithMany()
+            .HasForeignKey(pr => pr.EtfRuleVersionId)
+            .OnDelete(DeleteBehavior.Restrict);
 
     }
 }

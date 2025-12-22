@@ -9,6 +9,7 @@ using Payroll.Application.Services;
 using Payroll.Application.TimeReconciliation;
 using Payroll.Application.Tests.TestInfrastructure;
 using Payroll.Domain.Payroll;
+using Payroll.Infrastructure.RulePackages;
 using Xunit;
 
 namespace Payroll.Application.Tests.Services;
@@ -26,10 +27,12 @@ public class RecurringPayItemEngineTests
         var taxService = new TaxRuleSetService(context.DbContext, context.CurrentUserService);
         var auditLogger = new AuditLogger(context.DbContext, context.CurrentUserService);
         var timeReconciliationService = new TimeReconciliationService();
+        var ruleVersionResolver = new RuleVersionResolver(context.DbContext);
         return new PayrollService(
             context.DbContext,
             epfService,
             taxService,
+            ruleVersionResolver,
             auditLogger,
             new FakeCurrentUserService(),
             timeReconciliationService);

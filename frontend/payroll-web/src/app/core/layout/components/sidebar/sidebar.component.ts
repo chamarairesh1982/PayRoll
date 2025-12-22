@@ -34,7 +34,10 @@ export class SidebarComponent {
     { label: 'Approval Routes', path: '/approvals/config' },
   ];
 
-  adminLinks = [{ label: 'Audit Logs', path: '/admin/audit-logs' }];
+  adminLinks = [
+    { label: 'Audit Logs', path: '/admin/audit-logs' },
+    { label: 'Rule Versions', path: '/admin/rule-versions' },
+  ];
 
   constructor(private authService: AuthService) {}
 

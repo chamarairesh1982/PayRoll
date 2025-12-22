@@ -8,6 +8,7 @@ using Payroll.Domain.GeneralLedger;
 using Payroll.Domain.Payroll;
 using Payroll.Domain.Employees;
 using Payroll.Application.Interfaces;
+using Payroll.Infrastructure.RulePackages;
 using Xunit;
 
 namespace Payroll.Application.Tests.Services;
@@ -272,10 +273,12 @@ public class GeneralLedgerBatchTests
             var auditLogger = new AuditLogger(DbContext, CurrentUserService);
             var epfService = new Payroll.Application.PayrollConfig.EpfEtfRuleSetService(DbContext, CurrentUserService);
             var taxService = new Payroll.Application.PayrollConfig.TaxRuleSetService(DbContext, CurrentUserService);
+            var ruleVersionResolver = new RuleVersionResolver(DbContext);
             return new PayrollService(
                 DbContext,
                 epfService,
                 taxService,
+                ruleVersionResolver,
                 auditLogger,
                 CurrentUserService,
                 new TimeReconciliationService());

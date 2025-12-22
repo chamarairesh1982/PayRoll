@@ -29,6 +29,7 @@ public interface IPayrollService
     Task<List<GlMappingDto>> GetGlMappingsAsync(CancellationToken cancellationToken = default);
     Task<GlMappingDto> UpsertGlMappingAsync(UpsertGlMappingRequest request, CancellationToken cancellationToken = default);
     Task<ApitReportDto?> GetApitReportAsync(Guid payRunId, CancellationToken cancellationToken = default);
+    Task<PayRunRuleSnapshotDto?> GetPayRunRuleSnapshotAsync(Guid payRunId, CancellationToken cancellationToken = default);
     Task<FileExportResultDto?> GenerateApitCertificateAsync(Guid payRunId, Guid paySlipId, CancellationToken cancellationToken = default);
     Task<FileExportResultDto?> ExportPaySlipAsync(Guid payRunId, Guid paySlipId, string format = "pdf", CancellationToken cancellationToken = default);
 }

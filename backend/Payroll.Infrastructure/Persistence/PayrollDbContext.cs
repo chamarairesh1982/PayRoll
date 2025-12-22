@@ -47,6 +47,8 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
     public DbSet<Bank> Banks => Set<Bank>();
     public DbSet<BankBranch> BankBranches => Set<BankBranch>();
     public DbSet<EmployeeRecurringPayItem> EmployeeRecurringPayItems => Set<EmployeeRecurringPayItem>();
+    public DbSet<RulePackage> RulePackages => Set<RulePackage>();
+    public DbSet<RulePackageVersion> RulePackageVersions => Set<RulePackageVersion>();
     public DbSet<EpfEtfRuleSet> EpfEtfRuleSets => Set<EpfEtfRuleSet>();
     public DbSet<TaxRuleSet> TaxRuleSets => Set<TaxRuleSet>();
     public DbSet<TaxSlab> TaxSlabs => Set<TaxSlab>();
@@ -69,6 +71,7 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
         ValidateEmployeeRecurringPayItems();
         ValidateRecurringPayItemRules();
         ValidateRecurringPayItemAssignments();
+        ValidateRulePackageVersions();
         EnsureAuditEventEntriesAreAppendOnly();
         EnsurePayRunStatusHistoryIsAppendOnly();
 
@@ -213,6 +216,43 @@ public class PayrollDbContext : DbContext, IPayrollDbContext
             else
             {
                 throw new InvalidOperationException("Invalid recurring rule type.");
+            }
+        }
+    }
+
+    private void ValidateRulePackageVersions()
+    {
+        var pendingVersions = ChangeTracker.Entries<RulePackageVersion>()
+            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
+            .Select(e => e.Entity)
+            .ToList();
+
+        foreach (var version in pendingVersions)
+        {
+            if (version.EffectiveTo.HasValue && version.EffectiveTo.Value < version.EffectiveFrom)
+            {
+                throw new InvalidOperationException("Rule package version effective to date cannot be earlier than effective from date.");
+            }
+
+            if (version.Status != RulePackageVersionStatus.Active)
+            {
+                continue;
+            }
+
+            var rangeStart = version.EffectiveFrom;
+            var rangeEnd = version.EffectiveTo ?? DateOnly.MaxValue;
+
+            var overlaps = RulePackageVersions
+                .AsNoTracking()
+                .Any(existing => existing.Id != version.Id
+                                 && existing.RulePackageId == version.RulePackageId
+                                 && existing.Status == RulePackageVersionStatus.Active
+                                 && existing.EffectiveFrom <= rangeEnd
+                                 && (existing.EffectiveTo == null || existing.EffectiveTo >= rangeStart));
+
+            if (overlaps)
+            {
+                throw new InvalidOperationException("Overlapping active rule package versions are not allowed.");
             }
         }
     }
