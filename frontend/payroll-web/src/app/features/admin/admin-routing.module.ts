@@ -6,9 +6,9 @@ import { RuleVersionsPageComponent } from './pages/rule-versions/rule-versions-p
 
 const routes: Routes = [
   { path: '', redirectTo: 'audit-logs', pathMatch: 'full' },
-  { path: 'audit-logs', component: AuditLogListPageComponent },
-  { path: 'general-ledger', component: GlSettingsPageComponent },
-  { path: 'rule-versions', component: RuleVersionsPageComponent },
+  { path: 'audit-logs', component: AuditLogListPageComponent, data: { breadcrumb: 'Audit Logs' } },
+  { path: 'general-ledger', component: GlSettingsPageComponent, data: { breadcrumb: 'General Ledger' } },
+  { path: 'rule-versions', component: RuleVersionsPageComponent, data: { breadcrumb: 'Rule Versions' } },
 ];
 
 @NgModule({

@@ -9,23 +9,28 @@ const routes: Routes = [
   {
     path: '',
     component: PayRunsListPageComponent,
+    data: { breadcrumb: 'Pay Runs' },
   },
   {
     path: 'new',
     component: PayRunCreatePageComponent,
+    data: { breadcrumb: 'New Pay Run' },
   },
   {
     path: 'recurring-rules',
     loadChildren: () =>
       import('../recurring-rules/recurring-rules.module').then(m => m.RecurringRulesModule),
+    data: { breadcrumb: 'Recurring Pay Items' },
   },
   {
     path: ':payRunId/payslips/:paySlipId',
     component: PayslipViewPageComponent,
+    data: { breadcrumb: 'Payslip' },
   },
   {
     path: ':id',
     component: PayRunDetailPageComponent,
+    data: { breadcrumb: 'Pay Run Details' },
   },
 ];
 
