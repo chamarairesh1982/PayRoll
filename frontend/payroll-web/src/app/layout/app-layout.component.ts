@@ -21,6 +21,11 @@ interface DensityOption {
   value: 'comfortable' | 'compact';
 }
 
+interface TenantOption {
+  label: string;
+  value: string;
+}
+
 @Component({
   selector: 'app-layout',
   standalone: true,
@@ -50,21 +55,21 @@ export class AppLayoutComponent implements OnInit {
     { label: 'Compact', value: 'compact' },
   ];
   selectedDensity: DensityOption = this.densityOptions[0];
-  companyOptions = [
+  companyOptions: TenantOption[] = [
     { label: 'WorldBets Holdings', value: 'worldbets' },
     { label: 'WorldBets Retail', value: 'worldbets-retail' },
   ];
-  branchOptions = [
+  branchOptions: TenantOption[] = [
     { label: 'Colombo HQ', value: 'colombo-hq' },
     { label: 'Kandy Branch', value: 'kandy-branch' },
   ];
-  costCenterOptions = [
+  costCenterOptions: TenantOption[] = [
     { label: 'Finance', value: 'finance' },
     { label: 'Operations', value: 'operations' },
   ];
-  selectedCompany = this.companyOptions[0];
-  selectedBranch = this.branchOptions[0];
-  selectedCostCenter = this.costCenterOptions[0];
+  selectedCompany: TenantOption = this.companyOptions[0];
+  selectedBranch: TenantOption = this.branchOptions[0];
+  selectedCostCenter: TenantOption = this.costCenterOptions[0];
   userMenuItems: MenuItem[] = [
     { label: 'Profile', icon: 'pi pi-user' },
     { label: 'Notifications', icon: 'pi pi-bell' },
