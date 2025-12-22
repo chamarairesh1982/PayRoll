@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, Renderer2 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -12,6 +12,7 @@ import { PanelMenuModule } from 'primeng/panelmenu';
 import { SidebarModule } from 'primeng/sidebar';
 import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
+import { filter } from 'rxjs/operators';
 
 import { BreadcrumbComponent } from '../shared/components/breadcrumb/breadcrumb.component';
 import { AppMenuItem } from '../shared/models/menu.model';
@@ -76,7 +77,7 @@ export class AppLayoutComponent implements OnInit {
     { label: 'Sign Out', icon: 'pi pi-sign-out', command: () => this.signOut() },
   ];
 
-  menuItems: AppMenuItem[] = [
+  private readonly baseMenuItems: AppMenuItem[] = [
     {
       label: 'Dashboard',
       icon: 'pi pi-home',
@@ -139,6 +140,7 @@ export class AppLayoutComponent implements OnInit {
       ],
     },
   ];
+  menuItems: AppMenuItem[] = [];
 
   constructor(
     private renderer: Renderer2,
@@ -147,6 +149,10 @@ export class AppLayoutComponent implements OnInit {
 
   ngOnInit(): void {
     this.applyDensity(this.selectedDensity.value);
+    this.syncMenuState();
+    this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(() => {
+      this.syncMenuState();
+    });
   }
 
   toggleSidebar(): void {
@@ -167,5 +173,32 @@ export class AppLayoutComponent implements OnInit {
 
   private signOut(): void {
     this.router.navigateByUrl('/login');
+  }
+
+  private syncMenuState(): void {
+    this.menuItems = this.baseMenuItems.map(item => this.applyExpandedState(item));
+  }
+
+  private applyExpandedState(item: AppMenuItem): AppMenuItem {
+    const items = item.items?.map(child => this.applyExpandedState(child));
+    const expanded = Boolean(items?.some(child => child.expanded || this.isItemActive(child)));
+    return {
+      ...item,
+      items,
+      expanded,
+    };
+  }
+
+  private isItemActive(item: AppMenuItem): boolean {
+    if (!item.routerLink) {
+      return false;
+    }
+    const commands = Array.isArray(item.routerLink) ? item.routerLink : [item.routerLink];
+    return this.router.isActive(this.router.createUrlTree(commands), {
+      paths: 'exact',
+      queryParams: 'ignored',
+      fragment: 'ignored',
+      matrixParams: 'ignored',
+    });
   }
 }
