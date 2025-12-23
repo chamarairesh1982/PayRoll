@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, PRIMARY_OUTLET, Router } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { filter, Subject, takeUntil } from 'rxjs';
@@ -47,22 +47,20 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  private buildBreadcrumbs(route: ActivatedRoute, url: string = '', breadcrumbs: MenuItem[] = []): MenuItem[] {
-    const children = route.children;
-    if (!children.length) {
-      return breadcrumbs;
-    }
-
-    for (const child of children) {
-      const routeURL = child.snapshot.url.map(segment => segment.path).join('/');
+  private buildBreadcrumbs(route: ActivatedRoute): MenuItem[] {
+    const breadcrumbs: MenuItem[] = [];
+    const snapshots = route.snapshot.pathFromRoot.filter(snapshot => snapshot.outlet === PRIMARY_OUTLET);
+    let nextUrl = '';
+    for (const snapshot of snapshots) {
+      const routeURL = snapshot.url.map(segment => segment.path).join('/');
       if (routeURL) {
-        url += `/${routeURL}`;
+        nextUrl += `/${routeURL}`;
       }
-      const label = child.snapshot.data['breadcrumb'] as string | undefined;
+      const label = snapshot.data['breadcrumb'] as string | undefined;
       if (label) {
-        breadcrumbs.push({ label, routerLink: url });
+        const routerLink = routeURL ? nextUrl : undefined;
+        breadcrumbs.push({ label, routerLink });
       }
-      return this.buildBreadcrumbs(child, url, breadcrumbs);
     }
 
     return breadcrumbs;
