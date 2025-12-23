@@ -57,7 +57,8 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
     const nextUrl = routeURL ? `${url}/${routeURL}` : url;
     const label = primaryChild.snapshot.data['breadcrumb'] as string | undefined;
     if (label) {
-      breadcrumbs.push({ label, routerLink: nextUrl });
+      const routerLink = routeURL ? nextUrl : undefined;
+      breadcrumbs.push({ label, routerLink });
     }
 
     return this.buildBreadcrumbs(primaryChild, nextUrl, breadcrumbs);
