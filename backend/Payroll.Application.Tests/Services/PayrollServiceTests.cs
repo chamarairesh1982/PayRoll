@@ -302,6 +302,76 @@ public class PayrollServiceTests
     }
 
     [Fact]
+    public async Task CreatePayRun_Should_Proration_Recurring_Allowance_When_Starts_MidPeriod()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP010A", "Vera", 100_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+
+        var allowanceType = TestDataSeeder.SeedAllowanceType(context.DbContext, "ALW_RECUR_PR", "Prorated Allowance", true, true, true);
+        var rule = TestDataSeeder.SeedRecurringPayItemRule(
+            context.DbContext,
+            "Prorated Rule",
+            RecurringRuleType.Allowance,
+            allowanceType.Id,
+            3_000m,
+            new DateOnly(2025, 4, 1),
+            null,
+            true,
+            true,
+            true);
+
+        TestDataSeeder.SeedRecurringPayItemAssignment(
+            context.DbContext,
+            rule.Id,
+            employee.Id,
+            new DateOnly(2025, 4, 16),
+            null);
+
+        var payrollService = CreatePayrollService(context);
+        var result = await payrollService.CreatePayRunAsync(BuildDefaultRequest(employee.Id));
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        paySlip.Earnings.Should().Contain(e => e.Code == "ALW_RECUR_PR" && e.Amount == 1_500m);
+    }
+
+    [Fact]
+    public async Task CreatePayRun_Should_Proration_Recurring_Allowance_When_Ends_MidPeriod()
+    {
+        using var context = new TestContext();
+        var employee = TestDataSeeder.SeedEmployee(context.DbContext, "EMP010B", "Zoe", 100_000m);
+        TestDataSeeder.SeedDefaultEpfEtfRule(context.DbContext);
+        TestDataSeeder.SeedSimpleTaxRuleSet(context.DbContext);
+
+        var allowanceType = TestDataSeeder.SeedAllowanceType(context.DbContext, "ALW_RECUR_END", "Prorated Allowance End", true, true, true);
+        var rule = TestDataSeeder.SeedRecurringPayItemRule(
+            context.DbContext,
+            "Prorated Rule End",
+            RecurringRuleType.Allowance,
+            allowanceType.Id,
+            3_000m,
+            new DateOnly(2025, 4, 1),
+            null,
+            true,
+            true,
+            true);
+
+        TestDataSeeder.SeedRecurringPayItemAssignment(
+            context.DbContext,
+            rule.Id,
+            employee.Id,
+            new DateOnly(2025, 4, 1),
+            new DateOnly(2025, 4, 20));
+
+        var payrollService = CreatePayrollService(context);
+        var result = await payrollService.CreatePayRunAsync(BuildDefaultRequest(employee.Id));
+
+        var paySlip = result.PaySlips.Should().ContainSingle().Subject;
+        paySlip.Earnings.Should().Contain(e => e.Code == "ALW_RECUR_END" && e.Amount == 2_000m);
+    }
+
+    [Fact]
     public async Task CreatePayRun_Should_Apply_Percentage_Allowance_On_Basic_Salary()
     {
         using var context = new TestContext();
