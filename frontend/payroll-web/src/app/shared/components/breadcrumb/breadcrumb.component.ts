@@ -47,9 +47,10 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  private buildBreadcrumbs(route: ActivatedRoute, url: string = '', breadcrumbs: MenuItem[] = []): MenuItem[] {
+  private buildBreadcrumbs(route: ActivatedRoute): MenuItem[] {
+    const breadcrumbs: MenuItem[] = [];
     const snapshots = route.snapshot.pathFromRoot.filter(snapshot => snapshot.outlet === PRIMARY_OUTLET);
-    let nextUrl = url;
+    let nextUrl = '';
     for (const snapshot of snapshots) {
       const routeURL = snapshot.url.map(segment => segment.path).join('/');
       if (routeURL) {
