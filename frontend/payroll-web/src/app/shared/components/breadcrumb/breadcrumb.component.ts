@@ -63,6 +63,6 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
       }
     }
 
-    return this.buildBreadcrumbs(primaryChild, nextUrl, breadcrumbs);
+    return breadcrumbs;
   }
 }
