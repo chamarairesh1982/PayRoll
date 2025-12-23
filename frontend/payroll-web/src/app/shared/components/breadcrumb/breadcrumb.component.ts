@@ -3,7 +3,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, PRIMARY_OUTLET, Router } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
-import { filter, startWith, Subject, takeUntil } from 'rxjs';
+import { filter, Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-breadcrumb',
@@ -20,32 +20,46 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
   constructor(private router: Router, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
+    this.updateBreadcrumb();
     this.router.events
       .pipe(
-        startWith(new NavigationEnd(0, this.router.url, this.router.url)),
         filter(event => event instanceof NavigationEnd),
         takeUntil(this.destroy$),
       )
-      .subscribe(() => {
-        const breadcrumbs = this.buildBreadcrumbs(this.route.root);
-        const deduped = breadcrumbs.filter((item, index) => {
-          const next = breadcrumbs[index + 1];
-          if (next?.routerLink && item.routerLink && item.routerLink === next.routerLink) {
-            return false;
-          }
-          return true;
-        });
-        const lastIndex = deduped.length - 1;
-        if (lastIndex >= 0) {
-          deduped[lastIndex] = { ...deduped[lastIndex], routerLink: undefined };
-        }
-        this.items = deduped;
-      });
+      .subscribe(() => this.updateBreadcrumb());
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private updateBreadcrumb(): void {
+    const breadcrumbs = this.buildBreadcrumbs(this.getActivePrimaryRoute(this.route));
+    const deduped = breadcrumbs.filter((item, index) => {
+      const next = breadcrumbs[index + 1];
+      if (next?.routerLink && item.routerLink && item.routerLink === next.routerLink) {
+        return false;
+      }
+      return true;
+    });
+    const lastIndex = deduped.length - 1;
+    if (lastIndex >= 0) {
+      deduped[lastIndex] = { ...deduped[lastIndex], routerLink: undefined };
+    }
+    this.items = deduped;
+  }
+
+  private getActivePrimaryRoute(route: ActivatedRoute): ActivatedRoute {
+    let currentRoute = route;
+    while (currentRoute.firstChild) {
+      const primaryChild = currentRoute.children.find(child => child.outlet === PRIMARY_OUTLET);
+      if (!primaryChild) {
+        break;
+      }
+      currentRoute = primaryChild;
+    }
+    return currentRoute;
   }
 
   private buildBreadcrumbs(route: ActivatedRoute): MenuItem[] {
