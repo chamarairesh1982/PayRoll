@@ -2158,7 +2158,13 @@ public class PayrollService : IPayrollService
 
         var activeDays = effectiveEnd.DayNumber - effectiveStart.DayNumber + 1;
         var periodDays = periodEnd.DayNumber - periodStart.DayNumber + 1;
-        var prorated = rule.Amount * activeDays / periodDays;
+
+        if (activeDays <= 0 || periodDays <= 0)
+        {
+            return 0m;
+        }
+
+        var prorated = rule.Amount * activeDays / (decimal)periodDays;
         return RoundCurrency(prorated);
     }
 
