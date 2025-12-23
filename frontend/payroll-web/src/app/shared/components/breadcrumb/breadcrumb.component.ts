@@ -3,7 +3,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, PRIMARY_OUTLET, Router } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
-import { filter, Subject, takeUntil } from 'rxjs';
+import { filter, startWith, Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-breadcrumb',
@@ -22,6 +22,7 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.router.events
       .pipe(
+        startWith(new NavigationEnd(0, this.router.url, this.router.url)),
         filter(event => event instanceof NavigationEnd),
         takeUntil(this.destroy$),
       )
@@ -58,7 +59,7 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
       }
       const label = snapshot.data['breadcrumb'] as string | undefined;
       if (label) {
-        const routerLink = routeURL ? nextUrl : undefined;
+        const routerLink = nextUrl || undefined;
         breadcrumbs.push({ label, routerLink });
       }
     }
