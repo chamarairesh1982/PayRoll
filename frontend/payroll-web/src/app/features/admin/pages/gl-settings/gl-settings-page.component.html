@@ -1,114 +1,98 @@
-<div class="gl-settings-page">
-  <h1>General Ledger Setup</h1>
-  <div class="muted">Maintain the chart of accounts and mappings used for payroll postings.</div>
-
-  <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
-
-  <section class="gl-section">
-    <h2>GL Accounts</h2>
-    <div class="account-form">
-      <label>
-        Code
-        <input type="text" [(ngModel)]="accountForm.code" />
-      </label>
-      <label>
-        Name
-        <input type="text" [(ngModel)]="accountForm.name" />
-      </label>
-      <label>
-        Type
-        <select [(ngModel)]="accountForm.type">
-          <option *ngFor="let type of accountTypes" [value]="type">{{ type }}</option>
-        </select>
-      </label>
-      <label class="checkbox">
-        <input type="checkbox" [(ngModel)]="accountForm.isActive" />
-        Active
-      </label>
-      <div class="form-actions">
-        <button type="button" (click)="saveAccount()">Save</button>
-        <button type="button" (click)="resetAccountForm()">Clear</button>
-      </div>
+<div class="page-container animate-fadeIn">
+  <!-- Context Header: Institutional Governance -->
+  <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-end gap-4 mb-6">
+    <div>
+      <h1 class="m-0 text-3xl font-extrabold tracking-tight text-900 line-height-1">Institutional General Ledger</h1>
+      <p class="text-600 mt-2 mb-0">Orchestration of fiscal accounts and systemic payroll component mappings.</p>
     </div>
+    <div class="flex gap-2">
+      <button pButton icon="pi pi-plus-circle" label="Initialize Fiscal Account" class="p-button-primary shadow-2"
+        (click)="initNewAccount()"></button>
+    </div>
+  </div>
 
-    <div *ngIf="isLoadingAccounts" class="muted">Loading accounts...</div>
-    <table class="table" *ngIf="accounts.length; else noAccounts">
-      <thead>
-        <tr>
-          <th>Code</th>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Active</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let account of accounts">
-          <td>{{ account.code }}</td>
-          <td>{{ account.name }}</td>
-          <td>{{ account.type }}</td>
-          <td>{{ account.isActive ? 'Yes' : 'No' }}</td>
-          <td>
-            <button type="button" (click)="editAccount(account)">Edit</button>
-            <button type="button" (click)="deleteAccount(account)">Delete</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <ng-template #noAccounts>
-      <div class="muted">No GL accounts configured yet.</div>
-    </ng-template>
-  </section>
+  <p-tabView styleClass="surface-card border-round-xl shadow-1 overflow-hidden">
+    <p-tabPanel header="Chart of Accounts">
+      <div class="p-2">
+        <app-data-table [columns]="accountColumns" [data]="accounts" [loading]="isLoadingAccounts" [paginator]="true"
+          [rows]="10" [showGlobalFilter]="true"
+          emptyMessage="No fiscal accounts identified in the institutional ledger.">
+          <ng-template #rowActions let-item>
+            <div class="flex gap-1 justify-content-end">
+              <button pButton icon="pi pi-pencil" class="p-button-text p-button-sm p-button-secondary"
+                pTooltip="Modify Account Specification" (click)="editAccount(item)"></button>
+              <button pButton icon="pi pi-trash" class="p-button-text p-button-sm p-button-danger"
+                pTooltip="Decommission Account" (click)="deleteAccount(item)"></button>
+            </div>
+          </ng-template>
+        </app-data-table>
+      </div>
+    </p-tabPanel>
 
-  <section class="gl-section">
-    <h2>GL Mappings</h2>
-    <div *ngIf="isLoadingMappings" class="muted">Loading mappings...</div>
-    <table class="table" *ngIf="mappings.length; else noMappings">
-      <thead>
-        <tr>
-          <th>Component</th>
-          <th>Type</th>
-          <th>Cost Center</th>
-          <th>Debit Account</th>
-          <th>Credit Account</th>
-          <th>Posting Rule</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let mapping of mappings">
-          <td>{{ mapping.payComponentName }} ({{ mapping.payComponentCode }})</td>
-          <td>{{ mapping.payComponentType }}</td>
-          <td>{{ mapping.costCenterName || 'All' }}</td>
-          <td>
-            <select [(ngModel)]="mapping.debitAccountId">
-              <option [ngValue]="null">Select</option>
-              <option *ngFor="let account of accounts" [ngValue]="account.id">
-                {{ account.code }} - {{ account.name }}
-              </option>
-            </select>
-          </td>
-          <td>
-            <select [(ngModel)]="mapping.creditAccountId">
-              <option [ngValue]="null">Select</option>
-              <option *ngFor="let account of accounts" [ngValue]="account.id">
-                {{ account.code }} - {{ account.name }}
-              </option>
-            </select>
-          </td>
-          <td>
-            <select [(ngModel)]="mapping.postingSideRule">
-              <option *ngFor="let rule of postingRules" [value]="rule">{{ rule }}</option>
-            </select>
-          </td>
-          <td>
-            <button type="button" (click)="saveMapping(mapping)">Save</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <ng-template #noMappings>
-      <div class="muted">No GL mappings available yet.</div>
-    </ng-template>
-  </section>
+    <p-tabPanel header="Component Mappings">
+      <div class="p-2 text-600 text-sm mb-4 px-3 flex align-items-center gap-2">
+        <i class="pi pi-info-circle text-blue-500"></i>
+        <span>Systemic orchestration of payroll components to the general ledger framework.</span>
+      </div>
+      <div class="p-2">
+        <app-data-table [columns]="mappingColumns" [data]="mappings" [loading]="isLoadingMappings" [paginator]="true"
+          [rows]="10" [showGlobalFilter]="true"
+          emptyMessage="No component mappings initialized for the current fiscal period.">
+          <ng-template pTemplate="debitAccountId" let-item>
+            <span class="font-medium font-mono text-xs">{{ getAccountLabel(item.debitAccountId) }}</span>
+          </ng-template>
+          <ng-template pTemplate="creditAccountId" let-item>
+            <span class="font-medium font-mono text-xs">{{ getAccountLabel(item.creditAccountId) }}</span>
+          </ng-template>
+          <ng-template pTemplate="postingSideRule" let-item>
+            <p-tag [value]="item.postingSideRule" severity="info" styleClass="text-xs"></p-tag>
+          </ng-template>
+          <ng-template #rowActions let-item>
+            <div class="flex gap-1 justify-content-end">
+              <button pButton icon="pi pi-cog" class="p-button-text p-button-sm p-button-secondary"
+                pTooltip="Configure Orchestration"></button>
+            </div>
+          </ng-template>
+        </app-data-table>
+      </div>
+    </p-tabPanel>
+  </p-tabView>
 </div>
+
+<!-- Dialog: Fiscal Account Specification -->
+<p-dialog [(visible)]="showAccountDialog"
+  [header]="editingAccountId ? 'Modify Account Specification' : 'Initialize Fiscal Account'" [modal]="true"
+  [style]="{width: '450px'}" styleClass="p-fluid border-round-xl overflow-hidden" [draggable]="false"
+  [resizable]="false">
+  <div class="flex flex-column gap-4 py-3">
+    <div class="field">
+      <label class="font-bold text-sm mb-2 block uppercase tracking-wider text-500">Account Code</label>
+      <input pInputText [(ngModel)]="accountForm.code" placeholder="e.g. 1001-CASH" class="border-round-lg" />
+    </div>
+    <div class="field">
+      <label class="font-bold text-sm mb-2 block uppercase tracking-wider text-500">Account Name</label>
+      <input pInputText [(ngModel)]="accountForm.name" placeholder="e.g. Operating Cash Account"
+        class="border-round-lg" />
+    </div>
+    <div class="field">
+      <label class="font-bold text-sm mb-2 block uppercase tracking-wider text-500">Category</label>
+      <p-dropdown [options]="accountTypes" [(ngModel)]="accountForm.type" placeholder="Select Category"
+        styleClass="border-round-lg"></p-dropdown>
+    </div>
+    <div class="flex align-items-center gap-3 mt-2 bg-surface-50 p-3 border-round-lg">
+      <p-inputSwitch [(ngModel)]="accountForm.isActive"></p-inputSwitch>
+      <span class="text-sm font-medium">Policy Enforcement Active</span>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="flex gap-2 justify-content-end pb-3 px-3">
+      <button pButton label="Cancel" class="p-button-text p-button-secondary font-bold"
+        (click)="showAccountDialog = false"></button>
+      <button pButton [label]="editingAccountId ? 'Update Specification' : 'Initialize Account'"
+        class="p-button-primary shadow-2 font-bold px-4" (click)="saveAccount()"></button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<p-toast></p-toast>

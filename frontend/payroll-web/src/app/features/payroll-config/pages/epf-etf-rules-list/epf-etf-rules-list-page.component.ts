@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { PaginatedResult } from '../../../employees/models/employee.model';
+import { LazyLoadEvent, MessageService } from 'primeng/api';
+import { DataTableColumn } from '../../../../shared/components/table/data-table.component';
 import { EpfEtfRuleSet } from '../../models/epf-etf-rule-set.model';
 import { EpfEtfRulesApiService } from '../../services/epf-etf-rules-api.service';
 
@@ -8,44 +9,61 @@ import { EpfEtfRulesApiService } from '../../services/epf-etf-rules-api.service'
   selector: 'app-epf-etf-rules-list-page',
   templateUrl: './epf-etf-rules-list-page.component.html',
   styleUrls: ['./epf-etf-rules-list-page.component.scss'],
+  providers: [MessageService]
 })
 export class EpfEtfRulesListPageComponent implements OnInit {
   items: EpfEtfRuleSet[] = [];
-  page = 1;
-  pageSize = 20;
   totalCount = 0;
   isLoading = false;
   filterIsActive: 'all' | 'active' | 'inactive' = 'active';
 
-  constructor(private epfEtfApi: EpfEtfRulesApiService, private router: Router) {}
+  columns: DataTableColumn<EpfEtfRuleSet>[] = [
+    { field: 'name', header: 'Governance Policy', sortable: true },
+    { field: 'effectiveFrom', header: 'Enforcement Start', type: 'date', sortable: true },
+    { field: 'effectiveTo', header: 'Enforcement End', type: 'date', sortable: true },
+    { field: 'employeeEpfRate', header: 'EE EPF %', sortable: true },
+    { field: 'employerEpfRate', header: 'ER EPF %', sortable: true },
+    { field: 'employerEtfRate', header: 'ER ETF %', sortable: true },
+    { field: 'isDefault', header: 'Primary', type: 'boolean' },
+    { field: 'isActive', header: 'Status', type: 'boolean' }
+  ];
+
+  constructor(
+    private epfEtfApi: EpfEtfRulesApiService,
+    private router: Router,
+    private messageService: MessageService
+  ) { }
 
   ngOnInit(): void {
-    this.load();
+    // Initial load will be triggered by app-data-table's onLazyLoad
   }
 
-  load(): void {
+  load(event?: LazyLoadEvent): void {
     this.isLoading = true;
+    const page = event ? Math.floor((event.first ?? 0) / (event.rows ?? 10)) + 1 : 1;
+    const pageSize = event?.rows ?? 10;
     const isActive = this.filterIsActive === 'all' ? null : this.filterIsActive === 'active';
 
     this.epfEtfApi
-      .getRuleSets({ page: this.page, pageSize: this.pageSize, isActive })
+      .getRuleSets({ page, pageSize, isActive })
       .subscribe({
-        next: (result: PaginatedResult<EpfEtfRuleSet>) => {
+        next: result => {
           this.items = result.items;
           this.totalCount = result.totalCount;
-          this.page = result.page;
-          this.pageSize = result.pageSize;
           this.isLoading = false;
         },
         error: err => {
-          console.error('Failed to load EPF/ETF rules', err);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Systemic Failure',
+            detail: 'Failed to synchronize EPF/ETF governance protocols.'
+          });
           this.isLoading = false;
         },
       });
   }
 
   handleFilterChange(): void {
-    this.page = 1;
     this.load();
   }
 
@@ -55,23 +73,5 @@ export class EpfEtfRulesListPageComponent implements OnInit {
 
   navigateToEdit(item: EpfEtfRuleSet): void {
     this.router.navigate(['/config/epf-etf', item.id, 'edit']);
-  }
-
-  nextPage(): void {
-    if (this.page * this.pageSize < this.totalCount) {
-      this.page++;
-      this.load();
-    }
-  }
-
-  previousPage(): void {
-    if (this.page > 1) {
-      this.page--;
-      this.load();
-    }
-  }
-
-  get totalPages(): number {
-    return this.pageSize ? Math.ceil(this.totalCount / this.pageSize) : 1;
   }
 }

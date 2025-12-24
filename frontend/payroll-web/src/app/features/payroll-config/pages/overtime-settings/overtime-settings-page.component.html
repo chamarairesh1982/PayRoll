@@ -1,54 +1,86 @@
-<section class="page">
-  <header class="page-header">
+<div class="page-container animate-fadeIn">
+  <!-- Context Header: Institutional Governance -->
+  <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-end gap-4 mb-6">
     <div>
-      <h1>Overtime rules</h1>
-      <p class="muted">Create and manage overtime rules used in payroll calculations.</p>
+      <h1 class="m-0 text-3xl font-extrabold tracking-tight text-900 line-height-1">Overtime Governance</h1>
+      <p class="text-600 mt-2 mb-0">Policy definitions for institutional overtime mandates and multiplier orchestration.
+      </p>
     </div>
-    <button type="button" class="btn" (click)="createRule()">New rule</button>
-  </header>
-
-  <div *ngIf="isLoading" class="loading">Loading overtime rules...</div>
-  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
-  <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
-
-  <div class="rules-layout" *ngIf="!isLoading">
-    <aside class="rules-list">
-      <div *ngIf="!rules.length" class="empty">No rules yet. Create one to get started.</div>
-      <ul>
-        <li
-          *ngFor="let rule of rules"
-          [class.active]="selectedRule?.id === rule.id"
-          (click)="selectRule(rule)"
-        >
-          <div class="rule-name">{{ rule.type }} OT</div>
-          <div class="rule-meta">
-            <span>{{ rule.multiplier }}x</span>
-            <span>{{ rule.effectiveFrom }} → {{ rule.effectiveTo || 'Open' }}</span>
-            <span [class.muted]="!rule.isActive">{{ rule.isActive ? 'Active' : 'Inactive' }}</span>
-          </div>
-        </li>
-      </ul>
-    </aside>
-
-    <section class="rule-form" *ngIf="selectedRule; else selectPrompt">
-      <app-overtime-settings-form
-        [initialValue]="selectedRule"
-        [isSaving]="isSaving"
-        (submitted)="saveRule($event)"
-      ></app-overtime-settings-form>
-
-      <button
-        type="button"
-        class="btn btn-danger"
-        *ngIf="selectedRule?.id"
-        (click)="deleteRule(selectedRule)"
-      >
-        Delete rule
-      </button>
-    </section>
+    <div class="flex gap-2">
+      <button pButton icon="pi pi-plus-circle" label="Establish New Mandate" class="p-button-primary shadow-2"
+        (click)="createRule()"></button>
+    </div>
   </div>
 
-  <ng-template #selectPrompt>
-    <div class="empty">Select a rule to edit or create a new one.</div>
-  </ng-template>
-</section>
+  <div *ngIf="isLoading" class="flex justify-content-center p-8">
+    <p-progressSpinner></p-progressSpinner>
+  </div>
+
+  <div class="grid" *ngIf="!isLoading">
+    <!-- Policy Navigation Sidebar -->
+    <div class="col-12 xl:col-4">
+      <div class="surface-card border-round-xl shadow-1 overflow-hidden h-full">
+        <div class="p-4 border-bottom-1 border-surface-100 bg-surface-50">
+          <h3 class="m-0 text-sm font-bold text-500 uppercase tracking-wider">Institutional Mandates</h3>
+        </div>
+        <div class="flex flex-column">
+          <div *ngFor="let rule of rules" (click)="selectRule(rule)"
+            class="p-4 cursor-pointer hover:bg-surface-50 border-bottom-1 border-surface-100 transition-colors relative"
+            [ngClass]="{'bg-primary-50': selectedRule?.id === rule.id}">
+            <div *ngIf="selectedRule?.id === rule.id" class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+            <div class="flex justify-content-between align-items-start mb-2">
+              <span class="font-extrabold text-900">{{ rule.type }} OT</span>
+              <p-tag [severity]="rule.isActive ? 'success' : 'danger'" [value]="rule.multiplier + 'x'"
+                styleClass="text-xs"></p-tag>
+            </div>
+            <div class="flex align-items-center gap-2 text-xs text-500">
+              <i class="pi pi-calendar"></i>
+              <span>{{ rule.effectiveFrom | date:'mediumDate' }} → {{ rule.effectiveTo ? (rule.effectiveTo |
+                date:'mediumDate') : 'Permanent' }}</span>
+            </div>
+          </div>
+          <div *ngIf="rules.length === 0" class="p-8 text-center text-500 italic">
+            <i class="pi pi-shield text-4xl mb-4 block"></i>
+            No mandates established in current scope.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Parameter Orchestration Workspace -->
+    <div class="col-12 xl:col-8">
+      <div class="surface-card border-round-xl shadow-1 p-6 h-full" *ngIf="selectedRule; else selectPrompt">
+        <div class="flex justify-content-between align-items-center mb-6">
+          <h2 class="m-0 text-xl font-extrabold tracking-tight">Policy Parameters</h2>
+          <button pButton icon="pi pi-trash" label="Revoke Mandate"
+            class="p-button-text p-button-danger p-button-sm font-bold" *ngIf="selectedRule?.id"
+            (click)="deleteRule(selectedRule)"></button>
+        </div>
+
+        <app-overtime-settings-form [initialValue]="selectedRule" [isSaving]="isSaving"
+          (submitted)="saveRule($event)"></app-overtime-settings-form>
+
+        <div *ngIf="!selectedRule.isActive"
+          class="mt-6 p-4 bg-red-50 border-round-lg border-1 border-red-100 flex align-items-center gap-3">
+          <i class="pi pi-exclamation-triangle text-red-500 text-xl"></i>
+          <span class="text-sm text-red-700 font-medium">This policy is currently in an archived state and will not be
+            utilized in systemic calculations.</span>
+        </div>
+      </div>
+
+      <ng-template #selectPrompt>
+        <div
+          class="surface-card border-round-xl shadow-1 border-dashed border-2 border-surface-200 h-full flex flex-column align-items-center justify-content-center p-8 text-center">
+          <div class="p-4 bg-surface-50 border-round-circle mb-4">
+            <i class="pi pi-cog text-4xl text-300"></i>
+          </div>
+          <h3 class="m-0 text-900 font-bold mb-2">Initialize Specification</h3>
+          <p class="text-500 m-0 max-w-20rem">Select an existing mandate from the framework ledger or establish a new
+            policy specification.</p>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</div>
+
+<p-toast></p-toast>

@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { MessageService } from 'primeng/api';
 import { OTRule, OTRulePayload } from '../../models/ot-rule.model';
 import { OvertimeConfigApiService } from '../../services/overtime-config-api.service';
 
@@ -6,16 +7,18 @@ import { OvertimeConfigApiService } from '../../services/overtime-config-api.ser
   selector: 'app-overtime-settings-page',
   templateUrl: './overtime-settings-page.component.html',
   styleUrls: ['./overtime-settings-page.component.scss'],
+  providers: [MessageService]
 })
 export class OvertimeSettingsPageComponent implements OnInit {
   rules: OTRule[] = [];
   selectedRule: OTRule | null = null;
   isLoading = true;
   isSaving = false;
-  error: string | null = null;
-  successMessage: string | null = null;
 
-  constructor(private overtimeConfigApi: OvertimeConfigApiService) {}
+  constructor(
+    private overtimeConfigApi: OvertimeConfigApiService,
+    private messageService: MessageService
+  ) { }
 
   ngOnInit(): void {
     this.loadRules();
@@ -23,8 +26,6 @@ export class OvertimeSettingsPageComponent implements OnInit {
 
   loadRules(): void {
     this.isLoading = true;
-    this.error = null;
-
     this.overtimeConfigApi.getRules().subscribe({
       next: rules => {
         this.rules = rules;
@@ -34,16 +35,18 @@ export class OvertimeSettingsPageComponent implements OnInit {
         this.isLoading = false;
       },
       error: err => {
-        console.error('Failed to load overtime rules', err);
-        this.error = err.error?.message || 'Failed to load overtime rules.';
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Retrieval Error',
+          detail: 'Failed to synchronize institutional overtime protocols.'
+        });
         this.isLoading = false;
       },
     });
   }
 
   selectRule(rule: OTRule): void {
-    this.selectedRule = rule;
-    this.successMessage = null;
+    this.selectedRule = { ...rule };
   }
 
   createRule(): void {
@@ -59,25 +62,29 @@ export class OvertimeSettingsPageComponent implements OnInit {
       effectiveTo: null,
       isActive: true,
     };
-    this.successMessage = null;
   }
 
   saveRule(payload: OTRulePayload): void {
     this.isSaving = true;
-    this.successMessage = null;
-    this.error = null;
 
     if (this.selectedRule?.id) {
       this.overtimeConfigApi.updateRule(this.selectedRule.id, payload).subscribe({
         next: rule => {
           this.rules = this.rules.map(existing => (existing.id === rule.id ? rule : existing));
           this.selectedRule = rule;
-          this.successMessage = 'Overtime rule updated successfully.';
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Governance Updated',
+            detail: 'Overtime parameters have been successfully persistence.'
+          });
           this.isSaving = false;
         },
         error: err => {
-          console.error('Failed to update overtime rule', err);
-          this.error = err.error?.message || 'Failed to update overtime rule.';
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Persistence Failure',
+            detail: err.error?.message || 'Failed to modify overtime governance.'
+          });
           this.isSaving = false;
         },
       });
@@ -88,31 +95,43 @@ export class OvertimeSettingsPageComponent implements OnInit {
       next: rule => {
         this.rules = [...this.rules, rule];
         this.selectedRule = rule;
-        this.successMessage = 'Overtime rule created successfully.';
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Mandate Established',
+          detail: 'New overtime governance policy has been initialized.'
+        });
         this.isSaving = false;
       },
       error: err => {
-        console.error('Failed to create overtime rule', err);
-        this.error = err.error?.message || 'Failed to create overtime rule.';
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Initialization Failure',
+          detail: err.error?.message || 'Failed to establish new overtime policy.'
+        });
         this.isSaving = false;
       },
     });
   }
 
   deleteRule(rule: OTRule): void {
-    if (!rule.id) {
-      return;
-    }
+    if (!rule.id) return;
 
     this.overtimeConfigApi.deleteRule(rule.id).subscribe({
       next: () => {
         this.rules = this.rules.filter(existing => existing.id !== rule.id);
         this.selectedRule = this.rules[0] ?? null;
-        this.successMessage = 'Overtime rule removed successfully.';
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Policy Revoked',
+          detail: 'Institutional overtime mandate has been decommissioned.'
+        });
       },
       error: err => {
-        console.error('Failed to delete overtime rule', err);
-        this.error = err.error?.message || 'Failed to delete overtime rule.';
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Revocation Error',
+          detail: err.error?.message || 'Failed to decommission overtime policy.'
+        });
       },
     });
   }

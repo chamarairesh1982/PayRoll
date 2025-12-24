@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { MessageService } from 'primeng/api';
+import { DataTableColumn } from '../../../../shared/components/table/data-table.component';
 import { GlApiService } from '../../../payroll/services/gl-api.service';
 import { GlAccount, GlAccountType, GlMappingEntry, GlPostingSideRule } from '../../../payroll/models/gl.model';
 
@@ -6,19 +8,39 @@ import { GlAccount, GlAccountType, GlMappingEntry, GlPostingSideRule } from '../
   selector: 'app-gl-settings-page',
   templateUrl: './gl-settings-page.component.html',
   styleUrls: ['./gl-settings-page.component.scss'],
+  providers: [MessageService]
 })
 export class GlSettingsPageComponent implements OnInit {
   accounts: GlAccount[] = [];
   mappings: GlMappingEntry[] = [];
   isLoadingAccounts = false;
   isLoadingMappings = false;
-  errorMessage: string | null = null;
+
+  accountColumns: DataTableColumn<GlAccount>[] = [
+    { field: 'code', header: 'Account Code', sortable: true },
+    { field: 'name', header: 'Description', sortable: true },
+    { field: 'type', header: 'Category', sortable: true },
+    { field: 'isActive', header: 'Status', type: 'boolean' }
+  ];
+
+  mappingColumns: DataTableColumn<GlMappingEntry>[] = [
+    { field: 'payComponentCode', header: 'Component', sortable: true },
+    { field: 'payComponentType', header: 'Type', sortable: true },
+    { field: 'debitAccountId', header: 'Debit A/C' },
+    { field: 'creditAccountId', header: 'Credit A/C' },
+    { field: 'postingSideRule', header: 'Posting Logic' }
+  ];
+
   accountForm: Partial<GlAccount> = { type: 'Expense', isActive: true };
   editingAccountId: string | null = null;
   accountTypes: GlAccountType[] = ['Asset', 'Liability', 'Expense', 'Equity', 'Revenue'];
   postingRules: GlPostingSideRule[] = ['DebitWhenPositive', 'CreditWhenPositive'];
+  showAccountDialog = false;
 
-  constructor(private glApi: GlApiService) {}
+  constructor(
+    private glApi: GlApiService,
+    private messageService: MessageService
+  ) { }
 
   ngOnInit(): void {
     this.loadAccounts();
@@ -33,8 +55,7 @@ export class GlSettingsPageComponent implements OnInit {
         this.isLoadingAccounts = false;
       },
       error: err => {
-        console.error('Failed to load GL accounts', err);
-        this.errorMessage = err.error?.message || 'Failed to load GL accounts.';
+        this.messageService.add({ severity: 'error', summary: 'Retrieval Error', detail: 'Failed to synchronize institutional chart of accounts.' });
         this.isLoadingAccounts = false;
       },
     });
@@ -48,16 +69,21 @@ export class GlSettingsPageComponent implements OnInit {
         this.isLoadingMappings = false;
       },
       error: err => {
-        console.error('Failed to load GL mappings', err);
-        this.errorMessage = err.error?.message || 'Failed to load GL mappings.';
+        this.messageService.add({ severity: 'error', summary: 'Mapping Error', detail: 'Failed to synchronize component-to-ledger mappings.' });
         this.isLoadingMappings = false;
       },
     });
   }
 
+  initNewAccount(): void {
+    this.resetAccountForm();
+    this.showAccountDialog = true;
+  }
+
   editAccount(account: GlAccount): void {
     this.editingAccountId = account.id;
     this.accountForm = { ...account };
+    this.showAccountDialog = true;
   }
 
   resetAccountForm(): void {
@@ -67,63 +93,39 @@ export class GlSettingsPageComponent implements OnInit {
 
   saveAccount(): void {
     if (!this.accountForm.code || !this.accountForm.name || !this.accountForm.type) {
-      this.errorMessage = 'Account code, name, and type are required.';
+      this.messageService.add({ severity: 'warn', summary: 'Input Required', detail: 'Account identifier, name, and category are mandatory.' });
       return;
     }
 
     this.glApi.upsertAccount({ id: this.editingAccountId ?? undefined, ...this.accountForm }).subscribe({
       next: () => {
+        this.messageService.add({ severity: 'success', summary: 'Account persistence', detail: 'Fiscal account has been successfully synchronized.' });
+        this.showAccountDialog = false;
         this.resetAccountForm();
         this.loadAccounts();
         this.loadMappings();
       },
       error: err => {
-        console.error('Failed to save GL account', err);
-        this.errorMessage = err.error?.message || 'Failed to save GL account.';
+        this.messageService.add({ severity: 'error', summary: 'Persistence Failure', detail: err.error?.message || 'Failed to persist fiscal account.' });
       },
     });
   }
 
   deleteAccount(account: GlAccount): void {
-    if (!confirm(`Delete account ${account.code}?`)) {
-      return;
-    }
-
     this.glApi.deleteAccount(account.id).subscribe({
       next: () => {
+        this.messageService.add({ severity: 'warn', summary: 'Account Removed', detail: `Account ${account.code} has been decommissioned.` });
         this.loadAccounts();
         this.loadMappings();
       },
       error: err => {
-        console.error('Failed to delete GL account', err);
-        this.errorMessage = err.error?.message || 'Failed to delete GL account.';
+        this.messageService.add({ severity: 'error', summary: 'Revocation Error', detail: err.error?.message || 'Failed to decommission account.' });
       },
     });
   }
 
-  saveMapping(mapping: GlMappingEntry): void {
-    this.glApi
-      .upsertMapping({
-        id: mapping.id,
-        payComponentCode: mapping.payComponentCode,
-        payComponentType: mapping.payComponentType,
-        debitAccountId: mapping.debitAccountId,
-        creditAccountId: mapping.creditAccountId,
-        postingSideRule: mapping.postingSideRule,
-        costCenterId: mapping.costCenterId,
-        notes: mapping.notes,
-      })
-      .subscribe({
-        next: updated => {
-          const index = this.mappings.findIndex(entry => entry.payComponentCode === updated.payComponentCode && entry.payComponentType === updated.payComponentType && entry.costCenterId === updated.costCenterId);
-          if (index >= 0) {
-            this.mappings[index] = updated;
-          }
-        },
-        error: err => {
-          console.error('Failed to save GL mapping', err);
-          this.errorMessage = err.error?.message || 'Failed to save GL mapping.';
-        },
-      });
+  getAccountLabel(id: string): string {
+    const acc = this.accounts.find(a => a.id === id);
+    return acc ? `${acc.code} - ${acc.name}` : id;
   }
 }

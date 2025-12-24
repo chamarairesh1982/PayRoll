@@ -1,5 +1,5 @@
-import { Component, ContentChild, EventEmitter, Input, Output, TemplateRef, ViewChild } from '@angular/core';
-import { LazyLoadEvent, MenuItem } from 'primeng/api';
+import { Component, ContentChild, ContentChildren, EventEmitter, Input, Output, QueryList, TemplateRef, ViewChild } from '@angular/core';
+import { LazyLoadEvent, MenuItem, PrimeTemplate } from 'primeng/api';
 import { Table } from 'primeng/table';
 
 export type DataColumnAlign = 'left' | 'center' | 'right';
@@ -59,6 +59,12 @@ export class DataTableComponent<T extends Record<string, any>> {
   @ContentChild('headerActions') headerActionsTemplate?: TemplateRef<any>;
   @ContentChild('statusTemplate') statusTemplate?: TemplateRef<any>;
   @ContentChild('amountTemplate') amountTemplate?: TemplateRef<any>;
+  @ContentChildren(PrimeTemplate) templates?: QueryList<PrimeTemplate>;
+
+  getColumnTemplate(field: string | number | symbol): TemplateRef<any> | null {
+    const fieldName = String(field);
+    return this.templates?.find(t => t.getType() === fieldName)?.template || null;
+  }
 
   @Output() selectionChange = new EventEmitter<T | T[] | null>();
   @Output() lazyLoad = new EventEmitter<LazyLoadEvent>();
