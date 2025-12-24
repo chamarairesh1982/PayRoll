@@ -26,6 +26,7 @@ import { TabViewModule } from 'primeng/tabview';
 import { AvatarModule } from 'primeng/avatar';
 import { DividerModule } from 'primeng/divider';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { InputSwitchModule } from 'primeng/inputswitch';
 
 const PRIMENG_MODULES = [
   TableModule,
@@ -54,6 +55,7 @@ const PRIMENG_MODULES = [
   AvatarModule,
   DividerModule,
   ProgressSpinnerModule,
+  InputSwitchModule,
 ];
 
 @NgModule({

@@ -1,99 +1,118 @@
-<section class="tax-preview">
-  <div class="tax-preview__header">
+<div class="page-container animate-fadeIn">
+  <!-- Context Header -->
+  <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-end gap-4 mb-6">
     <div>
-      <h2 class="m-0">Monthly Tax Preview</h2>
-      <p class="text-600 mt-2 mb-0">Run PAYE previews before payroll engine integration.</p>
+      <h1 class="m-0 text-3xl font-extrabold tracking-tight text-900 line-height-1">PAYE Simulation</h1>
+      <p class="text-600 mt-2 mb-0">Institutional preview of monthly tax liabilities and relief applications.</p>
     </div>
-    <button pButton type="button" label="Refresh Preview" icon="pi pi-refresh" class="p-button-text" (click)="runPreview()"></button>
+    <button pButton icon="pi pi-refresh" label="Recalculate Projections"
+      class="p-button-text p-button-secondary font-bold" (click)="runPreview()"></button>
   </div>
 
-  <p-card>
+  <!-- Intelligence Filters -->
+  <div class="card border-none shadow-sm mb-6 p-4 surface-card flex flex-column gap-4">
     <form [formGroup]="form" class="grid p-fluid">
-      <div class="col-12 md:col-4">
-        <label for="previewMonth">Payroll month</label>
-        <p-calendar
-          id="previewMonth"
-          formControlName="month"
-          [showIcon]="true"
-          view="month"
-          dateFormat="yy-mm"
-          (onSelect)="updateActiveScheme(); runPreview()"
-        ></p-calendar>
+      <div class="col-12 md:col-4 field m-0">
+        <label class="text-900 font-bold mb-2 block text-sm">Fiscal Period</label>
+        <p-calendar formControlName="month" view="month" dateFormat="yy-mm" [showIcon]="true"
+          (onSelect)="updateActiveScheme(); runPreview()" placeholder="Select Period"></p-calendar>
       </div>
-      <div class="col-12 md:col-4">
-        <label for="scopeType">Scope</label>
+      <div class="col-12 md:col-4 field m-0">
+        <label class="text-900 font-bold mb-2 block text-sm">Enumeration Scope</label>
         <p-dropdown
-          id="scopeType"
-          [options]="[
-            { label: 'All employees', value: 'All' },
-            { label: 'Single employee', value: 'Employee' }
-          ]"
-          formControlName="scopeType"
-          (onChange)="runPreview()"
-        ></p-dropdown>
+          [options]="[{ label: 'Entire Workforce', value: 'All' }, { label: 'Filtered Employee', value: 'Employee' }]"
+          formControlName="scopeType" (onChange)="runPreview()"></p-dropdown>
       </div>
-      <div class="col-12 md:col-4">
-        <label for="employeeId">Employee</label>
-        <p-dropdown
-          id="employeeId"
-          [options]="employeeOptions"
-          [filter]="true"
-          [showClear]="true"
-          placeholder="Select an employee"
-          formControlName="employeeId"
-          (onChange)="runPreview()"
-          [disabled]="form.value.scopeType !== 'Employee'"
-        ></p-dropdown>
+      <div class="col-12 md:col-4 field m-0">
+        <label class="text-900 font-bold mb-2 block text-sm">Personnel Entity</label>
+        <p-dropdown [options]="employeeOptions" [filter]="true" [showClear]="true" placeholder="Search employee..."
+          formControlName="employeeId" (onChange)="runPreview()"
+          [disabled]="form.value.scopeType !== 'Employee'"></p-dropdown>
       </div>
     </form>
 
-    <div class="tax-preview__scheme" *ngIf="activeScheme; else noScheme">
-      <p-tag severity="info" [value]="activeScheme.name"></p-tag>
-      <span class="text-500">
-        Effective: {{ activeScheme.effectiveFrom | dateFormat }} → {{ activeScheme.effectiveTo ? (activeScheme.effectiveTo | dateFormat) : 'Open ended' }}
-      </span>
+    <!-- Dynamic Scheme Indicator -->
+    <div class="flex align-items-center justify-content-between p-3 border-round-xl"
+      [ngClass]="activeScheme ? 'bg-primary-50 border-1 border-primary-100' : 'bg-red-50 border-1 border-red-100'">
+      <div class="flex align-items-center gap-3" *ngIf="activeScheme">
+        <div class="p-3 bg-primary border-round-lg shadow-1">
+          <i class="pi pi-shield text-white text-xl"></i>
+        </div>
+        <div class="flex flex-column">
+          <span class="font-bold text-primary-900">{{ activeScheme.name }}</span>
+          <span class="text-xs text-primary-700">Effective from {{ activeScheme.effectiveFrom | date: 'longDate'
+            }}</span>
+        </div>
+      </div>
+      <div class="flex align-items-center gap-3" *ngIf="!activeScheme">
+        <div class="p-3 bg-red-500 border-round-lg shadow-1">
+          <i class="pi pi-exclamation-triangle text-white text-xl"></i>
+        </div>
+        <div class="flex flex-column">
+          <span class="font-bold text-red-900">Governance Void</span>
+          <span class="text-xs text-red-700">No active tax scheme identified for the selected period.</span>
+        </div>
+      </div>
+      <p-tag *ngIf="activeScheme" value="Active Compliance" severity="success" styleClass="px-3"></p-tag>
     </div>
-    <ng-template #noScheme>
-      <div class="tax-preview__scheme warning">No active tax scheme for the selected month.</div>
-    </ng-template>
-  </p-card>
+  </div>
 
-  <p-card>
-    <p-table [value]="previewRows" [paginator]="true" [rows]="8" dataKey="employeeId">
-      <ng-template pTemplate="header">
-        <tr>
-          <th>Employee</th>
-          <th>Tax Category</th>
-          <th class="text-right">Gross Taxable</th>
-          <th class="text-right">Reliefs</th>
-          <th class="text-right">Taxable Income</th>
-          <th class="text-right">Calculated PAYE</th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-row>
-        <tr>
-          <td>{{ row.employeeName }}</td>
-          <td>{{ row.taxCategory }}</td>
-          <td class="text-right">{{ row.grossTaxable | currency: 'LKR':'symbol':'1.0-0' }}</td>
-          <td class="text-right">{{ row.reliefTotal | currency: 'LKR':'symbol':'1.0-0' }}</td>
-          <td class="text-right">{{ row.taxableIncome | currency: 'LKR':'symbol':'1.0-0' }}</td>
-          <td class="text-right font-semibold">{{ row.calculatedTax | currency: 'LKR':'symbol':'1.0-0' }}</td>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="emptymessage">
-        <tr>
-          <td colspan="6">No preview data available.</td>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="footer">
-        <tr>
-          <td colspan="2" class="font-semibold">Totals</td>
-          <td class="text-right font-semibold">{{ totals.grossTaxable | currency: 'LKR':'symbol':'1.0-0' }}</td>
-          <td class="text-right font-semibold">{{ totals.reliefTotal | currency: 'LKR':'symbol':'1.0-0' }}</td>
-          <td class="text-right font-semibold">{{ totals.taxableIncome | currency: 'LKR':'symbol':'1.0-0' }}</td>
-          <td class="text-right font-semibold">{{ totals.calculatedTax | currency: 'LKR':'symbol':'1.0-0' }}</td>
-        </tr>
-      </ng-template>
-    </p-table>
-  </p-card>
-</section>
+  <!-- Analytics Workspace -->
+  <div class="grid mb-6" *ngIf="previewRows.length > 0">
+    <div class="col-12 md:col-3">
+      <div class="card border-none shadow-sm p-4 surface-card border-round-xl flex align-items-center gap-4">
+        <div class="p-3 bg-blue-50 border-round-circle">
+          <i class="pi pi-wallet text-blue-500 text-2xl"></i>
+        </div>
+        <div class="flex flex-column">
+          <span class="text-500 font-bold text-xs uppercase tracking-wider">Gross Aggregate</span>
+          <span class="text-2xl font-extrabold text-900">{{ totals.grossTaxable | currency:'LKR':'symbol-narrow':'1.0-0'
+            }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 md:col-3">
+      <div class="card border-none shadow-sm p-4 surface-card border-round-xl flex align-items-center gap-4">
+        <div class="p-3 bg-green-50 border-round-circle">
+          <i class="pi pi-percentage text-green-500 text-2xl"></i>
+        </div>
+        <div class="flex flex-column">
+          <span class="text-500 font-bold text-xs uppercase tracking-wider">Statutory Deductions</span>
+          <span class="text-2xl font-extrabold text-900">{{ totals.reliefTotal | currency:'LKR':'symbol-narrow':'1.0-0'
+            }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 md:col-3">
+      <div class="card border-none shadow-sm p-4 surface-card border-round-xl flex align-items-center gap-4">
+        <div class="p-3 bg-orange-50 border-round-circle">
+          <i class="pi pi-chart-bar text-orange-500 text-2xl"></i>
+        </div>
+        <div class="flex flex-column">
+          <span class="text-500 font-bold text-xs uppercase tracking-wider">Adjusted Base</span>
+          <span class="text-2xl font-extrabold text-900">{{ totals.taxableIncome |
+            currency:'LKR':'symbol-narrow':'1.0-0' }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 md:col-3">
+      <div
+        class="card border-none shadow-sm p-4 surface-card border-round-xl flex align-items-center gap-4 bg-primary overflow-hidden relative">
+        <div class="flex flex-column z-1">
+          <span class="text-primary-100 font-bold text-xs uppercase tracking-wider">Projected Liability</span>
+          <span class="text-2xl font-extrabold text-white">{{ totals.calculatedTax |
+            currency:'LKR':'symbol-narrow':'1.0-0' }}</span>
+        </div>
+        <i class="pi pi-bolt absolute text-7xl text-white-alpha-10" style="right: -10px; bottom: -10px;"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- High Fidelity Result Grid -->
+  <div class="card border-none shadow-sm overflow-hidden p-0">
+    <app-data-table [columns]="columns" [data]="previewRows" [loading]="isLoading" [paginator]="true" [rows]="10"
+      [showGlobalFilter]="true"
+      emptyMessage="Zero simulation results available. Adjust scope or select period to begin.">
+    </app-data-table>
+  </div>
+</div>

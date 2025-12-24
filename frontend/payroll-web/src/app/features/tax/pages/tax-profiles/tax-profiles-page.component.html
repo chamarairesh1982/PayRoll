@@ -1,96 +1,100 @@
-<p-toast></p-toast>
-<section class="tax-profiles">
-  <div class="tax-profiles__header">
+<div class="page-container animate-fadeIn">
+  <!-- Context Header -->
+  <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-end gap-4 mb-6">
     <div>
-      <h2 class="m-0">Employee Tax Profiles</h2>
-      <p class="text-600 mt-2 mb-0">Track residency, category, and exemption details per employee.</p>
+      <h1 class="m-0 text-3xl font-extrabold tracking-tight text-900 line-height-1">Taxpayer Enumeration</h1>
+      <p class="text-600 mt-2 mb-0">High-fidelity administration of employee fiscal profiles and residency status.</p>
     </div>
   </div>
 
-  <p-card>
-    <p-table [value]="rows" [paginator]="true" [rows]="8" dataKey="employee.id">
-      <ng-template pTemplate="header">
-        <tr>
-          <th>Employee</th>
-          <th>Tax Category</th>
-          <th>Residency</th>
-          <th>Exemptions</th>
-          <th class="text-right">Actions</th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-row>
-        <tr>
-          <td>
-            <div class="font-semibold">{{ row.employee.firstName }} {{ row.employee.lastName }}</div>
-            <div class="text-500">{{ row.employee.employeeCode }}</div>
-          </td>
-          <td>{{ row.profile?.taxCategory || 'Not set' }}</td>
-          <td>
-            <ng-container *ngIf="row.profile; else noProfile">
-              <p-tag
-                [value]="row.profile.isResident ? 'Resident' : 'Non-resident'"
-                [severity]="row.profile.isResident ? 'success' : 'warning'"
-              ></p-tag>
-            </ng-container>
-            <ng-template #noProfile>
-              <span class="text-500">Not set</span>
-            </ng-template>
-          </td>
-          <td>
-            <ng-container *ngIf="row.profile; else noExemptions">
-              <ng-container *ngFor="let option of exemptionOptions">
-                <p-chip *ngIf="row.profile.exemptions[option.key]" [label]="option.label"></p-chip>
-              </ng-container>
-            </ng-container>
-            <ng-template #noExemptions>
-              <span class="text-500">None</span>
-            </ng-template>
-          </td>
-          <td class="text-right">
-            <button pButton type="button" class="p-button-text" icon="pi pi-pencil" (click)="openEditor(row)"></button>
-          </td>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="emptymessage">
-        <tr>
-          <td colspan="5">No employees found.</td>
-        </tr>
-      </ng-template>
-    </p-table>
-  </p-card>
+  <!-- Strategic Data Grid -->
+  <div class="card border-none shadow-sm overflow-hidden p-0">
+    <app-data-table [columns]="columns" [data]="rows" [loading]="isLoading" [paginator]="true" [rows]="10"
+      [showGlobalFilter]="true" emptyMessage="No taxpayer profiles identified within the current scope.">
 
-  <p-dialog
-    [(visible)]="dialogVisible"
-    [modal]="true"
-    [style]="{ width: '40vw' }"
-    [breakpoints]="{ '960px': '95vw' }"
-    header="Edit Tax Profile"
-  >
-    <form [formGroup]="form" class="p-fluid">
-      <label>Tax category</label>
-      <p-dropdown [options]="taxCategories" formControlName="taxCategory"></p-dropdown>
-      <app-form-field-error [control]="form.get('taxCategory')"></app-form-field-error>
-
-      <div class="mt-3">
-        <label>Residency</label>
-        <div class="tax-profiles__toggle">
-          <p-checkbox formControlName="isResident" binary="true"></p-checkbox>
-          <span>{{ form.value.isResident ? 'Resident' : 'Non-resident' }}</span>
+      <!-- Identity Column -->
+      <ng-template #employeeNameTemplate let-row>
+        <div class="flex flex-column">
+          <span class="font-bold text-900">{{ row.employeeName }}</span>
+          <span class="text-xs text-500 font-mono tracking-wider">{{ row.employee.employeeCode }}</span>
         </div>
+      </ng-template>
+
+      <!-- Category Column Override -->
+      <ng-template #taxCategoryTemplate let-row>
+        <p-tag [value]="row.taxCategory" [severity]="row.profile ? 'info' : 'warning'"
+          styleClass="text-xs px-3"></p-tag>
+      </ng-template>
+
+      <!-- Reliefs & Exemptions -->
+      <ng-template #profileExemptionsTemplate let-row>
+        <div class="flex flex-wrap gap-1" *ngIf="row.profile">
+          <ng-container *ngFor="let option of exemptionOptions">
+            <p-tag *ngIf="row.profile.exemptions[option.key]" [value]="option.label"
+              styleClass="text-xs bg-surface-100 text-600 border-none font-medium"></p-tag>
+          </ng-container>
+          <span class="text-xs text-400 italic" *ngIf="!hasAnyExemption(row.profile)">No active reliefs</span>
+        </div>
+        <span class="text-xs text-400 italic" *ngIf="!row.profile">Configuration pending</span>
+      </ng-template>
+
+      <!-- Action Suite -->
+      <ng-template #rowActions let-row>
+        <div class="flex justify-content-end">
+          <button pButton icon="pi pi-user-edit" class="p-button-text p-button-secondary p-button-sm"
+            (click)="openEditor(row)" pTooltip="Adjust Fiscal Parameters"></button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+</div>
+
+<!-- Fiscal Parameter Adjustment Dialog -->
+<p-dialog [(visible)]="dialogVisible" [modal]="true" [style]="{ width: '450px' }" [draggable]="false"
+  [resizable]="false" header="Fiscal Parameter Adjustment" styleClass="p-fluid modern-dialog">
+  <div class="p-4" *ngIf="activeRow">
+    <div class="flex align-items-center gap-3 mb-5 p-3 surface-50 border-round-xl">
+      <p-avatar [label]="activeRow.employee.firstName[0]" size="large" shape="circle"
+        styleClass="bg-primary text-white"></p-avatar>
+      <div class="flex flex-column">
+        <span class="font-bold text-900">{{ activeRow.employeeName }}</span>
+        <span class="text-xs text-600">{{ activeRow.employee.employeeCode }}</span>
+      </div>
+    </div>
+
+    <form [formGroup]="form" class="flex flex-column gap-4">
+      <div class="field">
+        <label class="text-900 font-bold mb-2 block">Tax Category</label>
+        <p-dropdown [options]="taxCategories" formControlName="taxCategory" placeholder="Select fiscal category"
+          styleClass="w-full"></p-dropdown>
       </div>
 
-      <div class="tax-profiles__exemptions">
-        <h4 class="mt-4">Exemptions</h4>
-        <div class="tax-profiles__exemption" *ngFor="let option of exemptionOptions">
-          <p-checkbox [formControlName]="option.key" binary="true"></p-checkbox>
-          <span>{{ option.label }}</span>
+      <div class="field flex align-items-center justify-content-between p-3 surface-50 border-round-lg">
+        <div class="flex flex-column gap-1">
+          <span class="font-bold text-900">Residency Status</span>
+          <span class="text-xs text-600">Affects withholding tax thresholds</span>
+        </div>
+        <p-inputSwitch formControlName="isResident"></p-inputSwitch>
+      </div>
+
+      <div class="field">
+        <label class="text-900 font-bold mb-3 block">Reliefs & Exemptions</label>
+        <div class="flex flex-column gap-3">
+          <div *ngFor="let option of exemptionOptions" class="flex align-items-center gap-3">
+            <p-checkbox [formControlName]="option.key" binary="true" [inputId]="option.key"></p-checkbox>
+            <label [for]="option.key" class="text-sm cursor-pointer">{{ option.label }}</label>
+          </div>
         </div>
       </div>
     </form>
+  </div>
 
-    <ng-template pTemplate="footer">
-      <button pButton type="button" label="Cancel" class="p-button-text" (click)="dialogVisible = false"></button>
-      <button pButton type="button" label="Save" (click)="saveProfile()"></button>
-    </ng-template>
-  </p-dialog>
-</section>
+  <ng-template pTemplate="footer">
+    <div class="flex gap-2 justify-content-end p-2">
+      <button pButton label="Cancel" class="p-button-text p-button-secondary" (click)="dialogVisible = false"></button>
+      <button pButton label="Commit Changes" icon="pi pi-check" (click)="saveProfile()"
+        class="p-button-primary px-4"></button>
+    </div>
+  </ng-template>
+</p-dialog>
+<p-toast></p-toast>

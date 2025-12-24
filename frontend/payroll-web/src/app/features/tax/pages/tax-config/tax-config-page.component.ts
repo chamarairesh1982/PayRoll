@@ -11,6 +11,7 @@ import { MessageService } from 'primeng/api';
 import { Subject, takeUntil } from 'rxjs';
 import { TaxScheme, TaxRelief } from '../../models/tax-scheme.model';
 import { TaxConfigService } from '../../services/tax-config.service';
+import { DataTableColumn } from '../../../../shared/components/table/data-table.component';
 
 @Component({
   selector: 'app-tax-config-page',
@@ -20,6 +21,15 @@ import { TaxConfigService } from '../../services/tax-config.service';
 })
 export class TaxConfigPageComponent implements OnInit, OnDestroy {
   schemes: TaxScheme[] = [];
+  isLoading = false;
+
+  columns: DataTableColumn<TaxScheme>[] = [
+    { field: 'name', header: 'Fiscal Scheme', sortable: true, minWidth: '200px' },
+    { field: 'effectiveFrom', header: 'Statutory Window', minWidth: '250px' },
+    { field: 'slabs', header: 'Complexity', minWidth: '150px' },
+    { field: 'reliefs', header: 'Active Reliefs', minWidth: '200px' },
+    { field: 'isActive', header: 'Governance Status', sortable: true, type: 'status', minWidth: '150px' },
+  ];
   dialogVisible = false;
   dialogMode: 'create' | 'edit' | 'clone' = 'create';
   activeScheme: TaxScheme | null = null;
@@ -50,7 +60,7 @@ export class TaxConfigPageComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private taxConfigService: TaxConfigService,
     private messageService: MessageService,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.taxConfigService

@@ -6,10 +6,15 @@ import { Employee } from '../../../employees/models/employee.model';
 import { EmployeesApiService } from '../../../employees/services/employees-api.service';
 import { EmployeeTaxProfile, TaxExemptionKey } from '../../models/tax-profile.model';
 import { TaxProfileService } from '../../services/tax-profile.service';
+import { DataTableColumn } from '../../../../shared/components/table/data-table.component';
 
 interface EmployeeTaxRow {
   employee: Employee;
   profile: EmployeeTaxProfile | null;
+  // Computed fields for flat table access
+  employeeName?: string;
+  taxCategory?: string;
+  isResidentLabel?: string;
 }
 
 @Component({
@@ -20,6 +25,14 @@ interface EmployeeTaxRow {
 })
 export class TaxProfilesPageComponent implements OnInit, OnDestroy {
   rows: EmployeeTaxRow[] = [];
+  isLoading = false;
+
+  columns: DataTableColumn<EmployeeTaxRow>[] = [
+    { field: 'employeeName', header: 'Taxpayer Identity', sortable: true, minWidth: '250px' },
+    { field: 'taxCategory', header: 'Category', sortable: true, type: 'badge', minWidth: '150px' },
+    { field: 'isResidentLabel', header: 'Residency', sortable: true, type: 'status', minWidth: '150px' },
+    { field: 'profile.exemptions', header: 'Reliefs & Exemptions', minWidth: '250px' },
+  ];
   dialogVisible = false;
   activeRow: EmployeeTaxRow | null = null;
   form: FormGroup = this.fb.group({
@@ -47,19 +60,32 @@ export class TaxProfilesPageComponent implements OnInit, OnDestroy {
     private taxProfileService: TaxProfileService,
     private fb: FormBuilder,
     private messageService: MessageService,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
+    this.isLoading = true;
     combineLatest([
-      this.employeesApi.getEmployees(1, 200, {}),
+      this.employeesApi.getEmployees(1, 1000, {}),
       this.taxProfileService.getProfiles(),
     ])
       .pipe(takeUntil(this.destroy$))
-      .subscribe(([employeeResult, profiles]) => {
-        this.rows = employeeResult.items.map(employee => ({
-          employee,
-          profile: profiles.find(profile => profile.employeeId === employee.id) ?? null,
-        }));
+      .subscribe({
+        next: ([employeeResult, profiles]) => {
+          this.rows = employeeResult.items.map(employee => {
+            const profile = profiles.find(p => p.employeeId === employee.id) ?? null;
+            return {
+              employee,
+              profile,
+              employeeName: `${employee.firstName} ${employee.lastName}`,
+              taxCategory: profile?.taxCategory || 'Pending adjudication',
+              isResidentLabel: profile ? (profile.isResident ? 'Resident' : 'Non-resident') : 'Undefined',
+            };
+          });
+          this.isLoading = false;
+        },
+        error: () => {
+          this.isLoading = false;
+        },
       });
   }
 
@@ -82,6 +108,10 @@ export class TaxProfilesPageComponent implements OnInit, OnDestroy {
     });
 
     this.dialogVisible = true;
+  }
+
+  hasAnyExemption(profile: EmployeeTaxProfile): boolean {
+    return Object.values(profile.exemptions).some(val => !!val);
   }
 
   saveProfile(): void {

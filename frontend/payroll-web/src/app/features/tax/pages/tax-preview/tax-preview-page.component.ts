@@ -9,6 +9,7 @@ import { TaxScheme } from '../../models/tax-scheme.model';
 import { TaxCalculationService } from '../../services/tax-calculation.service';
 import { TaxConfigService } from '../../services/tax-config.service';
 import { TaxProfileService } from '../../services/tax-profile.service';
+import { DataTableColumn } from '../../../../shared/components/table/data-table.component';
 
 @Component({
   selector: 'app-tax-preview-page',
@@ -21,6 +22,17 @@ export class TaxPreviewPageComponent implements OnInit, OnDestroy {
     scopeType: ['All'],
     employeeId: [''],
   });
+
+  isLoading = false;
+
+  columns: DataTableColumn<TaxPreviewRow>[] = [
+    { field: 'employeeName', header: 'Staff Member', sortable: true, minWidth: '200px' },
+    { field: 'taxCategory', header: 'Fiscal Identity', sortable: true, minWidth: '150px' },
+    { field: 'grossTaxable', header: 'Gross Taxable', sortable: true, type: 'amount', minWidth: '150px' },
+    { field: 'reliefTotal', header: 'Reliefs', sortable: true, type: 'amount', minWidth: '120px' },
+    { field: 'taxableIncome', header: 'Net Taxable', sortable: true, type: 'amount', minWidth: '150px' },
+    { field: 'calculatedTax', header: 'PAYE Projection', sortable: true, type: 'amount', minWidth: '150px' },
+  ];
 
   employees: Employee[] = [];
   employeeOptions: { label: string; value: string }[] = [];
@@ -44,7 +56,7 @@ export class TaxPreviewPageComponent implements OnInit, OnDestroy {
     private taxProfileService: TaxProfileService,
     private taxConfigService: TaxConfigService,
     private taxCalculationService: TaxCalculationService,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     combineLatest([
