@@ -7,7 +7,7 @@
 
   .subtitle {
     margin: 0.25rem 0 0;
-    color: #6b7280;
+    color: var(--app-text-muted);
   }
 }
 
@@ -45,13 +45,13 @@
 
   .meta {
     font-size: 0.75rem;
-    color: #6b7280;
+    color: var(--app-text-muted);
   }
 }
 
 .muted {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--app-text-muted);
 }
 
 .table-footer {
