@@ -12,7 +12,7 @@ import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DropdownModule } from 'primeng/dropdown';
+import { DropdownModule, DropdownChangeEvent } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { PanelMenuModule } from 'primeng/panelmenu';
@@ -59,35 +59,34 @@ interface TenantOption {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppLayoutComponent implements OnInit, OnDestroy {
-  sidebarVisible = false;
-  densityOptions: DensityOption[] = [
+  public sidebarVisible = false;
+  public densityOptions: DensityOption[] = [
     { label: 'Comfortable', value: 'comfortable' },
     { label: 'Compact', value: 'compact' },
   ];
-  selectedDensity: DensityOption = this.densityOptions[0];
-  companyOptions: TenantOption[] = [
+  public selectedDensity: DensityOption = this.densityOptions[0];
+  public companyOptions: TenantOption[] = [
     { label: 'WorldBets Holdings', value: 'worldbets' },
     { label: 'WorldBets Retail', value: 'worldbets-retail' },
   ];
-  branchOptions: TenantOption[] = [
+  public branchOptions: TenantOption[] = [
     { label: 'Colombo HQ', value: 'colombo-hq' },
     { label: 'Kandy Branch', value: 'kandy-branch' },
   ];
-  costCenterOptions: TenantOption[] = [
+  public costCenterOptions: TenantOption[] = [
     { label: 'Finance', value: 'finance' },
     { label: 'Operations', value: 'operations' },
   ];
-  selectedCompany: TenantOption = this.companyOptions[0];
-  selectedBranch: TenantOption = this.branchOptions[0];
-  selectedCostCenter: TenantOption = this.costCenterOptions[0];
-  userMenuItems: MenuItem[] = [
+  public selectedCompany: TenantOption = this.companyOptions[0];
+  public selectedBranch: TenantOption = this.branchOptions[0];
+  public selectedCostCenter: TenantOption = this.costCenterOptions[0];
+  public userMenuItems: MenuItem[] = [
     { label: 'Profile', icon: 'pi pi-user' },
     { label: 'Notifications', icon: 'pi pi-bell' },
     { label: 'Sign Out', icon: 'pi pi-sign-out', command: () => this.signOut() },
   ];
-  userName = 'User';
-  userRole = 'Employee';
-  selectedCompanyLabel = this.selectedCompany.label;
+  public userName = 'User';
+  public userRole = 'Employee';
 
   private readonly destroy$ = new Subject<void>();
   private userRoles: string[] = [];
@@ -201,7 +200,6 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
     }
     this.userName = this.authService.getUserName() ?? 'User';
     this.userRole = this.formatRoleLabel(this.userRoles[0]);
-    this.selectedCompanyLabel = this.selectedCompany.label;
     this.applyDensity(this.selectedDensity.value);
     this.syncMenuState();
     this.cdr.markForCheck();
@@ -229,8 +227,12 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
     this.applyDensity(option.value);
   }
 
-  onCompanyChange(): void {
-    this.selectedCompanyLabel = this.selectedCompany.label;
+  get selectedCompanyLabel(): string {
+    return this.selectedCompany?.label ?? 'Select company';
+  }
+
+  onCompanyChange(event: DropdownChangeEvent): void {
+    this.selectedCompany = (event.value as TenantOption) ?? this.selectedCompany;
     this.cdr.markForCheck();
   }
 
