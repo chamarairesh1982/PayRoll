@@ -6,3 +6,102 @@
 @import 'primeng/resources/primeng.min.css';
 @import 'primeicons/primeicons.css';
 @import 'primeflex/primeflex.css';
+
+/* -------------------------------------------------------------------------
+   COMPONENT OVERRIDES
+   ------------------------------------------------------------------------- */
+
+/* Buttons */
+.p-button {
+    border-radius: var(--radius-md) !important;
+    font-weight: 500 !important;
+    padding: 0.625rem 1.25rem !important;
+    /* Visual balance */
+    font-size: var(--text-sm) !important;
+    transition: background-color var(--transition-fast) !important;
+
+    &:focus {
+        box-shadow: 0 0 0 2px var(--p-surface-0), 0 0 0 4px var(--p-primary-200) !important;
+    }
+
+    &.p-button-outlined {
+        background-color: transparent !important;
+        color: var(--p-primary-600) !important;
+        border: 1px solid var(--p-primary-200) !important;
+
+        &:hover {
+            background-color: var(--p-primary-50) !important;
+            border-color: var(--p-primary-300) !important;
+        }
+    }
+}
+
+/* Inputs */
+.p-inputtext {
+    border-radius: var(--radius-md) !important;
+    border-color: var(--p-surface-200) !important;
+    padding: 0.625rem 0.75rem !important;
+    font-size: var(--text-base) !important;
+    color: var(--p-surface-900) !important;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast) !important;
+
+    &:enabled:hover {
+        border-color: var(--p-surface-400) !important;
+    }
+
+    &:enabled:focus {
+        border-color: var(--p-primary-500) !important;
+        box-shadow: 0 0 0 2px var(--p-primary-100) !important;
+    }
+}
+
+/* Tables (The Power Grid) */
+.p-datatable {
+    .p-datatable-header {
+        background: var(--p-surface-0) !important;
+        border: none !important;
+        border-bottom: 1px solid var(--p-surface-200) !important;
+        padding: var(--sp-4) !important;
+        border-top-left-radius: var(--radius-md) !important;
+        border-top-right-radius: var(--radius-md) !important;
+    }
+
+    .p-datatable-thead>tr>th {
+        background: var(--p-surface-50) !important;
+        color: var(--p-surface-600) !important;
+        font-weight: 600 !important;
+        font-size: var(--text-xs) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+        padding: var(--sp-3) var(--sp-4) !important;
+        border: none !important;
+        border-bottom: 1px solid var(--p-surface-200) !important;
+    }
+
+    .p-datatable-tbody>tr {
+        background: var(--p-surface-0) !important;
+        color: var(--p-surface-900) !important;
+        transition: background-color var(--transition-fast) !important;
+
+        >td {
+            padding: var(--sp-3) var(--sp-4) !important;
+            border: none !important;
+            border-bottom: 1px solid var(--p-surface-100) !important;
+            font-size: var(--text-sm) !important;
+        }
+
+        &:hover {
+            background-color: var(--p-surface-50) !important;
+        }
+    }
+}
+
+/* Badges (Tags) */
+.p-tag {
+    border-radius: 999px !important;
+    /* Pill shape */
+    font-weight: 500 !important;
+    font-size: var(--text-xs) !important;
+    padding: 0.25rem 0.75rem !important;
+    text-transform: uppercase !important;
+}

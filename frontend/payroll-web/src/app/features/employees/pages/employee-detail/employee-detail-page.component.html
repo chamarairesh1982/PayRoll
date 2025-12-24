@@ -1,40 +1,180 @@
-<div *ngIf="employee" class="card">
-  <div class="card__header">
-    <h2>{{ employee.firstName }} {{ employee.lastName }}</h2>
-    <div class="actions">
-      <button type="button" (click)="editEmployee()">Edit</button>
-      <button type="button" (click)="goBack()">Back</button>
+<div *ngIf="employee; else loadingTemplate" class="page-container">
+  <!-- Page Header -->
+  <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-start gap-4 mb-5">
+    <div class="flex align-items-center gap-4">
+      <p-avatar [label]="employee.firstName.charAt(0) + employee.lastName.charAt(0)" size="xlarge" shape="circle"
+        styleClass="bg-primary text-white text-3xl font-bold p-4" style="width: 80px; height: 80px;"></p-avatar>
+      <div>
+        <div class="flex align-items-center gap-2 mb-1">
+          <h1 class="m-0 text-3xl font-bold">{{ employee.firstName }} {{ employee.lastName }}</h1>
+          <p-tag [severity]="employee.isActive ? 'success' : 'danger'"
+            [value]="employee.isActive ? 'Active' : 'Inactive'" class="ml-2"></p-tag>
+        </div>
+        <div class="flex align-items-center gap-3 text-600">
+          <span><i class="pi pi-id-card mr-2"></i>{{ employee.employeeCode }}</span>
+          <span><i class="pi pi-building mr-2"></i>{{ employee.branchName || 'No Branch' }}</span>
+          <span><i class="pi pi-map-marker mr-2"></i>{{ employee.costCenterName || 'No Cost Center' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-2">
+      <button pButton type="button" label="Edit Profile" icon="pi pi-pencil" class="p-button-outlined"
+        (click)="editEmployee()"></button>
+      <button pButton type="button" label="Back to List" icon="pi pi-arrow-left"
+        class="p-button-text p-button-secondary" (click)="goBack()"></button>
     </div>
   </div>
-  <div class="card__body">
-    <div class="row"><strong>Employee Code:</strong> {{ employee.employeeCode }}</div>
-    <div class="row"><strong>Initials:</strong> {{ employee.initials || '—' }}</div>
-    <div class="row"><strong>Calling Name:</strong> {{ employee.callingName || '—' }}</div>
-    <div class="row">
-      <strong>NIC:</strong>
-      {{ isAdmin ? employee.nicNumber : employee.maskedNicNumber || '—' }}
-    </div>
-    <div class="row"><strong>EPF Number:</strong> {{ employee.epfNumber || '—' }}</div>
-    <div class="row"><strong>Date of Birth:</strong> {{ employee.dateOfBirth | dateFormat }}</div>
-    <div class="row"><strong>Gender:</strong> {{ employee.gender }}</div>
-    <div class="row"><strong>Marital Status:</strong> {{ employee.maritalStatus }}</div>
-    <div class="row"><strong>Employment Start:</strong> {{ employee.employmentStartDate | dateFormat }}</div>
-    <div class="row"><strong>Probation End:</strong> {{ employee.probationEndDate | dateFormat }}</div>
-    <div class="row"><strong>Confirmation Date:</strong> {{ employee.confirmationDate | dateFormat }}</div>
-    <div class="row"><strong>Base Salary:</strong> {{ employee.baseSalary | number: '1.0-2' }}</div>
-    <div class="row">
-      <strong>Hourly Rate:</strong>
-      {{ employee.hourlyRate != null ? (employee.hourlyRate | number: '1.0-2') : '—' }}
-    </div>
-    <div class="row"><strong>Bank Name:</strong> {{ employee.bankName || '—' }}</div>
-    <div class="row"><strong>Bank Code:</strong> {{ employee.bankCode || '—' }}</div>
-    <div class="row"><strong>Branch Code:</strong> {{ employee.branchCode || '—' }}</div>
-    <div class="row">
-      <strong>Bank Account Number:</strong>
-      {{ isAdmin ? employee.bankAccountNumber || '—' : employee.maskedBankAccountNumber || '—' }}
-    </div>
-    <div class="row"><strong>Branch:</strong> {{ employee.branchName || '-' }}</div>
-    <div class="row"><strong>Cost Center:</strong> {{ employee.costCenterName || '-' }}</div>
-    <div class="row"><strong>Active:</strong> {{ employee.isActive ? 'Yes' : 'No' }}</div>
-  </div>
+
+  <!-- Tabs Information -->
+  <p-tabView styleClass="custom-tabs">
+    <!-- Personal Information -->
+    <p-tabPanel header="Personal Profile">
+      <div class="grid mt-2">
+        <div class="col-12 lg:col-8">
+          <div class="card border-none shadow-sm mb-4">
+            <h3 class="mt-0 mb-4 flex align-items-center"><i class="pi pi-user mr-2 text-primary"></i>Basic Identity
+            </h3>
+            <div class="grid">
+              <div class="col-12 md:col-6 mb-4">
+                <label class="block text-500 text-sm font-medium mb-1">Full Name</label>
+                <div class="text-900 font-semibold">{{ employee.firstName }} {{ employee.lastName }}</div>
+              </div>
+              <div class="col-12 md:col-6 mb-4">
+                <label class="block text-500 text-sm font-medium mb-1">Initials</label>
+                <div class="text-900 font-semibold">{{ employee.initials || '—' }}</div>
+              </div>
+              <div class="col-12 md:col-6 mb-4">
+                <label class="block text-500 text-sm font-medium mb-1">Calling Name</label>
+                <div class="text-900 font-semibold">{{ employee.callingName || '—' }}</div>
+              </div>
+              <div class="col-12 md:col-6 mb-4">
+                <label class="block text-500 text-sm font-medium mb-1">NIC / Identity Number</label>
+                <div class="text-900 font-semibold">{{ isAdmin ? employee.nicNumber : employee.maskedNicNumber || '—' }}
+                </div>
+              </div>
+              <div class="col-12 md:col-6 mb-4">
+                <label class="block text-500 text-sm font-medium mb-1">Date of Birth</label>
+                <div class="text-900 font-semibold">{{ employee.dateOfBirth | dateFormat }}</div>
+              </div>
+              <div class="col-12 md:col-6 mb-4">
+                <label class="block text-500 text-sm font-medium mb-1">Gender</label>
+                <div class="text-900 font-semibold">{{ employee.gender }}</div>
+              </div>
+              <div class="col-12 md:col-6 mb-4">
+                <label class="block text-500 text-sm font-medium mb-1">Marital Status</label>
+                <div class="text-900 font-semibold">{{ employee.maritalStatus }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 lg:col-4">
+          <div class="card border-none shadow-sm mb-4 bg-primary-reverse">
+            <h3 class="mt-0 mb-4 flex align-items-center"><i class="pi pi-building mr-2 text-primary"></i>Organization
+              Details</h3>
+            <div class="mb-4">
+              <label class="block text-500 text-sm font-medium mb-1">EPF Registration</label>
+              <div class="text-900 font-semibold">{{ employee.epfNumber || 'Not Registered' }}</div>
+            </div>
+            <div class="mb-4">
+              <label class="block text-500 text-sm font-medium mb-1">Primary Branch</label>
+              <div class="text-900 font-semibold">{{ employee.branchName || 'Not Assigned' }}</div>
+            </div>
+            <div class="mb-4">
+              <label class="block text-500 text-sm font-medium mb-1">Cost Center</label>
+              <div class="text-900 font-semibold">{{ employee.costCenterName || 'Not Assigned' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </p-tabPanel>
+
+    <!-- Employment Details -->
+    <p-tabPanel header="Employment Status">
+      <div class="card border-none shadow-sm mt-3">
+        <h3 class="mt-0 mb-4 flex align-items-center"><i class="pi pi-briefcase mr-2 text-primary"></i>Service History
+        </h3>
+        <div class="grid">
+          <div class="col-12 md:col-4 mb-4 text-center p-4 surface-50 border-round">
+            <label class="block text-500 text-sm font-medium mb-2 uppercase tracking-wider">Join Date</label>
+            <div class="text-2xl font-bold text-900">{{ employee.employmentStartDate | dateFormat }}</div>
+          </div>
+          <div class="col-12 md:col-4 mb-4 text-center p-4 surface-50 border-round">
+            <label class="block text-500 text-sm font-medium mb-2 uppercase tracking-wider">Probation End</label>
+            <div class="text-2xl font-bold text-900">{{ employee.probationEndDate ? (employee.probationEndDate |
+              dateFormat) : 'N/A' }}</div>
+          </div>
+          <div class="col-12 md:col-4 mb-4 text-center p-4 surface-50 border-round">
+            <label class="block text-500 text-sm font-medium mb-2 uppercase tracking-wider">Confirmation Date</label>
+            <div class="text-2xl font-bold text-900">{{ employee.confirmationDate ? (employee.confirmationDate |
+              dateFormat) : 'Pending' }}</div>
+          </div>
+        </div>
+      </div>
+    </p-tabPanel>
+
+    <!-- Financial & Banking -->
+    <p-tabPanel header="Financials & Banking">
+      <div class="grid mt-2">
+        <div class="col-12 md:col-6">
+          <div class="card border-none shadow-sm h-full">
+            <h3 class="mt-0 mb-4 flex align-items-center"><i class="pi pi-wallet mr-2 text-primary"></i>Compensation
+            </h3>
+            <div class="flex align-items-center justify-content-between p-3 surface-50 border-round mb-3">
+              <span class="text-700 font-medium">Base Salary (Monthly)</span>
+              <span class="text-xl font-bold text-900">{{ employee.baseSalary | currency:'LKR ':'symbol-narrow':'1.0-2'
+                }}</span>
+            </div>
+            <div class="flex align-items-center justify-content-between p-3 surface-50 border-round">
+              <span class="text-700 font-medium">Hourly Overtime Rate</span>
+              <span class="text-xl font-bold text-900">
+                {{ employee.hourlyRate != null ? (employee.hourlyRate | currency:'LKR ':'symbol-narrow':'1.0-2') : '—'
+                }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 md:col-6">
+          <div class="card border-none shadow-sm h-full">
+            <h3 class="mt-0 mb-4 flex align-items-center"><i class="pi pi-credit-card mr-2 text-primary"></i>Bank
+              Account</h3>
+            <div class="grid">
+              <div class="col-12 mb-3">
+                <label class="block text-500 text-sm font-medium mb-1">Bank Institution</label>
+                <div class="text-900 font-semibold">{{ employee.bankName || '—' }} ({{ employee.bankCode || 'N/A' }})
+                </div>
+              </div>
+              <div class="col-12 mb-3">
+                <label class="block text-500 text-sm font-medium mb-1">Branch Code</label>
+                <div class="text-900 font-semibold">{{ employee.branchCode || '—' }}</div>
+              </div>
+              <div class="col-12">
+                <label class="block text-500 text-sm font-medium mb-1">Account Number</label>
+                <div class="text-xl text-primary font-bold tracking-widest">
+                  {{ isAdmin ? employee.bankAccountNumber || '—' : employee.maskedBankAccountNumber || '—' }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </p-tabPanel>
+  </p-tabView>
 </div>
+
+<ng-template #loadingTemplate>
+  <div class="page-container">
+    <div class="flex align-items-center gap-4 mb-5">
+      <p-skeleton shape="circle" size="80px"></p-skeleton>
+      <div class="flex-1">
+        <p-skeleton width="200px" height="2rem" styleClass="mb-2"></p-skeleton>
+        <p-skeleton width="300px"></p-skeleton>
+      </div>
+    </div>
+    <div class="card p-4 border-none shadow-sm">
+      <p-skeleton width="100%" height="300px"></p-skeleton>
+    </div>
+  </div>
+</ng-template>

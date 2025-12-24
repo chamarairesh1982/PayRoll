@@ -63,7 +63,7 @@ export class PayRunDetailPageComponent implements OnInit {
     private glApi: GlApiService,
     private organizationApi: OrganizationApiService,
     private router: Router,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadScopeOptions();
@@ -647,5 +647,24 @@ export class PayRunDetailPageComponent implements OnInit {
     ].filter(Boolean);
 
     return segments.length ? segments.join(' / ') : 'Unscoped';
+  }
+  getStatusSeverity(status: string): string {
+    switch (status) {
+      case 'Draft': return 'info';
+      case 'Prepared': return 'warning';
+      case 'Approved': return 'success';
+      case 'Locked': return 'danger';
+      default: return 'secondary';
+    }
+  }
+
+  getStatusColor(status: string): string {
+    switch (status) {
+      case 'Draft': return 'var(--p-primary-400)';
+      case 'Prepared': return 'var(--p-warning-500)';
+      case 'Approved': return 'var(--p-success-500)';
+      case 'Locked': return 'var(--p-danger-500)';
+      default: return 'var(--p-surface-400)';
+    }
   }
 }

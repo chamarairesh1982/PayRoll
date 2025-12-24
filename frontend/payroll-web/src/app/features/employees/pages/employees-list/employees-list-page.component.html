@@ -1,236 +1,78 @@
-<div class="employees-page">
-  <div class="page-header flex flex-column md:flex-row md:justify-content-between md:align-items-center gap-3">
-    <div>
-      <h1 class="m-0">Employees</h1>
-      <p class="text-600 mt-2 mb-0">Manage employee profiles across companies, branches, and cost centers.</p>
+<div class="page-header flex flex-column md:flex-row md:justify-content-between md:align-items-center gap-3">
+  <div>
+    <h1 class="m-0">Employees</h1>
+    <p class="text-600 mt-2 mb-0">Manage employee profiles across companies, branches, and cost centers.</p>
+  </div>
+  <button pButton type="button" label="New Employee" icon="pi pi-plus" class="p-button-rounded"
+    (click)="goToCreate()"></button>
+</div>
+
+<div class="card mb-4 border-none shadow-sm">
+  <div class="grid p-fluid">
+    <div class="col-12 md:col-6 lg:col-3">
+      <label class="font-medium text-sm text-500 mb-1 block" for="companyFilter">Company</label>
+      <p-dropdown inputId="companyFilter" [options]="companies" optionLabel="name" optionValue="id" [filter]="true"
+        [showClear]="true" placeholder="All companies" [(ngModel)]="companyFilter"
+        (onChange)="onCompanyChange($event.value)" styleClass="w-full">
+        <ng-template pTemplate="selectedItem" let-company>
+          <span *ngIf="company">{{ company.name }}</span>
+        </ng-template>
+        <ng-template pTemplate="item" let-company>
+          <div>{{ company.name }} <small class="text-500">({{ company.code }})</small></div>
+        </ng-template>
+      </p-dropdown>
     </div>
-    <button pButton type="button" label="Create Employee" icon="pi pi-plus" class="p-button-rounded" (click)="goToCreate()"></button>
-  </div>
 
-  <div class="filters card">
-    <div class="grid">
-      <div class="col-12 md:col-6 lg:col-3">
-        <label class="filter-label" for="companyFilter">Company</label>
-        <p-dropdown
-          inputId="companyFilter"
-          [options]="companies"
-          optionLabel="name"
-          optionValue="id"
-          [filter]="true"
-          [showClear]="true"
-          placeholder="All companies"
-          [(ngModel)]="companyFilter"
-          (onChange)="onCompanyChange($event.value)"
-        >
-          <ng-template pTemplate="selectedItem" let-company>
-            <span *ngIf="company">{{ company.name }} ({{ company.code }})</span>
-          </ng-template>
-          <ng-template pTemplate="item" let-company>
-            <div>{{ company.name }} ({{ company.code }})</div>
-          </ng-template>
-        </p-dropdown>
-      </div>
-
-      <div class="col-12 md:col-6 lg:col-3">
-        <label class="filter-label" for="branchFilter">Branch</label>
-        <p-dropdown
-          inputId="branchFilter"
-          [options]="branches"
-          optionLabel="name"
-          optionValue="id"
-          [filter]="true"
-          [showClear]="true"
-          placeholder="All branches"
-          [(ngModel)]="branchFilter"
-          [disabled]="!companyFilter"
-          (onChange)="onBranchChange($event.value)"
-        >
-          <ng-template pTemplate="selectedItem" let-branch>
-            <span *ngIf="branch">{{ branch.name }} ({{ branch.code }})</span>
-          </ng-template>
-          <ng-template pTemplate="item" let-branch>
-            <div>{{ branch.name }} ({{ branch.code }})</div>
-          </ng-template>
-        </p-dropdown>
-      </div>
-
-      <div class="col-12 md:col-6 lg:col-3">
-        <label class="filter-label" for="costCenterFilter">Cost Center</label>
-        <p-dropdown
-          inputId="costCenterFilter"
-          [options]="costCenters"
-          optionLabel="name"
-          optionValue="id"
-          [filter]="true"
-          [showClear]="true"
-          placeholder="All cost centers"
-          [(ngModel)]="costCenterFilter"
-          [disabled]="!companyFilter"
-          (onChange)="onCostCenterChange($event.value)"
-        >
-          <ng-template pTemplate="selectedItem" let-costCenter>
-            <span *ngIf="costCenter">{{ costCenter.name }} ({{ costCenter.code }})</span>
-          </ng-template>
-          <ng-template pTemplate="item" let-costCenter>
-            <div>{{ costCenter.name }} ({{ costCenter.code }})</div>
-          </ng-template>
-        </p-dropdown>
-      </div>
-
-      <div class="col-12 md:col-6 lg:col-3">
-        <label class="filter-label" for="globalSearch">Global Search</label>
-        <span class="p-input-icon-left w-full">
-          <i class="pi pi-search"></i>
-          <input
-            id="globalSearch"
-            type="text"
-            pInputText
-            class="w-full"
-            [ngModel]="searchTerm"
-            (ngModelChange)="onGlobalSearch($event)"
-            placeholder="Search employees, NIC, EPF, branch, cost center"
-          />
-        </span>
-      </div>
+    <div class="col-12 md:col-6 lg:col-3">
+      <label class="font-medium text-sm text-500 mb-1 block" for="branchFilter">Branch</label>
+      <p-dropdown inputId="branchFilter" [options]="branches" optionLabel="name" optionValue="id" [filter]="true"
+        [showClear]="true" placeholder="All branches" [(ngModel)]="branchFilter" [disabled]="!companyFilter"
+        (onChange)="onBranchChange($event.value)" styleClass="w-full">
+        <ng-template pTemplate="selectedItem" let-branch>
+          <span *ngIf="branch">{{ branch.name }}</span>
+        </ng-template>
+        <ng-template pTemplate="item" let-branch>
+          <div>{{ branch.name }} <small class="text-500">({{ branch.code }})</small></div>
+        </ng-template>
+      </p-dropdown>
     </div>
-  </div>
 
-  <div class="table-card">
-    <p-table
-      #employeesTable
-      [value]="employees"
-      [globalFilterFields]="['employeeCode', 'firstName', 'lastName', 'nicDisplay', 'epfNumber', 'branchName', 'costCenterName']"
-      [resizableColumns]="true"
-      [columnResizeMode]="'expand'"
-      [scrollable]="true"
-      scrollHeight="flex"
-      responsiveLayout="scroll"
-      styleClass="p-datatable-sm"
-    >
-      <ng-template pTemplate="header">
-        <tr>
-          <th pResizableColumn pSortableColumn="employeeCode">
-            Employee Code
-            <p-sortIcon field="employeeCode"></p-sortIcon>
-            <p-columnFilter field="employeeCode" matchMode="contains" display="menu"></p-columnFilter>
-          </th>
-          <th pResizableColumn pSortableColumn="firstName">
-            First Name
-            <p-sortIcon field="firstName"></p-sortIcon>
-            <p-columnFilter field="firstName" matchMode="contains" display="menu"></p-columnFilter>
-          </th>
-          <th pResizableColumn pSortableColumn="lastName">
-            Last Name
-            <p-sortIcon field="lastName"></p-sortIcon>
-            <p-columnFilter field="lastName" matchMode="contains" display="menu"></p-columnFilter>
-          </th>
-          <th pResizableColumn pSortableColumn="nicDisplay">
-            NIC
-            <p-sortIcon field="nicDisplay"></p-sortIcon>
-            <p-columnFilter field="nicDisplay" matchMode="contains" display="menu"></p-columnFilter>
-          </th>
-          <th pResizableColumn pSortableColumn="epfNumber">
-            EPF
-            <p-sortIcon field="epfNumber"></p-sortIcon>
-            <p-columnFilter field="epfNumber" matchMode="contains" display="menu"></p-columnFilter>
-          </th>
-          <th pResizableColumn pSortableColumn="baseSalary">
-            Base Salary
-            <p-sortIcon field="baseSalary"></p-sortIcon>
-            <p-columnFilter field="baseSalary" type="numeric" matchMode="equals" display="menu"></p-columnFilter>
-          </th>
-          <th pResizableColumn pSortableColumn="isActive">
-            Status
-            <p-sortIcon field="isActive"></p-sortIcon>
-            <p-columnFilter field="isActive" matchMode="equals" display="menu">
-              <ng-template pTemplate="filter" let-value let-filter="filterCallback">
-                <p-dropdown
-                  [options]="activeOptions"
-                  optionLabel="label"
-                  optionValue="value"
-                  [showClear]="true"
-                  placeholder="All"
-                  [ngModel]="value"
-                  (onChange)="filter($event.value)"
-                ></p-dropdown>
-              </ng-template>
-            </p-columnFilter>
-          </th>
-          <th class="actions-column">Actions</th>
-        </tr>
-      </ng-template>
-
-      <ng-template pTemplate="body" let-employee>
-        <tr>
-          <td>{{ employee.employeeCode }}</td>
-          <td>{{ employee.firstName }}</td>
-          <td>{{ employee.lastName }}</td>
-          <td>{{ employee.nicDisplay }}</td>
-          <td>{{ employee.epfNumber }}</td>
-          <td>{{ employee.baseSalary | currency: 'LKR':'symbol':'1.0-0' }}</td>
-          <td>
-            <p-tag
-              [value]="employee.isActive ? 'Active' : 'Inactive'"
-              [severity]="employee.isActive ? 'success' : 'danger'"
-            ></p-tag>
-          </td>
-          <td>
-            <div class="actions">
-              <button
-                pButton
-                type="button"
-                icon="pi pi-eye"
-                class="p-button-text p-button-sm"
-                pTooltip="View"
-                tooltipPosition="top"
-                (click)="viewEmployee(employee)"
-              ></button>
-              <button
-                pButton
-                type="button"
-                icon="pi pi-pencil"
-                class="p-button-text p-button-sm"
-                pTooltip="Edit"
-                tooltipPosition="top"
-                (click)="editEmployee(employee)"
-              ></button>
-              <button
-                pButton
-                type="button"
-                icon="pi pi-trash"
-                class="p-button-text p-button-danger p-button-sm"
-                pTooltip="Delete"
-                tooltipPosition="top"
-                (click)="confirmDelete(employee)"
-              ></button>
-            </div>
-          </td>
-        </tr>
-      </ng-template>
-
-      <ng-template pTemplate="emptymessage">
-        <tr>
-          <td colspan="8">
-            <div class="empty-state">
-              <i class="pi pi-users"></i>
-              <span>No employees found. Try adjusting your filters.</span>
-            </div>
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
-  </div>
-
-  <div class="paginator-wrapper">
-    <p-paginator
-      [first]="(page - 1) * pageSize"
-      [rows]="pageSize"
-      [totalRecords]="totalCount"
-      [rowsPerPageOptions]="[10, 25, 50]"
-      (onPageChange)="onPageChange($event)"
-    ></p-paginator>
+    <div class="col-12 md:col-6 lg:col-3">
+      <label class="font-medium text-sm text-500 mb-1 block" for="costCenterFilter">Cost Center</label>
+      <p-dropdown inputId="costCenterFilter" [options]="costCenters" optionLabel="name" optionValue="id" [filter]="true"
+        [showClear]="true" placeholder="All cost centers" [(ngModel)]="costCenterFilter" [disabled]="!companyFilter"
+        (onChange)="onCostCenterChange($event.value)" styleClass="w-full">
+        <ng-template pTemplate="selectedItem" let-costCenter>
+          <span *ngIf="costCenter">{{ costCenter.name }}</span>
+        </ng-template>
+        <ng-template pTemplate="item" let-costCenter>
+          <div>{{ costCenter.name }} <small class="text-500">({{ costCenter.code }})</small></div>
+        </ng-template>
+      </p-dropdown>
+    </div>
   </div>
 </div>
 
-<p-confirmDialog></p-confirmDialog>
+<app-data-table [columns]="columns" [data]="employees" [totalRecords]="totalCount" [loading]="loading" [rows]="pageSize"
+  [lazy]="true" (lazyLoad)="onLazyLoad($event)" (rowSelect)="viewEmployee($event)" [showGlobalFilter]="true"
+  [globalFilterFields]="['firstName', 'lastName', 'nicNumber', 'epfNumber']">
+  <!-- Custom Actions Template -->
+  <ng-template #rowActions let-employee>
+    <div class="flex justify-content-center gap-2">
+      <button pButton class="p-button-text p-button-sm p-button-rounded p-button-secondary" icon="pi pi-eye"
+        (click)="viewEmployee(employee); $event.stopPropagation()" pTooltip="View Profile"></button>
+      <button pButton class="p-button-text p-button-sm p-button-rounded" icon="pi pi-pencil"
+        (click)="editEmployee(employee); $event.stopPropagation()" pTooltip="Edit"></button>
+      <button pButton class="p-button-text p-button-sm p-button-rounded p-button-danger" icon="pi pi-trash"
+        (click)="confirmDelete(employee); $event.stopPropagation()" pTooltip="Delete"></button>
+    </div>
+  </ng-template>
+
+  <ng-template #headerActions>
+    <button pButton type="button" icon="pi pi-download" class="p-button-outlined" pTooltip="Export CSV"
+      tooltipPosition="bottom"></button>
+  </ng-template>
+</app-data-table>
+
+<p-confirmDialog [style]="{width: '450px'}"></p-confirmDialog>
 <p-toast></p-toast>

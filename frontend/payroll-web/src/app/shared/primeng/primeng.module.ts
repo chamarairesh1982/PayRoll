@@ -22,6 +22,8 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 import { ChipModule } from 'primeng/chip';
 import { TimelineModule } from 'primeng/timeline';
 import { TabMenuModule } from 'primeng/tabmenu';
+import { TabViewModule } from 'primeng/tabview';
+import { AvatarModule } from 'primeng/avatar';
 
 const PRIMENG_MODULES = [
   TableModule,
@@ -46,10 +48,12 @@ const PRIMENG_MODULES = [
   ChipModule,
   TimelineModule,
   TabMenuModule,
+  TabViewModule,
+  AvatarModule,
 ];
 
 @NgModule({
   imports: [...PRIMENG_MODULES],
   exports: [...PRIMENG_MODULES],
 })
-export class PrimeNgModule {}
+export class PrimeNgModule { }

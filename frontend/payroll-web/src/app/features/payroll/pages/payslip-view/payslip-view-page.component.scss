@@ -1,99 +1,162 @@
-.payslip {
-  display: grid;
-  gap: 1rem;
+.payslip-container {
+  max-width: 900px;
+  margin: 2rem auto;
 }
 
-.payslip__header {
+.payslip-card {
+  background: white;
+  box-shadow: var(--shadow-xl);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  color: var(--p-surface-900);
+}
+
+.payslip-header {
+  background: var(--p-surface-900);
+  color: white;
+  padding: var(--sp-8);
   display: flex;
+  justify-content: space-between;
   align-items: center;
+
+  .brand-section {
+    .company-name {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .document-type {
+      font-size: 0.875rem;
+      color: var(--p-surface-400);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+  }
+
+  .period-section {
+    text-align: right;
+
+    .period-label {
+      font-size: var(--text-xs);
+      color: var(--p-surface-400);
+      display: block;
+    }
+
+    .period-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+  }
+}
+
+.employee-section {
+  padding: var(--sp-6) var(--sp-8);
+  border-bottom: 1px solid var(--p-surface-100);
+  background: var(--p-surface-50);
+  display: flex;
   justify-content: space-between;
 }
 
-.company {
-  color: #6b7280;
-}
-
-.details,
-.summary,
-.statutory {
+.content-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 0.5rem 1rem;
-  padding: 1rem;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+
+  .column {
+    padding: var(--sp-8);
+
+    &:first-child {
+      border-right: 1px solid var(--p-surface-100);
+    }
+
+    h3 {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--p-surface-500);
+      margin-bottom: var(--sp-4);
+      display: flex;
+      justify-content: space-between;
+    }
+  }
 }
 
-.tax-breakdown {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 1rem;
-  background: #ffffff;
-  display: grid;
-  gap: 1rem;
+.line-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--sp-3);
+  font-size: 0.95rem;
+
+  .amount {
+    font-weight: 600;
+    font-family: inherit;
+  }
 }
 
-.tax-summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.5rem 1rem;
+.net-pay-section {
+  background: var(--p-primary-900);
+  color: white;
+  padding: var(--sp-6) var(--sp-8);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .label {
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+
+  .value {
+    font-size: 2rem;
+    font-weight: 800;
+  }
 }
 
-.tax-breakdown table {
-  width: 100%;
-  border-collapse: collapse;
+.statutory-section {
+  padding: var(--sp-6) var(--sp-8);
+  background: var(--p-surface-50);
+  border-top: 1px solid var(--p-surface-100);
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--p-surface-600);
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    span:last-child {
+      color: var(--p-surface-900);
+      font-weight: 600;
+    }
+  }
 }
 
-.tax-breakdown th,
-.tax-breakdown td {
-  border: 1px solid #e5e7eb;
-  padding: 0.6rem;
-  text-align: left;
+.tax-breakdown-area {
+  padding: var(--sp-6) var(--sp-8);
+  border-top: 1px dashed var(--p-surface-200);
+
+  h4 {
+    font-size: 0.875rem;
+    margin-bottom: var(--sp-4);
+  }
 }
 
-.tax-breakdown th {
-  background: #f3f4f6;
-}
+@media print {
+  .payslip-container {
+    margin: 0;
+    max-width: none;
+  }
 
-.columns {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1rem;
-}
+  .payslip-card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
 
-.panel {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 1rem;
-  background: #ffffff;
-}
-
-.panel table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.panel th,
-.panel td {
-  border: 1px solid #e5e7eb;
-  padding: 0.6rem;
-  text-align: left;
-}
-
-.panel th {
-  background: #f3f4f6;
-}
-
-.actions button {
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: 1px solid #2563eb;
-  background: #2563eb;
-  color: #ffffff;
-  font-weight: 700;
-}
-
-.loading {
-  margin: 1rem 0;
+  .back-button {
+    display: none;
+  }
 }

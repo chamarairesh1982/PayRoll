@@ -1,103 +1,115 @@
-<div *ngIf="isLoading" class="loading">Loading payslip...</div>
+<div class="page-container">
+  <div class="mb-4 flex align-items-center justify-content-between back-button">
+    <button pButton icon="pi pi-arrow-left" label="Back to Pay Run" class="p-button-text p-button-secondary"
+      (click)="goBack()"></button>
+    <button pButton icon="pi pi-print" label="Print Payslip" class="p-button-outlined"
+      (click)="window.print()"></button>
+  </div>
 
-<section *ngIf="paySlip" class="payslip">
-  <div class="payslip__header">
-    <div>
-      <h1>Payslip</h1>
-      <div class="company">Company Name</div>
+  <div *ngIf="isLoading" class="flex justify-content-center p-8">
+    <p-progressSpinner></p-progressSpinner>
+  </div>
+
+  <div *ngIf="paySlip && !isLoading" class="payslip-container animate-slideIn">
+    <div class="payslip-card">
+      <!-- Header -->
+      <div class="payslip-header">
+        <div class="brand-section">
+          <div class="document-type">Official Payroll Statement</div>
+          <div class="company-name">ACME ORGANIZATION</div>
+        </div>
+        <div class="period-section">
+          <span class="period-label">PAYMENT PERIOD</span>
+          <span class="period-value">OCTOBER 2025</span>
+        </div>
+      </div>
+
+      <!-- Employee Info -->
+      <div class="employee-section">
+        <div>
+          <label class="block text-xs font-bold text-500 uppercase mb-1">Employee Details</label>
+          <div class="text-xl font-bold">{{ paySlip.employeeName }}</div>
+          <div class="text-600">{{ paySlip.employeeCode }}</div>
+        </div>
+        <div class="text-right">
+          <label class="block text-xs font-bold text-500 uppercase mb-1">Statement Date</label>
+          <div class="font-semibold">{{ today | date:'mediumDate' }}</div>
+          <div class="text-sm text-500">Run ID: {{ paySlip.payRunId.substring(0,8) }}</div>
+        </div>
+      </div>
+
+      <!-- Main Breakdown -->
+      <div class="content-grid">
+        <div class="column">
+          <h3><span>Earnings</span> <span>Amount ({{ paySlip.currency }})</span></h3>
+          <div class="line-item" *ngFor="let earning of paySlip.earnings">
+            <span class="desc">{{ earning.description }}</span>
+            <span class="amount">{{ earning.amount | number:'1.2-2' }}</span>
+          </div>
+          <div class="mt-4 pt-3 border-top-1 border-surface-100 flex justify-content-between font-bold">
+            <span>Total Earnings</span>
+            <span>{{ paySlip.totalEarnings | number:'1.2-2' }}</span>
+          </div>
+        </div>
+
+        <div class="column">
+          <h3><span>Deductions</span> <span>Amount ({{ paySlip.currency }})</span></h3>
+          <div class="line-item" *ngFor="let deduction of paySlip.deductions">
+            <span class="desc">{{ deduction.description }}</span>
+            <span class="amount text-red-600">-{{ deduction.amount | number:'1.2-2' }}</span>
+          </div>
+          <div class="mt-4 pt-3 border-top-1 border-surface-100 flex justify-content-between font-bold">
+            <span>Total Deductions</span>
+            <span class="text-red-700">-{{ paySlip.totalDeductions | number:'1.2-2' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Net Pay Highlight -->
+      <div class="net-pay-section">
+        <div class="label">NET TAKE HOME</div>
+        <div class="value">{{ paySlip.netPay | number:'1.2-2' }} {{ paySlip.currency }}</div>
+      </div>
+
+      <!-- Statutory Contributions -->
+      <div class="statutory-section">
+        <div>
+          <span>Employee EPF (8%)</span>
+          <span>{{ paySlip.employeeEpf | number:'1.2-2' }}</span>
+        </div>
+        <div>
+          <span>Employer EPF (12%)</span>
+          <span>{{ paySlip.employerEpf | number:'1.2-2' }}</span>
+        </div>
+        <div>
+          <span>Employer ETF (3%)</span>
+          <span>{{ paySlip.employerEtf | number:'1.2-2' }}</span>
+        </div>
+        <div>
+          <span>PAYE/APIT Tax</span>
+          <span>{{ paySlip.payeTax | number:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      <!-- Tax Breakdown (Optional/Admin) -->
+      <div class="tax-breakdown-area" *ngIf="paySlip.taxCalculation">
+        <h4 class="text-600 font-bold uppercase text-xs mb-3">Tax Calculation Insight</h4>
+        <div class="grid text-sm">
+          <div class="col-3">
+            <span class="text-500 block">Taxable Base</span>
+            <span class="font-bold">{{ paySlip.taxCalculation.taxableBase | number:'1.2-2' }}</span>
+          </div>
+          <div class="col-3" *ngFor="let band of paySlip.taxCalculation.breakdown">
+            <span class="text-500 block">Band ({{ band.rate }}%)</span>
+            <span class="font-bold text-amber-700">{{ band.taxForBand | number:'1.2-2' }}</span>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="actions">
-      <button type="button" (click)="goBack()">Back to Pay Run</button>
-    </div>
-  </div>
 
-  <div class="details">
-    <div><strong>Employee:</strong> {{ paySlip.employeeName || paySlip.employeeId }} ({{ paySlip.employeeCode || 'N/A' }})</div>
-    <div><strong>Pay Run:</strong> {{ paySlip.payRunId }}</div>
-    <div><strong>Currency:</strong> {{ paySlip.currency }}</div>
+    <p class="text-center text-500 text-xs mt-4">
+      This is a computer-generated document and does not require a physical signature.
+      <br>Confidential information property of ACME ORGANIZATION.
+    </p>
   </div>
-
-  <div class="columns">
-    <div class="panel">
-      <h3>Earnings</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Code</th>
-            <th>Description</th>
-            <th>Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let earning of paySlip.earnings">
-            <td>{{ earning.code }}</td>
-            <td>{{ earning.description }}</td>
-            <td>{{ earning.amount }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="panel">
-      <h3>Deductions</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Code</th>
-            <th>Description</th>
-            <th>Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let deduction of paySlip.deductions">
-            <td>{{ deduction.code }}</td>
-            <td>{{ deduction.description }}</td>
-            <td>{{ deduction.amount }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="summary">
-    <div><strong>Basic Salary:</strong> {{ paySlip.basicSalary }}</div>
-    <div><strong>Total Earnings:</strong> {{ paySlip.totalEarnings }}</div>
-    <div><strong>Total Deductions:</strong> {{ paySlip.totalDeductions }}</div>
-    <div><strong>Net Pay:</strong> {{ paySlip.netPay }}</div>
-  </div>
-
-  <div class="statutory">
-    <div><strong>Employee EPF:</strong> {{ paySlip.employeeEpf }}</div>
-    <div><strong>Employer EPF:</strong> {{ paySlip.employerEpf }}</div>
-    <div><strong>Employer ETF:</strong> {{ paySlip.employerEtf }}</div>
-    <div><strong>PAYE Tax:</strong> {{ paySlip.payeTax }}</div>
-  </div>
-
-  <div class="tax-breakdown" *ngIf="paySlip.taxCalculation as taxCalc">
-    <h3>Tax breakdown</h3>
-    <div class="tax-summary">
-      <div><strong>Taxable earnings:</strong> {{ taxCalc.taxableEarnings }}</div>
-      <div><strong>Relief total:</strong> {{ taxCalc.reliefTotal }}</div>
-      <div><strong>Taxable base:</strong> {{ taxCalc.taxableBase }}</div>
-      <div><strong>Tax (PAYE/APIT):</strong> {{ taxCalc.tax }}</div>
-    </div>
-    <table *ngIf="taxCalc.breakdown?.length">
-      <thead>
-        <tr>
-          <th>Band</th>
-          <th>Rate</th>
-          <th>Taxable in band</th>
-          <th>Tax</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let band of taxCalc.breakdown">
-          <td>{{ band.bandFrom }} - {{ band.bandTo ?? '∞' }}</td>
-          <td>{{ band.rate }}</td>
-          <td>{{ band.taxableInBand }}</td>
-          <td>{{ band.taxForBand }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</section>
+</div>

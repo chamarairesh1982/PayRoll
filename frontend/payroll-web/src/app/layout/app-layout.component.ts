@@ -10,6 +10,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { MenuItem } from 'primeng/api';
+import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DropdownModule, DropdownChangeEvent } from 'primeng/dropdown';
@@ -52,6 +53,7 @@ interface TenantOption {
     MenuModule,
     ToastModule,
     ConfirmDialogModule,
+    AvatarModule,
     BreadcrumbComponent,
   ],
   templateUrl: './app-layout.component.html',

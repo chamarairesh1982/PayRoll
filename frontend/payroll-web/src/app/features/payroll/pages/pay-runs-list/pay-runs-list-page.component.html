@@ -1,65 +1,68 @@
-<div class="page-header">
-  <h1>Pay Runs</h1>
-  <button type="button" (click)="goToCreate()">Create Pay Run</button>
-</div>
-
-<div class="filters">
-  <label>
-    Status
-    <select [(ngModel)]="selectedStatus" (change)="onStatusChange()">
-      <option [value]="''">All</option>
-      <option *ngFor="let status of statusOptions.slice(1)" [value]="status">{{ status }}</option>
-    </select>
-  </label>
-  <label>
-    Company
-    <select [(ngModel)]="companyFilter" (change)="onCompanyChange($event.target.value)">
-      <option value="">All companies</option>
-      <option *ngFor="let company of companies" [value]="company.id">
-        {{ company.name }} ({{ company.code }})
-      </option>
-    </select>
-  </label>
-  <label>
-    Branch
-    <select [(ngModel)]="branchFilter" (change)="onBranchChange($event.target.value)">
-      <option value="">All branches</option>
-      <option *ngFor="let branch of branches" [value]="branch.id">
-        {{ branch.name }} ({{ branch.code }})
-      </option>
-    </select>
-  </label>
-  <label>
-    Cost Center
-    <select [(ngModel)]="costCenterFilter" (change)="onCostCenterChange($event.target.value)">
-      <option value="">All cost centers</option>
-      <option *ngFor="let costCenter of costCenters" [value]="costCenter.id">
-        {{ costCenter.name }} ({{ costCenter.code }})
-      </option>
-    </select>
-  </label>
-  <label>
-    Consolidated
-    <select [(ngModel)]="consolidatedFilter" (change)="onScopeChange()">
-      <option value="">All</option>
-      <option value="true">Consolidated</option>
-      <option value="false">Per entity</option>
-    </select>
-  </label>
-</div>
-
-<div *ngIf="isLoading" class="loading">Loading pay runs...</div>
-
-<ng-template #actions let-payRun>
-  <div class="actions">
-    <button type="button" (click)="viewPayRun(payRun)">View</button>
+<div class="page-header flex flex-column md:flex-row md:justify-content-between md:align-items-center gap-3">
+  <div>
+    <h1 class="m-0">Pay Runs</h1>
+    <p class="text-600 mt-2 mb-0">View and manage payroll processing cycles.</p>
   </div>
-</ng-template>
-
-<app-data-table [columns]="columns" [data]="payRuns" [actionsTemplate]="actions"></app-data-table>
-
-<div class="pagination">
-  <button type="button" (click)="previousPage()" [disabled]="page === 1">Previous</button>
-  <span>Page {{ page }}</span>
-  <button type="button" (click)="nextPage()" [disabled]="page * pageSize >= totalCount">Next</button>
+  <button pButton type="button" label="New Pay Run" icon="pi pi-plus" class="p-button-rounded"
+    (click)="goToCreate()"></button>
 </div>
+
+<div class="card mb-4 border-none shadow-sm">
+  <div class="grid p-fluid">
+    <!-- Status Filter -->
+    <div class="col-12 md:col-6 lg:col-2">
+      <label class="font-medium text-sm text-500 mb-1 block">Status</label>
+      <p-dropdown [options]="statusOptions" [(ngModel)]="selectedStatus" (onChange)="onStatusChange()"
+        placeholder="All Statuses" styleClass="w-full"></p-dropdown>
+    </div>
+
+    <!-- Company Filter -->
+    <div class="col-12 md:col-6 lg:col-3">
+      <label class="font-medium text-sm text-500 mb-1 block">Company</label>
+      <p-dropdown [options]="companies" optionLabel="name" optionValue="id" [filter]="true" [showClear]="true"
+        placeholder="All Companies" [(ngModel)]="companyFilter" (onChange)="onCompanyChange($event.value)"
+        styleClass="w-full">
+        <ng-template pTemplate="item" let-company>
+          <div>{{ company.name }} <small class="text-500">({{ company.code }})</small></div>
+        </ng-template>
+      </p-dropdown>
+    </div>
+
+    <!-- Branch Filter -->
+    <div class="col-12 md:col-6 lg:col-2">
+      <label class="font-medium text-sm text-500 mb-1 block">Branch</label>
+      <p-dropdown [options]="branches" optionLabel="name" optionValue="id" [filter]="true" [showClear]="true"
+        placeholder="All Branches" [(ngModel)]="branchFilter" [disabled]="!companyFilter"
+        (onChange)="onBranchChange($event.value)" styleClass="w-full"></p-dropdown>
+    </div>
+
+    <!-- Cost Center Filter -->
+    <div class="col-12 md:col-6 lg:col-3">
+      <label class="font-medium text-sm text-500 mb-1 block">Cost Center</label>
+      <p-dropdown [options]="costCenters" optionLabel="name" optionValue="id" [filter]="true" [showClear]="true"
+        placeholder="All Cost Centers" [(ngModel)]="costCenterFilter" [disabled]="!companyFilter"
+        (onChange)="onCostCenterChange($event.value)" styleClass="w-full"></p-dropdown>
+    </div>
+
+    <!-- Consolidated Filter -->
+    <div class="col-12 md:col-6 lg:col-2">
+      <label class="font-medium text-sm text-500 mb-1 block">Type</label>
+      <p-dropdown
+        [options]="[{label: 'All', value: ''}, {label: 'Consolidated', value: 'true'}, {label: 'Per Entity', value: 'false'}]"
+        [(ngModel)]="consolidatedFilter" (onChange)="onScopeChange()" placeholder="Select Type"
+        styleClass="w-full"></p-dropdown>
+    </div>
+  </div>
+</div>
+
+<app-data-table [columns]="columns" [data]="payRuns" [totalRecords]="totalCount" [loading]="isLoading" [rows]="pageSize"
+  [lazy]="true" (lazyLoad)="onLazyLoad($event)" (rowSelect)="viewPayRun($event)" [title]="'Payroll Run History'">
+  <!-- Custom Status Badge Colors if needed, though 'type: badge' handles it generally -->
+
+  <ng-template #rowActions let-payRun>
+    <div class="flex justify-content-center">
+      <button pButton class="p-button-text p-button-sm p-button-rounded p-button-secondary" icon="pi pi-eye"
+        (click)="viewPayRun(payRun); $event.stopPropagation()" pTooltip="View Details"></button>
+    </div>
+  </ng-template>
+</app-data-table>

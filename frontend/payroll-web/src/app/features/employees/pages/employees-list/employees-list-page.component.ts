@@ -2,7 +2,6 @@ import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { PaginatorState } from 'primeng/paginator';
-import { Table } from 'primeng/table';
 import { Subject } from 'rxjs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -10,6 +9,7 @@ import { OrganizationApiService } from '../../../../shared/services/organization
 import { BranchOption, CompanyOption, CostCenterOption } from '../../../../shared/models/organization.model';
 import { EmployeesApiService } from '../../services/employees-api.service';
 import { Employee, PaginatedResult } from '../../models/employee.model';
+import { DataTableColumn } from '../../../../shared/components/table/data-table.component';
 
 type EmployeeRow = Employee & { nicDisplay: string };
 
@@ -20,26 +20,36 @@ type EmployeeRow = Employee & { nicDisplay: string };
   providers: [ConfirmationService, MessageService],
 })
 export class EmployeesListPageComponent implements OnInit, OnDestroy {
-  @ViewChild('employeesTable') employeesTable?: Table;
-
   employees: EmployeeRow[] = [];
+  loading = false;
   totalCount = 0;
   page = 1;
   pageSize = 25;
-  public searchTerm = '';
+
+  // Power Grid Columns
+  columns: DataTableColumn<EmployeeRow>[] = [
+    { field: 'employeeCode', header: 'Code', sortable: true, filterable: true, minWidth: '100px' },
+    { field: 'firstName', header: 'First Name', sortable: true, filterable: true, minWidth: '120px' },
+    { field: 'lastName', header: 'Last Name', sortable: true, filterable: true, minWidth: '120px' },
+    { field: 'nicDisplay', header: 'NIC', sortable: false, filterable: true, minWidth: '120px' },
+    { field: 'epfNumber', header: 'EPF', sortable: true, filterable: true, minWidth: '100px' },
+    { field: 'baseSalary', header: 'Salary', type: 'currency', align: 'right', sortable: true, minWidth: '120px' },
+    { field: 'isActive', header: 'Status', type: 'boolean', align: 'center', sortable: true, minWidth: '100px' },
+  ];
+
   companyFilter = '';
   branchFilter = '';
   costCenterFilter = '';
   companies: CompanyOption[] = [];
   branches: BranchOption[] = [];
   costCenters: CostCenterOption[] = [];
-  activeOptions = [
-    { label: 'Active', value: true },
-    { label: 'Inactive', value: false },
-  ];
+
   employeeToDelete: Employee | null = null;
   private destroy$ = new Subject<void>();
+
+  // Debounce subject for global search
   private searchSubject = new Subject<string>();
+  searchTerm = '';
 
   constructor(
     private employeesApi: EmployeesApiService,
@@ -48,15 +58,17 @@ export class EmployeesListPageComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private confirmationService: ConfirmationService,
     private messageService: MessageService,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadCompanies();
-    this.loadEmployees();
     this.searchSubject.pipe(debounceTime(300), takeUntil(this.destroy$)).subscribe(value => {
       this.searchTerm = value;
-      this.applyGlobalFilter(value);
+      this.page = 1; // Reset to first page on new search
+      this.loadEmployees();
     });
+    // Initial load
+    this.loadEmployees();
   }
 
   ngOnDestroy(): void {
@@ -87,21 +99,45 @@ export class EmployeesListPageComponent implements OnInit, OnDestroy {
   }
 
   loadEmployees(): void {
+    this.loading = true;
     this.employeesApi
       .getEmployees(this.page, this.pageSize, {
         companyId: this.companyFilter || undefined,
         branchId: this.branchFilter || undefined,
         costCenterId: this.costCenterFilter || undefined,
+        // searchTerm: this.searchTerm // Assuming API supports this, otherwise client-side filtering logic remains but API is preferred
       })
-      .subscribe((result: PaginatedResult<Employee>) => {
-        const isAdmin = this.authService.isAdmin();
-        this.employees = result.items.map(item => ({
-          ...item,
-          nicDisplay: isAdmin ? item.nicNumber : item.maskedNicNumber || '',
-        }));
-        this.totalCount = result.totalCount;
-        this.applyGlobalFilter(this.searchTerm);
+      .subscribe({
+        next: (result: PaginatedResult<Employee>) => {
+          const isAdmin = this.authService.isAdmin();
+          this.employees = result.items.map(item => ({
+            ...item,
+            nicDisplay: isAdmin ? item.nicNumber : item.maskedNicNumber || '',
+          }));
+          this.totalCount = result.totalCount;
+        },
+        complete: () => {
+          this.loading = false;
+        }
       });
+  }
+
+  // Event Handlers for Power Grid
+  onLazyLoad(event: any): void {
+    // Calculate page from offset
+    const first = event.first ?? 0;
+    const rows = event.rows ?? 25;
+    const newPage = Math.floor(first / rows) + 1;
+
+    if (newPage !== this.page || rows !== this.pageSize) {
+      this.page = newPage;
+      this.pageSize = rows;
+      this.loadEmployees();
+    }
+  }
+
+  onGlobalSearch(value: string): void {
+    this.searchSubject.next(value);
   }
 
   onCompanyChange(value: string | null): void {
@@ -125,6 +161,12 @@ export class EmployeesListPageComponent implements OnInit, OnDestroy {
     this.onScopeChange();
   }
 
+  onScopeChange(): void {
+    this.page = 1;
+    this.loadEmployees();
+  }
+
+  // Actions
   goToCreate(): void {
     this.router.navigate(['/employees/new']);
   }
@@ -176,31 +218,5 @@ export class EmployeesListPageComponent implements OnInit, OnDestroy {
         });
       },
     });
-  }
-
-  public onPageChange(event: PaginatorState): void {
-    const nextPage = (event.page ?? 0) + 1;
-    const nextRows = event.rows ?? this.pageSize;
-    const shouldReload = nextPage !== this.page || nextRows !== this.pageSize;
-    this.page = nextPage;
-    this.pageSize = nextRows;
-    if (shouldReload) {
-      this.loadEmployees();
-    }
-  }
-
-  onScopeChange(): void {
-    this.page = 1;
-    this.loadEmployees();
-  }
-
-  public onGlobalSearch(value: string): void {
-    this.searchSubject.next(value);
-  }
-
-  private applyGlobalFilter(value: string): void {
-    if (this.employeesTable) {
-      this.employeesTable.filterGlobal(value, 'contains');
-    }
   }
 }

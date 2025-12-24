@@ -2,110 +2,78 @@
   <p-toast></p-toast>
   <p-confirmDialog></p-confirmDialog>
 
-  <p-toolbar class="app-layout__topbar">
-    <div class="app-layout__topbar-left">
-      <button
-        pButton
-        class="app-layout__menu-btn"
-        icon="pi pi-bars"
-        (click)="toggleSidebar()"
-        aria-label="Toggle menu"
-      ></button>
-      <div class="app-layout__brand">
-        <span class="app-layout__logo">WorldBets Payroll</span>
-        <small class="app-layout__context">{{ selectedCompanyLabel }}</small>
-      </div>
-      <p-dropdown
-        class="app-layout__tenant"
-        [options]="companyOptions"
-        [(ngModel)]="selectedCompany"
-        optionLabel="label"
-        placeholder="Company"
-        aria-label="Select company"
-        (onChange)="onCompanyChange($event)"
-      ></p-dropdown>
-      <p-dropdown
-        class="app-layout__tenant"
-        [options]="branchOptions"
-        [(ngModel)]="selectedBranch"
-        optionLabel="label"
-        placeholder="Branch"
-        aria-label="Select branch"
-      ></p-dropdown>
-      <p-dropdown
-        class="app-layout__tenant"
-        [options]="costCenterOptions"
-        [(ngModel)]="selectedCostCenter"
-        optionLabel="label"
-        placeholder="Cost Center"
-        aria-label="Select cost center"
-      ></p-dropdown>
+  <!-- Sidebar -->
+  <aside class="app-layout__sidebar">
+    <div class="sidebar-header">
+      <div class="logo-text">Payroll Cloud</div>
     </div>
-    <div class="app-layout__topbar-center">
-      <span class="p-input-icon-left app-layout__search">
+    <div class="sidebar-content">
+      <p-panelMenu [model]="menuItems" (onNodeSelect)="onMenuSelect()"></p-panelMenu>
+    </div>
+    <!-- Sidebar Footer could be added here -->
+  </aside>
+
+  <!-- Topbar -->
+  <header class="app-layout__topbar">
+    <div class="topbar-left">
+      <button pButton class="mobile-menu-btn p-button-text p-button-secondary" icon="pi pi-bars"
+        (click)="toggleSidebar()"></button>
+
+      <!-- Tenant Switches -->
+      <p-dropdown [options]="companyOptions" [(ngModel)]="selectedCompany" optionLabel="label"
+        placeholder="Select Company" (onChange)="onCompanyChange($event)">
+        <ng-template pTemplate="selectedItem" let-item>
+          <div class="flex align-items-center gap-2" *ngIf="item">
+            <i class="pi pi-building text-primary"></i>
+            <span class="font-semibold">{{ item.label }}</span>
+          </div>
+        </ng-template>
+      </p-dropdown>
+
+      <p-dropdown [options]="branchOptions" [(ngModel)]="selectedBranch" optionLabel="label" placeholder="Branch"
+        [disabled]="!selectedCompany"></p-dropdown>
+
+      <p-dropdown [options]="costCenterOptions" [(ngModel)]="selectedCostCenter" optionLabel="label"
+        placeholder="Cost Center" [disabled]="!selectedBranch"></p-dropdown>
+    </div>
+
+    <div class="topbar-right">
+      <!-- Search Input (optional, minimal version) -->
+      <span class="p-input-icon-left hidden md:block">
         <i class="pi pi-search"></i>
-        <input
-          pInputText
-          type="text"
-          placeholder="Search employees, pay runs, payslips"
-          aria-label="Global search"
-        />
+        <input pInputText type="text" placeholder="Global search..." class="p-inputtext-sm border-none bg-surface-50" />
       </span>
-    </div>
-    <div class="app-layout__topbar-right">
-      <div class="app-layout__density">
-        <span class="app-layout__density-label">Density</span>
-        <p-dropdown
-          [options]="densityOptions"
-          [(ngModel)]="selectedDensity"
-          optionLabel="label"
-          (onChange)="onDensityChange($event.value)"
-        ></p-dropdown>
-      </div>
-      <button
-        pButton
-        type="button"
-        class="p-button-text p-button-rounded"
-        icon="pi pi-bell"
-        aria-label="Notifications"
-      ></button>
-      <div class="app-layout__user" (click)="userMenu.toggle($event)" tabindex="0" role="button">
-        <span class="pi pi-user app-layout__user-avatar" aria-hidden="true"></span>
-        <div class="app-layout__user-meta">
-          <div class="app-layout__user-name">{{ userName }}</div>
-          <div class="app-layout__user-role">{{ userRole }}</div>
+
+      <!-- Notifications -->
+      <button pButton icon="pi pi-bell" class="p-button-text p-button-secondary p-button-rounded"></button>
+
+      <!-- User Profile -->
+      <div class="flex align-items-center gap-3 pl-3 border-left-1 border-surface-200 cursor-pointer"
+        (click)="userMenu.toggle($event)">
+        <div class="hidden md:block text-right">
+          <div class="text-sm font-bold text-surface-900">{{ userName }}</div>
+          <div class="text-xs text-surface-500">{{ userRole }}</div>
         </div>
-        <span class="pi pi-chevron-down" aria-hidden="true"></span>
+        <p-avatar icon="pi pi-user" shape="circle" styleClass="bg-primary text-white"></p-avatar>
+        <i class="pi pi-chevron-down text-xs text-surface-400"></i>
       </div>
       <p-menu #userMenu [popup]="true" [model]="userMenuItems"></p-menu>
     </div>
-  </p-toolbar>
+  </header>
 
-  <div class="app-layout__body">
-    <aside class="app-layout__sidebar">
-      <p-panelMenu
-        [model]="menuItems"
-        (onNodeSelect)="onMenuSelect()"
-      ></p-panelMenu>
-    </aside>
+  <!-- Main Content -->
+  <main class="app-layout__content">
+    <div class="page-container">
+      <app-breadcrumb class="mb-4 block"></app-breadcrumb>
+      <router-outlet></router-outlet>
+    </div>
+  </main>
 
-    <main class="app-layout__content">
-      <app-breadcrumb></app-breadcrumb>
-      <section class="app-layout__page">
-        <router-outlet></router-outlet>
-      </section>
-    </main>
-  </div>
-
-  <p-sidebar
-    [(visible)]="sidebarVisible"
-    [modal]="true"
-    position="left"
-    styleClass="app-layout__mobile-sidebar"
-  >
-    <p-panelMenu
-      [model]="menuItems"
-      (onNodeSelect)="onMenuSelect()"
-    ></p-panelMenu>
+  <!-- Mobile Sidebar -->
+  <p-sidebar [(visible)]="sidebarVisible" [modal]="true" position="left" styleClass="app-mobile-sidebar">
+    <div class="mb-4">
+      <div class="logo-text">Payroll Cloud</div>
+    </div>
+    <p-panelMenu [model]="menuItems" (onNodeSelect)="onMenuSelect()"></p-panelMenu>
   </p-sidebar>
 </div>

@@ -1,195 +1,172 @@
 .app-layout {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-areas:
+    "sidebar topbar"
+    "sidebar content";
+  grid-template-columns: 260px 1fr;
+  grid-template-rows: 64px 1fr;
   min-height: 100vh;
-  background: #f4f6f9;
+  background-color: var(--p-surface-50);
 }
 
-.app-layout__topbar {
+/* Sidebar */
+.app-layout__sidebar {
+  grid-area: sidebar;
+  background-color: var(--p-surface-0);
+  border-right: 1px solid var(--p-surface-100);
+  display: flex;
+  flex-direction: column;
   position: sticky;
   top: 0;
+  height: 100vh;
   z-index: 100;
-  border-bottom: 1px solid #e3e6ea;
-  background: #ffffff;
 }
 
-.app-layout__topbar-left,
-.app-layout__topbar-center,
-.app-layout__topbar-right {
+.sidebar-header {
+  height: 64px;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  padding: 0 var(--sp-6);
+  border-bottom: 1px solid var(--p-surface-50);
 }
 
-.app-layout__topbar-left {
-  min-width: 420px;
-  flex-wrap: wrap;
-}
-
-.app-layout__brand {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.app-layout__logo {
+.logo-text {
+  font-size: var(--text-lg);
   font-weight: 700;
-  font-size: 1.1rem;
-  color: #1f2937;
+  color: var(--p-primary-600);
+  letter-spacing: -0.025em;
 }
 
-.app-layout__context {
-  color: #6b7280;
-  font-weight: 600;
-}
-
-.app-layout__tenant {
-  min-width: 180px;
-}
-
-.app-layout__search input {
-  width: 320px;
-}
-
-.app-layout__density {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.app-layout__density-label {
-  font-size: 0.85rem;
-  color: #6b7280;
-}
-
-.app-layout__user {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 0.6rem;
-  border-radius: 12px;
-  border: 1px solid #e3e6ea;
-  cursor: pointer;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.app-layout__user:focus,
-.app-layout__user:hover {
-  background: #f3f4f6;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-.app-layout__user-avatar {
-  background: #1d4ed8;
-  color: #ffffff;
-  padding: 0.35rem;
-  border-radius: 50%;
-}
-
-.app-layout__user-meta {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.1;
-}
-
-.app-layout__user-name {
-  font-weight: 700;
-  color: #111827;
-}
-
-.app-layout__user-role {
-  color: #6b7280;
-  font-size: 0.85rem;
-}
-
-.app-layout__menu-btn {
-  display: none;
-}
-
-.app-layout__body {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  min-height: calc(100vh - 4rem);
-}
-
-.app-layout__sidebar {
-  border-right: 1px solid #e3e6ea;
-  padding: 1rem;
-  background: #ffffff;
-  position: sticky;
-  top: 4rem;
-  height: calc(100vh - 4rem);
+.sidebar-content {
+  flex: 1;
   overflow-y: auto;
+  padding: var(--sp-4);
 }
 
+/* Topbar */
+.app-layout__topbar {
+  grid-area: topbar;
+  height: 64px;
+  background-color: var(--p-surface-0);
+  border-bottom: 1px solid var(--p-surface-100);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--sp-6);
+  position: sticky;
+  top: 0;
+  z-index: 90;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+/* Content Area */
 .app-layout__content {
-  padding: 1.5rem 2rem;
+  grid-area: content;
+  padding: var(--sp-6);
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
 }
 
-.app-layout__page {
-  margin-top: 1rem;
+.page-container {
+  animation: fadeIn 0.3s ease-out;
 }
 
-:host ::ng-deep .app-layout__mobile-sidebar {
-  width: 280px;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-:host ::ng-deep .p-panelmenu .p-menuitem-link-active {
-  background: #eef2ff;
-  color: #4338ca;
-  font-weight: 700;
-}
-
-:host ::ng-deep .p-panelmenu .p-menuitem-icon {
-  color: #64748b;
-}
-
-:host ::ng-deep body.density-compact .p-datatable .p-datatable-thead > tr > th,
-:host ::ng-deep body.density-compact .p-datatable .p-datatable-tbody > tr > td {
-  padding: 0.35rem 0.5rem;
-}
-
-:host ::ng-deep body.density-compact .p-datatable .p-datatable-thead > tr > th {
-  font-size: 0.8rem;
-}
-
+/* Mobile Adjustments */
 @media (max-width: 1024px) {
-  .app-layout__body {
+  .app-layout {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "topbar"
+      "content";
   }
 
   .app-layout__sidebar {
     display: none;
   }
 
-  .app-layout__menu-btn {
-    display: inline-flex;
-  }
-
-  .app-layout__topbar-left {
-    min-width: auto;
-  }
-
-  .app-layout__tenant {
-    min-width: 160px;
-  }
-
-  .app-layout__search input {
-    width: 100%;
-    min-width: 180px;
+  .mobile-menu-btn {
+    display: flex !important;
   }
 }
 
-@media (max-width: 768px) {
-  .app-layout__topbar-center {
-    display: none;
+.mobile-menu-btn {
+  display: none;
+}
+
+/* Override PrimeNG PanelMenu for Sidebar */
+:host ::ng-deep {
+  .p-panelmenu {
+    .p-panelmenu-header>a {
+      background: transparent;
+      border: none;
+      color: var(--p-surface-600);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      padding: var(--sp-2) var(--sp-3);
+      border-radius: var(--radius-md);
+      transition: all var(--transition-fast);
+
+      &:hover {
+        background: var(--p-surface-100);
+        color: var(--p-surface-900);
+      }
+    }
+
+    .p-panelmenu-content {
+      background: transparent;
+      border: none;
+      padding-left: var(--sp-4);
+    }
+
+    .p-menuitem-link {
+      padding: var(--sp-2) var(--sp-3);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      color: var(--p-surface-500);
+
+      &:hover {
+        background: var(--p-surface-50);
+        color: var(--p-primary-600);
+      }
+
+      &.p-menuitem-link-active {
+        background: var(--p-primary-50);
+        color: var(--p-primary-700);
+        font-weight: 600;
+      }
+    }
   }
 
-  .app-layout__topbar-left {
-    min-width: auto;
-  }
+  .p-dropdown {
+    border: none !important;
+    background: var(--p-surface-50) !important;
 
-  .app-layout__content {
-    padding: 1rem;
+    &:hover {
+      background: var(--p-surface-100) !important;
+    }
   }
 }

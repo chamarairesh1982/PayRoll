@@ -1,86 +1,127 @@
-<div class="table-shell">
-  <div class="table-toolbar" *ngIf="showGlobalFilter">
-    <span class="p-input-icon-left">
-      <i class="pi pi-search"></i>
-      <input
-        pInputText
-        type="text"
-        [placeholder]="globalFilterPlaceholder"
-        (input)="onGlobalFilter($event)"
-      />
-    </span>
-  </div>
+<div class="card p-0">
+  <p-table #dt [columns]="columns" [value]="data" [loading]="loading" [lazy]="lazy" (onLazyLoad)="onLazyLoad($event)"
+    [paginator]="paginator" [rows]="rows" [rowsPerPageOptions]="rowsPerPageOptions" [totalRecords]="totalRecords"
+    [selectionMode]="selectionMode || 'single'" [(selection)]="selection" (selectionChange)="onSelectionChange($event)"
+    (onRowSelect)="onRowSelect($event)" (onRowUnselect)="onRowUnselect($event)" [dataKey]="dataKey" [rowHover]="true"
+    [showCurrentPageReport]="showCurrentPageReport"
+    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+    styleClass="p-datatable-striped p-datatable-sm" [globalFilterFields]="globalFilterFields">
+    <!-- Caption / Toolbar -->
+    <ng-template pTemplate="caption">
+      <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-center gap-2">
+        <h5 class="m-0" *ngIf="title">{{ title }}</h5>
+        <div *ngIf="!title"></div>
 
-  <p-table
-    #dt
-    [value]="data"
-    [columns]="columns"
-    [paginator]="paginator"
-    [rows]="rows"
-    [first]="first"
-    [totalRecords]="totalRecords"
-    [rowsPerPageOptions]="rowsPerPageOptions"
-    [lazy]="lazy"
-    [loading]="loading"
-    [globalFilterFields]="resolvedGlobalFilterFields"
-    [rowHover]="true"
-    (onLazyLoad)="handleLazyLoad($event)"
-  >
-    <ng-template pTemplate="header">
+        <div class="flex align-items-center gap-2">
+          <!-- External Actions -->
+          <ng-container *ngTemplateOutlet="headerActionsTemplate"></ng-container>
+
+          <!-- Global Filter -->
+          <span class="p-input-icon-left" *ngIf="showGlobalFilter">
+            <i class="pi pi-search"></i>
+            <input pInputText type="text" (input)="onGlobalFilter($event)" placeholder="Search..."
+              class="w-full md:w-auto" />
+          </span>
+
+          <button pButton icon="pi pi-filter-slash" class="p-button-outlined" (click)="clear()" pTooltip="Clear Filters"
+            tooltipPosition="bottom"></button>
+        </div>
+      </div>
+    </ng-template>
+
+    <!-- Header -->
+    <ng-template pTemplate="header" let-columns>
       <tr>
-        <th *ngFor="let column of columns" [pSortableColumn]="column.sortable ? column.field : null">
-          <span class="header-label">{{ column.header }}</span>
-          <p-sortIcon *ngIf="column.sortable" [field]="column.field"></p-sortIcon>
+        <th style="width: 3rem" *ngIf="hasSelection && selectionMode === 'multiple'">
+          <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
         </th>
-        <th *ngIf="actionsTemplate" class="actions-header">Actions</th>
-      </tr>
-      <tr *ngIf="showColumnFilters">
-        <th *ngFor="let column of columns">
-          <p-columnFilter
-            *ngIf="column.filter !== false"
-            [field]="column.field"
-            [matchMode]="column.filterMatchMode || 'contains'"
-            [showMenu]="false"
-            [showClearButton]="false"
-            [type]="resolveFilterType(column)"
-          ></p-columnFilter>
+        <th *ngFor="let col of columns" [pSortableColumn]="col.sortable ? col.field : null"
+          [ngClass]="getColumnClass(col)" [style.min-width]="col.minWidth">
+          {{ col.header }}
+          <p-sortIcon *ngIf="col.sortable" [field]="col.field"></p-sortIcon>
+          <p-columnFilter *ngIf="col.filterable" type="text" [field]="col.field" display="menu"
+            class="ml-2"></p-columnFilter>
         </th>
-        <th *ngIf="actionsTemplate"></th>
+        <th style="width: 4rem" *ngIf="rowActionsTemplate || actionsTemplate"></th>
       </tr>
     </ng-template>
 
-    <ng-template pTemplate="body" let-rowData>
-      <tr>
-        <td *ngFor="let column of columns">
-          <ng-container [ngSwitch]="column.type">
-            <span *ngSwitchCase="'date'">{{ rowData[column.field] | date: column.format || 'yyyy-MM-dd' }}</span>
-            <span *ngSwitchCase="'datetime'">{{ rowData[column.field] | date: column.format || 'medium' }}</span>
-            <span *ngSwitchCase="'currency'">{{ rowData[column.field] | currency: column.format }}</span>
-            <span *ngSwitchCase="'number'">{{ rowData[column.field] | number: column.format }}</span>
-            <span *ngSwitchDefault>{{ rowData[column.field] }}</span>
+    <!-- Body -->
+    <ng-template pTemplate="body" let-rowData let-columns="columns">
+      <tr [pSelectableRow]="rowData">
+        <td *ngIf="hasSelection && selectionMode === 'multiple'">
+          <p-tableCheckbox [value]="rowData"></p-tableCheckbox>
+        </td>
+
+        <td *ngFor="let col of columns" [ngClass]="getColumnClass(col)">
+          <!-- Custom Formatting Switch -->
+          <ng-container [ngSwitch]="col.type">
+            <!-- Badge -->
+            <span *ngSwitchCase="'badge'">
+              <span class="p-tag" [ngClass]="'p-tag-' + (rowData[col.field] | lowercase)">
+                {{ rowData[col.field] }}
+              </span>
+            </span>
+
+            <!-- Currency -->
+            <span *ngSwitchCase="'currency'">
+              {{ rowData[col.field] | currency: (col.format || 'LKR') : 'symbol-narrow' }}
+            </span>
+
+            <!-- Date -->
+            <span *ngSwitchCase="'date'">
+              {{ rowData[col.field] | date: (col.format || 'yyyy-MM-dd') }}
+            </span>
+
+            <!-- DateTime -->
+            <span *ngSwitchCase="'datetime'">
+              {{ rowData[col.field] | date: (col.format || 'yyyy-MM-dd HH:mm') }}
+            </span>
+
+            <!-- Boolean -->
+            <span *ngSwitchCase="'boolean'">
+              <i class="pi"
+                [ngClass]="{'pi-check-circle text-green-500': rowData[col.field], 'pi-times-circle text-red-500': !rowData[col.field]}"></i>
+            </span>
+
+            <!-- Default -->
+            <span *ngSwitchDefault>
+              {{ rowData[col.field] }}
+            </span>
           </ng-container>
         </td>
-        <td *ngIf="actionsTemplate" class="actions-cell">
-          <ng-container *ngTemplateOutlet="actionsTemplate; context: { $implicit: rowData }"></ng-container>
+
+        <!-- Actions -->
+        <td *ngIf="rowActionsTemplate || actionsTemplate" class="text-center">
+          <ng-container
+            *ngTemplateOutlet="rowActionsTemplate || actionsTemplate; context: { $implicit: rowData }"></ng-container>
         </td>
       </tr>
     </ng-template>
 
-    <ng-template pTemplate="loadingbody">
-      <tr *ngFor="let _ of skeletonRowsArray">
-        <td *ngFor="let column of columns">
-          <p-skeleton height="1.25rem"></p-skeleton>
+    <!-- Loading -->
+    <ng-template pTemplate="loadingbody" let-columns="columns">
+      <tr *ngFor="let i of [1,2,3,4,5]">
+        <td *ngIf="hasSelection && selectionMode === 'multiple'">
+          <p-skeleton size="1rem"></p-skeleton>
         </td>
-        <td *ngIf="actionsTemplate">
-          <p-skeleton height="1.25rem"></p-skeleton>
+        <td *ngFor="let col of columns">
+          <p-skeleton width="100%"></p-skeleton>
+        </td>
+        <td *ngIf="rowActionsTemplate">
+          <p-skeleton size="2rem" shape="circle"></p-skeleton>
         </td>
       </tr>
     </ng-template>
 
-    <ng-template pTemplate="emptymessage">
+    <!-- Empty -->
+    <ng-template pTemplate="emptymessage" let-columns>
       <tr>
-        <td [attr.colspan]="columns.length + (actionsTemplate ? 1 : 0)">
-          <div class="empty-state">{{ emptyMessage }}</div>
+        <td [attr.colspan]="columns.length + (hasSelection ? 1 : 0) + (rowActionsTemplate ? 1 : 0)">
+          <div class="flex flex-column align-items-center justify-content-center p-5 gap-3">
+            <i class="pi pi-folder-open text-500 text-6xl"></i>
+            <span class="text-xl text-500 font-semibold">No records found</span>
+          </div>
         </td>
       </tr>
     </ng-template>

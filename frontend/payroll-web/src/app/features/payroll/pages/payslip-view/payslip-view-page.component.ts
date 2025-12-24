@@ -12,8 +12,10 @@ export class PayslipViewPageComponent implements OnInit {
   paySlip?: PaySlip;
   payRunId?: string;
   isLoading = true;
+  today = new Date();
+  window = window;
 
-  constructor(private route: ActivatedRoute, private payRunsApi: PayRunsApiService, private router: Router) {}
+  constructor(private route: ActivatedRoute, private payRunsApi: PayRunsApiService, private router: Router) { }
 
   ngOnInit(): void {
     this.payRunId = this.route.snapshot.paramMap.get('payRunId') || undefined;
