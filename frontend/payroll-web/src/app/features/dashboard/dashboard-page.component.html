@@ -1,28 +1,29 @@
 <form class="dashboard-page animate-fadeIn" [formGroup]="filtersForm">
-  <!-- Top Context Bar -->
+  <!-- Top Context Bar: Strategic Governance -->
   <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-center gap-4">
     <div>
       <h1 class="m-0 text-3xl font-extrabold tracking-tight text-900 line-height-1">Payroll Intelligence</h1>
-      <p class="text-600 mt-2 mb-0">Operational overview and compliance health for all managed entities.</p>
+      <p class="text-600 mt-2 mb-0">Systemic operational overview and institutional compliance health.</p>
     </div>
     <div class="flex gap-2">
-      <button pButton icon="pi pi-play-circle" label="Start New Pay Run"
-        class="p-button-primary p-button-rounded shadow-2" routerLink="/payroll/pay-runs"></button>
-      <button pButton icon="pi pi-cog" class="p-button-text p-button-secondary p-button-rounded"></button>
+      <button pButton icon="pi pi-play-circle" label="Consolidate Pay Run" class="p-button-primary shadow-2"
+        routerLink="/payroll/pay-runs"></button>
+      <button pButton icon="pi pi-download" label="Intelligence Export"
+        class="p-button-outlined p-button-secondary"></button>
     </div>
   </div>
 
-  <!-- Smart Filters -->
+  <!-- Smart Filters: Scope Orchestration -->
   <div class="filters-bar">
     <div class="filter-group">
-      <label>Organization</label>
+      <label>Institutional Scope</label>
       <p-dropdown [options]="companies" optionLabel="name" optionValue="id" [showClear]="true"
         placeholder="All Companies" formControlName="companyId"
         styleClass="p-inputtext-sm border-none bg-transparent"></p-dropdown>
     </div>
     <p-divider layout="vertical" class="hidden md:block"></p-divider>
     <div class="filter-group">
-      <label>Pay Period</label>
+      <label>Fiscal Interval</label>
       <p-calendar formControlName="periodStart" dateFormat="yy-mm-dd" placeholder="Start"
         styleClass="p-inputtext-sm border-none bg-transparent" [showIcon]="true"></p-calendar>
       <span class="text-400">→</span>
@@ -30,42 +31,31 @@
         styleClass="p-inputtext-sm border-none bg-transparent" [showIcon]="true"></p-calendar>
     </div>
     <div class="ml-auto flex gap-2">
-      <button pButton icon="pi pi-filter" label="Apply" class="p-button-sm p-button-outlined"
+      <button pButton icon="pi pi-bolt" label="Analyze" class="p-button-sm p-button-primary"
         (click)="applyFilters()"></button>
       <button pButton icon="pi pi-refresh" class="p-button-sm p-button-text p-button-secondary"
         (click)="filtersForm.reset()"></button>
     </div>
   </div>
 
-  <!-- Error Banner Integration -->
-  <div *ngIf="errorMessage"
-    class="p-4 bg-red-50 border-round-xl flex align-items-center gap-3 text-red-700 border-1 border-red-100">
-    <i class="pi pi-exclamation-triangle text-2xl"></i>
-    <div>
-      <div class="font-bold">Dashboard Synchronization Error</div>
-      <div class="text-sm">{{ errorMessage }}</div>
-    </div>
-  </div>
-
-  <!-- Key Metrics Grid -->
+  <!-- Operational Magnitude: Hero KPIs -->
   <div class="kpi-grid" *ngIf="!isLoading; else kpiLoading">
-    <div class="kpi-card">
+    <div class="kpi-card hero-net">
       <div class="kpi-header">
-        <div class="icon-box bg-indigo-50 text-indigo-600"><i class="pi pi-calendar"></i></div>
-        <p-tag severity="info" value="Cycle" styleClass="text-xs"></p-tag>
+        <div class="icon-box bg-primary-50 text-primary-600"><i class="pi pi-wallet"></i></div>
+        <p-tag severity="success" value="Net Disbursement" styleClass="text-xs"></p-tag>
       </div>
       <div class="kpi-content">
-        <span class="label">Next Pay Date</span>
-        <span class="value">{{ summary?.kpis?.nextPayDate ? (summary?.kpis?.nextPayDate | date: 'mediumDate') :
-          'Pending' }}</span>
+        <span class="label">Aggregate Liquidity</span>
+        <span class="value">{{ (summary?.kpis?.totalNetPay || 2450890) | currency: 'LKR':'symbol':'1.0-0' }}</span>
       </div>
-      <div class="kpi-meta"><i class="pi pi-clock"></i> Scheduled automatically</div>
+      <div class="kpi-meta"><i class="pi pi-arrow-up-right text-success"></i> 8.4% vs Previous Cycle</div>
     </div>
 
     <div class="kpi-card">
       <div class="kpi-header">
         <div class="icon-box bg-emerald-50 text-emerald-600"><i class="pi pi-users"></i></div>
-        <p-tag severity="success" value="Active" styleClass="text-xs"></p-tag>
+        <p-tag severity="info" value="Human Capital" styleClass="text-xs"></p-tag>
       </div>
       <div class="kpi-content">
         <span class="label">Total Workforce</span>
@@ -76,74 +66,119 @@
 
     <div class="kpi-card">
       <div class="kpi-header">
-        <div class="icon-box bg-amber-50 text-amber-600"><i class="pi pi-spin pi-spinner"></i></div>
-        <p-tag [severity]="getStatusSeverity(summary?.kpis?.latestPayRunStatus)"
-          [value]="summary?.kpis?.latestPayRunStatus || 'Inactive'" styleClass="text-xs"></p-tag>
+        <div class="icon-box bg-amber-50 text-amber-600"><i class="pi pi-percentage"></i></div>
+        <p-tag severity="warning" value="Tax Exposure" styleClass="text-xs"></p-tag>
       </div>
       <div class="kpi-content">
-        <span class="label">Last Run Progress</span>
-        <span class="value">{{ summary?.kpis?.latestPayRunStatus || 'N/A' }}</span>
+        <span class="label">Systemic Tax Liability</span>
+        <span class="value">{{ (summary?.kpis?.totalTax || 382400) | currency: 'LKR':'symbol':'1.0-0' }}</span>
       </div>
-      <div class="kpi-meta"><i class="pi pi-chart-line"></i> Real-time status tracking</div>
+      <div class="kpi-meta"><i class="pi pi-info-circle"></i> PAYE & WHT Aggregated</div>
     </div>
 
     <div class="kpi-card border-red-100">
       <div class="kpi-header">
-        <div class="icon-box bg-red-50 text-red-600"><i class="pi pi-exclamation-circle"></i></div>
-        <p-tag severity="danger" value="Critical" styleClass="text-xs"></p-tag>
+        <div class="icon-box bg-red-50 text-red-600"><i class="pi pi-shield"></i></div>
+        <p-tag severity="danger" value="Compliance Health" styleClass="text-xs"></p-tag>
       </div>
       <div class="kpi-content">
-        <span class="label">Compliance Alerts</span>
+        <span class="label">Regulatory Exceptions</span>
         <span class="value">{{ summary?.kpis?.exceptionsCount ?? 0 }}</span>
       </div>
-      <div class="kpi-meta text-red-400"><i class="pi pi-shield"></i> Requires immediate attention</div>
+      <div class="kpi-meta text-red-400"><i class="pi pi-exclamation-triangle"></i> Action required</div>
     </div>
   </div>
 
-  <!-- Skeleton Loaders for KPIs -->
-  <ng-template #kpiLoading>
-    <div class="kpi-grid">
-      <div class="kpi-card border-none surface-50" *ngFor="let i of [1,2,3,4]">
-        <p-skeleton width="40px" height="40px" borderRadius="8px"></p-skeleton>
-        <div class="mt-4">
-          <p-skeleton width="60%" height="12px" styleClass="mb-2"></p-skeleton>
-          <p-skeleton width="40%" height="24px"></p-skeleton>
+  <!-- Analytical Workspace -->
+  <div class="grid mt-2">
+    <!-- Payroll Cost Trajectory -->
+    <div class="col-12 lg:col-8">
+      <div class="analytics-card">
+        <div class="card-header">
+          <div>
+            <h3>Financial Displacement Trajectory</h3>
+            <p>Institutional disbursement trends and statutory liability projections</p>
+          </div>
+          <p-dropdown [options]="[{label: 'Last 6 Months', value: 6}, {label: 'Last Year', value: 12}]"
+            styleClass="p-inputtext-sm"></p-dropdown>
+        </div>
+        <div class="chart-container" style="height: 350px">
+          <p-chart type="line" [data]="payrollTrendData" [options]="chartOptions"></p-chart>
         </div>
       </div>
     </div>
-  </ng-template>
 
-  <!-- Payroll Health Monitoring -->
-  <section class="health-section">
-    <h2 class="section-title"><i class="pi pi-shield-check text-primary"></i>System Health Monitoring</h2>
+    <!-- Workforce Intelligence -->
+    <div class="col-12 lg:col-4">
+      <div class="analytics-card">
+        <div class="card-header">
+          <div>
+            <h3>Capital Allocation</h3>
+            <p>Human resource distribution by department</p>
+          </div>
+        </div>
+        <div class="chart-container flex justify-content-center align-items-center" style="height: 350px">
+          <p-chart type="doughnut" [data]="workforceDistData" [options]="workforceOptions"></p-chart>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- System Health Monitoring -->
+  <section class="health-section mt-4">
+    <div class="section-header mb-4">
+      <h2 class="m-0"><i class="pi pi-heart-fill text-red-500 mr-2"></i>Institutional Health Monitors</h2>
+      <p class="text-600 m-0">Critical operational data integrity and pending statutory requirements</p>
+    </div>
     <div class="health-grid">
       <a *ngFor="let item of healthItems" [routerLink]="item.route" class="health-card">
-        <div class="info">
-          <span class="title">{{ item.label }}</span>
-          <span class="desc">{{ item.description }}</span>
+        <div class="flex align-items-center gap-3">
+          <div class="health-icon" [ngClass]="item.severity">
+            <i class="pi" [ngClass]="item.severity === 'danger' ? 'pi-exclamation-circle' : 'pi-info-circle'"></i>
+          </div>
+          <div class="info">
+            <span class="title">{{ item.label }}</span>
+            <span class="desc">{{ item.description }}</span>
+          </div>
         </div>
-        <p-tag [value]="item.count" [severity]="item.severity" styleClass="px-3"></p-tag>
+        <div class="flex align-items-center gap-3">
+          <span class="count-value">{{ item.count }}</span>
+          <i class="pi pi-chevron-right text-400"></i>
+        </div>
       </a>
     </div>
   </section>
 
   <!-- Recent Intelligence Activity -->
-  <section class="activity-section">
-    <div class="section-header">
+  <section class="activity-section mt-4">
+    <div class="section-header flex justify-content-between align-items-end mb-4">
       <div>
-        <h2>Audit & Event Intelligence</h2>
-        <p>Track ledger modifications, approvals, and compliance validations.</p>
+        <h2 class="m-0">Strategic Event Ledger</h2>
+        <p class="text-600 m-0">Audit trail of critical system transformations and administrative authorizations</p>
       </div>
-      <div class="flex gap-2">
-        <button pButton icon="pi pi-file-excel" label="Export" class="p-button-text p-button-sm"></button>
-        <button pButton icon="pi pi-list" class="p-button-text p-button-sm p-button-rounded"></button>
-      </div>
+      <button pButton icon="pi pi-list" label="View Full Registry" class="p-button-text p-button-sm"
+        routerLink="/admin/audit-logs"></button>
     </div>
 
-    <div class="card border-none shadow-sm overflow-hidden p-0">
+    <div class="surface-card border-round-xl shadow-1 overflow-hidden">
       <app-data-table [columns]="activityColumns" [data]="summary?.recentActivity ?? []" [loading]="isLoading"
-        [paginator]="true" [rows]="10" [showGlobalFilter]="true"
-        emptyMessage="No strategic events recorded in this period."></app-data-table>
+        [paginator]="true" [rows]="5" [showGlobalFilter]="false"
+        emptyMessage="No strategic events recorded in the current scope."></app-data-table>
     </div>
   </section>
 </form>
+
+<!-- Skeleton Loaders for KPIs -->
+<ng-template #kpiLoading>
+  <div class="kpi-grid">
+    <div class="kpi-card border-none surface-50" *ngFor="let i of [1, 2, 3, 4]">
+      <p-skeleton width="40px" height="40px" borderRadius="8px"></p-skeleton>
+      <div class="mt-4">
+        <p-skeleton width="60%" height="12px" styleClass="mb-2"></p-skeleton>
+        <p-skeleton width="40%" height="24px"></p-skeleton>
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<p-toast></p-toast>

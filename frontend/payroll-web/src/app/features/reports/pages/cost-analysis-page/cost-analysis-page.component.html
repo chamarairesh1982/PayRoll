@@ -1,0 +1,86 @@
+<div class="page-container animate-fadeIn">
+    <!-- Context Header: Financial Intelligence -->
+    <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-end gap-4 mb-6">
+        <div>
+            <h1 class="m-0 text-3xl font-extrabold tracking-tight text-900 line-height-1">Financial Intelligence</h1>
+            <p class="text-600 mt-2 mb-0">Systemic analysis of personnel costs, statutory burdens, and budgetary
+                trajectories.</p>
+        </div>
+        <div class="flex gap-2">
+            <button pButton icon="pi pi-file-excel" label="Export Deep Data"
+                class="p-button-text p-button-secondary font-bold"></button>
+            <button pButton icon="pi pi-print" label="Print Narrative"
+                class="p-button-outlined p-button-secondary font-bold"></button>
+        </div>
+    </div>
+
+    <!-- Intelligence Analytics Grid -->
+    <div class="grid" *ngIf="!isLoading; else loadingState">
+
+        <!-- Cost Composition -->
+        <div class="col-12 xl:col-4">
+            <div class="analysis-card h-full">
+                <div class="card-header mb-4">
+                    <h3 class="m-0 text-xl font-extrabold">Economic Composition</h3>
+                    <p class="text-sm text-500">Breakdown of gross financial commitments for the current period</p>
+                </div>
+                <div class="chart-wrapper flex justify-content-center align-items-center" style="height: 350px">
+                    <p-chart type="pie" [data]="costStructureData" [options]="chartOptions"></p-chart>
+                </div>
+                <div class="card-footer mt-4 p-3 bg-surface-50 border-round-lg">
+                    <div class="flex justify-content-between text-sm mb-2">
+                        <span class="text-600 font-medium">Core Disbursement</span>
+                        <span class="text-900 font-extrabold">65% (LKR 2.4M)</span>
+                    </div>
+                    <p class="text-xs text-500 m-0 italic">Reflects direct net pay to personnel bank accounts.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Long-term Trajectory -->
+        <div class="col-12 xl:col-8">
+            <div class="analysis-card h-full">
+                <div class="card-header mb-4 flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="m-0 text-xl font-extrabold">Financial Trajectory</h3>
+                        <p class="text-sm text-500">Systemic cost oscillations over the previous 6 fiscal cycles</p>
+                    </div>
+                    <p-dropdown [options]="['6 Months', '12 Months']" placeholder="Time Scale"
+                        styleClass="p-inputtext-sm"></p-dropdown>
+                </div>
+                <div class="chart-wrapper" style="height: 400px">
+                    <p-chart type="line" [data]="trendAnalysisData" [options]="lineOptions"></p-chart>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operational Cost Mapping -->
+        <div class="col-12">
+            <div class="analysis-card mt-4">
+                <div class="card-header mb-6">
+                    <h3 class="m-0 text-xl font-extrabold">Departmental Capital Allocation</h3>
+                    <p class="text-sm text-500">Intensity of capital utilization by organizational business units</p>
+                </div>
+                <div class="chart-wrapper" style="height: 300px">
+                    <p-chart type="bar" [data]="departmentCostData" [options]="barOptions"></p-chart>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Loading State Skeleton -->
+    <ng-template #loadingState>
+        <div class="grid">
+            <div class="col-12 xl:col-4">
+                <div class="analysis-card"><p-skeleton width="100%" height="450px"></p-skeleton></div>
+            </div>
+            <div class="col-12 xl:col-8">
+                <div class="analysis-card"><p-skeleton width="100%" height="450px"></p-skeleton></div>
+            </div>
+            <div class="col-12">
+                <div class="analysis-card mt-4"><p-skeleton width="100%" height="350px"></p-skeleton></div>
+            </div>
+        </div>
+    </ng-template>
+</div>

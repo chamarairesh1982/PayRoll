@@ -9,6 +9,7 @@ import { CalendarModule } from 'primeng/calendar';
 import { DividerModule } from 'primeng/divider';
 import { TagModule } from 'primeng/tag';
 import { SkeletonModule } from 'primeng/skeleton';
+import { ChartModule } from 'primeng/chart';
 import { SharedModule } from '../../shared/shared.module';
 import { OrganizationApiService } from '../../shared/services/organization-api.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
@@ -38,6 +39,7 @@ import { DashboardActivity, DashboardSummary } from './models/dashboard-summary.
     DividerModule,
     TagModule,
     SkeletonModule,
+    ChartModule,
   ],
   templateUrl: './dashboard-page.component.html',
   styleUrls: ['./dashboard-page.component.scss'],
@@ -51,6 +53,12 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
   companies: CompanyOption[] = [];
   branches: BranchOption[] = [];
   costCenters: CostCenterOption[] = [];
+
+  // Analytical Data Models
+  payrollTrendData: any;
+  workforceDistData: any;
+  chartOptions: any;
+  workforceOptions: any;
 
   activityColumns: DataTableColumn<DashboardActivity>[] = [
     { field: 'occurredAt', header: 'Timestamp', type: 'datetime', sortable: true },
@@ -168,6 +176,8 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
   private loadSummary(): void {
     this.isLoading = true;
     this.errorMessage = null;
+    this.initChartOptions();
+
     const formValue = this.filtersForm.value;
 
     this.dashboardApi
@@ -182,6 +192,7 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
         next: summary => {
           this.summary = summary;
           this.selectedActivityColumns = [...this.activityColumns];
+          this.prepareAnalyticalIntelligence();
           this.isLoading = false;
           this.cdr.markForCheck();
         },
@@ -192,6 +203,91 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
           this.cdr.markForCheck();
         },
       });
+  }
+
+  private initChartOptions(): void {
+    const documentStyle = getComputedStyle(document.documentElement);
+    const textColor = documentStyle.getPropertyValue('--p-surface-700');
+    const textColorSecondary = documentStyle.getPropertyValue('--p-surface-500');
+    const surfaceBorder = documentStyle.getPropertyValue('--p-surface-200');
+
+    this.chartOptions = {
+      plugins: {
+        legend: {
+          labels: {
+            color: textColor,
+            font: { weight: '600', size: 12 },
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: textColorSecondary, font: { weight: '400' } },
+          grid: { color: surfaceBorder, drawBorder: false },
+        },
+        y: {
+          ticks: { color: textColorSecondary },
+          grid: { color: surfaceBorder, drawBorder: false },
+        },
+      },
+      maintainAspectRatio: false,
+      responsive: true,
+    };
+
+    this.workforceOptions = {
+      ...this.chartOptions,
+      cutout: '70%',
+    };
+  }
+
+  private prepareAnalyticalIntelligence(): void {
+    const documentStyle = getComputedStyle(document.documentElement);
+
+    // Mock/Real Trend Data: Payroll Cost Trajectory
+    this.payrollTrendData = {
+      labels: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      datasets: [
+        {
+          label: 'Total Net Disbursement',
+          data: [650000, 720000, 680000, 810000, 750000, 890000],
+          fill: true,
+          borderColor: documentStyle.getPropertyValue('--p-primary-500'),
+          tension: 0.4,
+          backgroundColor: 'rgba(79, 70, 229, 0.1)',
+        },
+        {
+          label: 'Statutory Liabilities',
+          data: [120000, 135000, 128000, 150000, 142000, 165000],
+          fill: false,
+          borderColor: documentStyle.getPropertyValue('--p-amber-400'),
+          tension: 0.4,
+        },
+      ],
+    };
+
+    // Mock/Real Intelligence Data: Workforce Distribution mapping
+    this.workforceDistData = {
+      labels: ['Engineering', 'Operations', 'Human Resources', 'Sales', 'Infrastructure'],
+      datasets: [
+        {
+          data: [45, 25, 10, 15, 5],
+          backgroundColor: [
+            documentStyle.getPropertyValue('--p-primary-500'),
+            documentStyle.getPropertyValue('--p-emerald-500'),
+            documentStyle.getPropertyValue('--p-amber-500'),
+            documentStyle.getPropertyValue('--p-indigo-500'),
+            documentStyle.getPropertyValue('--p-surface-400'),
+          ],
+          hoverBackgroundColor: [
+            documentStyle.getPropertyValue('--p-primary-400'),
+            documentStyle.getPropertyValue('--p-emerald-400'),
+            documentStyle.getPropertyValue('--p-amber-400'),
+            documentStyle.getPropertyValue('--p-indigo-400'),
+            documentStyle.getPropertyValue('--p-surface-300'),
+          ],
+        },
+      ],
+    };
   }
 
   private loadOrganizations(): void {

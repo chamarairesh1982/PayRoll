@@ -29,6 +29,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { ProgressBarModule } from 'primeng/progressbar';
+import { ChartModule } from 'primeng/chart';
 
 const PRIMENG_MODULES = [
   TableModule,
@@ -60,6 +61,7 @@ const PRIMENG_MODULES = [
   InputSwitchModule,
   OverlayPanelModule,
   ProgressBarModule,
+  ChartModule,
 ];
 
 @NgModule({

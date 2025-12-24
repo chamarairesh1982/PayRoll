@@ -2,6 +2,8 @@ export interface DashboardSummary {
   kpis: DashboardKpis;
   health: DashboardHealth;
   recentActivity: DashboardActivity[];
+  trends?: DashboardTrends;
+  intelligence?: DashboardIntelligence;
 }
 
 export interface DashboardKpis {
@@ -9,6 +11,9 @@ export interface DashboardKpis {
   employeeCount: number;
   latestPayRunStatus: string;
   exceptionsCount: number;
+  totalGrossPay?: number;
+  totalNetPay?: number;
+  totalTax?: number;
 }
 
 export interface DashboardHealth {
@@ -25,6 +30,29 @@ export interface DashboardActivity {
   activity: string;
   actor: string;
   context: string;
+}
+
+export interface DashboardTrends {
+  payrollCosts: TrendDataPoint[];
+  headcount: TrendDataPoint[];
+}
+
+export interface TrendDataPoint {
+  label: string;
+  value: number;
+  secondary?: number;
+}
+
+export interface DashboardIntelligence {
+  departmentDistribution: DistributionDataPoint[];
+  costCenterDistribution: DistributionDataPoint[];
+  statutoryBreakdown: DistributionDataPoint[];
+}
+
+export interface DistributionDataPoint {
+  label: string;
+  value: number;
+  percentage?: number;
 }
 
 export interface DashboardSummaryQuery {

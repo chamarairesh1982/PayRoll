@@ -156,6 +156,7 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
       items: [
         { label: 'Operational Reports', icon: 'pi pi-chart-line', routerLink: '/reports', roles: ['admin', 'approver'] },
         { label: 'Tax Reports', icon: 'pi pi-file-excel', routerLink: '/reports/tax', roles: ['admin', 'approver'] },
+        { label: 'Cost Analysis', icon: 'pi pi-money-bill', routerLink: '/reports/cost-analysis', roles: ['admin', 'approver'] },
       ],
     },
     {
