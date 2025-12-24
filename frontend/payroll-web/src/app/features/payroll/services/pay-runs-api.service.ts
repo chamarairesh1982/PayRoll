@@ -20,7 +20,7 @@ export interface PayRunActionRequest {
 
 @Injectable({ providedIn: 'root' })
 export class PayRunsApiService {
-  private baseUrl = `${environment.apiBaseUrl}/pay-runs`;
+  private baseUrl = `${environment.apiBaseUrl}/payruns`;
   private bankExportUrl = `${environment.apiBaseUrl}/bank-exports`;
 
   constructor(private http: HttpClient) {}

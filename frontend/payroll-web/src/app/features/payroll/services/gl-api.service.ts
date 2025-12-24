@@ -14,7 +14,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class GlApiService {
   private readonly baseUrl = `${environment.apiBaseUrl}/gl`;
-  private readonly payRunsUrl = `${environment.apiBaseUrl}/pay-runs`;
+  private readonly payRunsUrl = `${environment.apiBaseUrl}/payruns`;
 
   constructor(private http: HttpClient) {}
 
