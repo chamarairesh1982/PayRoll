@@ -87,6 +87,7 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
   ];
   public userName = 'User';
   public userRole = 'Employee';
+  public readonly routerLinkActiveOptions = { exact: false };
 
   private readonly destroy$ = new Subject<void>();
   private userRoles: string[] = [];
@@ -221,6 +222,10 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
 
   toggleSidebar(): void {
     this.sidebarVisible = !this.sidebarVisible;
+  }
+
+  onMenuSelect(): void {
+    this.sidebarVisible = false;
   }
 
   onDensityChange(option: DensityOption): void {

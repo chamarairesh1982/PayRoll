@@ -83,7 +83,11 @@
 
   <div class="app-layout__body">
     <aside class="app-layout__sidebar">
-      <p-panelMenu [model]="menuItems"></p-panelMenu>
+      <p-panelMenu
+        [model]="menuItems"
+        [routerLinkActiveOptions]="routerLinkActiveOptions"
+        (onNodeSelect)="onMenuSelect()"
+      ></p-panelMenu>
     </aside>
 
     <main class="app-layout__content">
@@ -100,6 +104,10 @@
     position="left"
     styleClass="app-layout__mobile-sidebar"
   >
-    <p-panelMenu [model]="menuItems"></p-panelMenu>
+    <p-panelMenu
+      [model]="menuItems"
+      [routerLinkActiveOptions]="routerLinkActiveOptions"
+      (onNodeSelect)="onMenuSelect()"
+    ></p-panelMenu>
   </p-sidebar>
 </div>
