@@ -1,58 +1,49 @@
-<div class="page-header">
-  <h1>PAYE Tax Rule Sets</h1>
-  <button type="button" (click)="navigateToCreate()">New Tax Rule Set</button>
-</div>
-
-<div class="filters">
-  <label>
-    Year of Assessment
-    <div class="year-filter">
-      <input type="number" [ngModel]="filterYear" (ngModelChange)="handleYearChange($event)" placeholder="Any year" />
-      <button type="button" class="secondary" (click)="clearYear()">Clear</button>
+<div class="page-container">
+  <!-- Context Header: Tax Governance Framework -->
+  <div class="context-header">
+    <div class="header-content">
+      <div class="title-area">
+        <h1>Tax Governance Framework</h1>
+        <p>Manage systematically structured PAYE rules and institutional tax slabs</p>
+      </div>
     </div>
-  </label>
+    <div class="header-actions">
+      <button pButton label="Initialize Rule Set" icon="pi pi-plus" class="p-button-primary shadow-2"
+        (click)="navigateToCreate()"></button>
+    </div>
+  </div>
+
+  <!-- Intelligence Filters -->
+  <div class="filter-runtime p-4 mb-4">
+    <div class="grid align-items-end">
+      <div class="col-12 md:col-4 field m-0">
+        <label class="block text-sm font-medium mb-2">Year of Assessment</label>
+        <div class="p-inputgroup">
+          <p-inputNumber [(ngModel)]="filterYear" (onInput)="handleYearChange($event.value)" placeholder="Fiscal Year"
+            [useGrouping]="false"></p-inputNumber>
+          <button type="button" pButton icon="pi pi-times" class="p-button-secondary p-button-outlined"
+            (click)="clearYear()"></button>
+        </div>
+      </div>
+      <div class="col-12 md:col-8 text-right font-medium text-500">
+        <span class="mr-2">{{ totalCount }} Regulatory Frameworks Identified</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Power Grid: Tax Ledger -->
+  <div class="grid-container">
+    <app-data-table [data]="items" [columns]="columns" [loading]="isLoading" [totalRecords]="totalCount"
+      [paginator]="true" [rows]="pageSize" [showGlobalFilter]="true" (onLazyLoad)="load()">
+      <!-- Row Actions -->
+      <ng-template #rowActions let-row>
+        <div class="flex gap-2">
+          <button pButton icon="pi pi-pencil" class="p-button-rounded p-button-secondary p-button-text"
+            pTooltip="Modify parameters" (click)="navigateToEdit(row)"></button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
 </div>
 
-<ng-template #loading>
-  <div class="loading">Loading tax rule sets...</div>
-</ng-template>
-
-<div class="table-wrapper" *ngIf="!isLoading; else loading">
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Year</th>
-        <th>Effective From</th>
-        <th>Effective To</th>
-        <th>Slabs</th>
-        <th>Default?</th>
-        <th>Active?</th>
-        <th class="actions">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let item of items">
-        <td>{{ item.name }}</td>
-        <td>{{ item.yearOfAssessment }}</td>
-        <td>{{ item.effectiveFrom | dateFormat }}</td>
-        <td>{{ item.effectiveTo ? (item.effectiveTo | dateFormat) : '-' }}</td>
-        <td>{{ item.slabs?.length || 0 }}</td>
-        <td>{{ item.isDefault ? 'Yes' : 'No' }}</td>
-        <td>{{ item.isActive ? 'Yes' : 'No' }}</td>
-        <td class="actions">
-          <button type="button" (click)="navigateToEdit(item)">Edit</button>
-        </td>
-      </tr>
-      <tr *ngIf="items.length === 0">
-        <td colspan="8" class="empty">No tax rule sets found.</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-<div class="pagination">
-  <button type="button" (click)="previousPage()" [disabled]="page === 1">Previous</button>
-  <span>Page {{ page }} of {{ totalPages || 1 }}</span>
-  <button type="button" (click)="nextPage()" [disabled]="page * pageSize >= totalCount">Next</button>
-</div>
+<p-toast></p-toast>

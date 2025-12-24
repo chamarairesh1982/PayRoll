@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
+import { MessageService } from 'primeng/api';
 import { PaginatedResult } from '../../../employees/models/employee.model';
 import { AuditLogEntry } from '../../../../shared/models/audit-log.model';
 import { AuditLogApiService } from '../../../../shared/services/audit-log-api.service';
+import { DataTableColumn } from '../../../../shared/components/table/data-table.component';
 
 type AuditLogRow = AuditLogEntry & { beforePreview: string; afterPreview: string; createdAtDisplay: string };
 
@@ -9,11 +11,20 @@ type AuditLogRow = AuditLogEntry & { beforePreview: string; afterPreview: string
   selector: 'app-audit-log-list-page',
   templateUrl: './audit-log-list-page.component.html',
   styleUrls: ['./audit-log-list-page.component.scss'],
+  providers: [MessageService],
 })
 export class AuditLogListPageComponent implements OnInit {
+  columns: DataTableColumn<AuditLogRow>[] = [
+    { field: 'createdAtDisplay', header: 'Chronology', sortable: true, minWidth: '180px' },
+    { field: 'actorDisplayName', header: 'Principal Actor', sortable: true, minWidth: '180px' },
+    { field: 'entityType', header: 'Governance Object', sortable: true, minWidth: '150px' },
+    { field: 'action', header: 'Transaction Type', sortable: true, minWidth: '150px' },
+    { field: 'afterPreview', header: 'Post-State Intelligence', sortable: false, minWidth: '300px' },
+  ];
+
   logs: AuditLogRow[] = [];
   page = 1;
-  pageSize = 25;
+  pageSize = 10;
   totalCount = 0;
   isLoading = false;
 
@@ -25,32 +36,31 @@ export class AuditLogListPageComponent implements OnInit {
     from: string;
     to: string;
   } = {
-    entityType: '',
-    entityId: '',
-    action: '',
-    actor: '',
-    from: '',
-    to: '',
-  };
+      entityType: '',
+      entityId: '',
+      action: '',
+      actor: '',
+      from: '',
+      to: '',
+    };
 
-  columns: { field: keyof AuditLogRow; header: string }[] = [
-    { field: 'createdAtDisplay', header: 'Timestamp' },
-    { field: 'actorDisplayName', header: 'Actor' },
-    { field: 'entityType', header: 'Entity' },
-    { field: 'entityId', header: 'Entity ID' },
-    { field: 'action', header: 'Action' },
-    { field: 'beforePreview', header: 'Before' },
-    { field: 'afterPreview', header: 'After' },
-  ];
-
-  constructor(private auditApi: AuditLogApiService) {}
+  constructor(
+    private auditApi: AuditLogApiService,
+    private messageService: MessageService,
+  ) { }
 
   ngOnInit(): void {
     this.load();
   }
 
-  load(): void {
+  load(event?: any): void {
     this.isLoading = true;
+
+    if (event) {
+      this.page = event.first / event.rows + 1;
+      this.pageSize = event.rows;
+    }
+
     this.auditApi
       .getAuditLogs({
         page: this.page,
@@ -66,12 +76,14 @@ export class AuditLogListPageComponent implements OnInit {
         next: (result: PaginatedResult<AuditLogEntry>) => {
           this.logs = result.items.map(log => this.toRow(log));
           this.totalCount = result.totalCount;
-          this.page = result.page;
-          this.pageSize = result.pageSize;
           this.isLoading = false;
         },
         error: err => {
-          console.error('Failed to load audit logs', err);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Data Retrieval Failure',
+            detail: 'Unable to synchronize institutional audit trails.',
+          });
           this.isLoading = false;
         },
       });
@@ -112,23 +124,20 @@ export class AuditLogListPageComponent implements OnInit {
           a.download = `audit-logs-${new Date().toISOString()}.csv`;
           a.click();
           window.URL.revokeObjectURL(url);
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Export Successful',
+            detail: 'Institutional audit trail has been archived to CSV.',
+          });
         },
-        error: err => console.error('Failed to export audit logs', err),
+        error: err => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Export Failure',
+            detail: 'Unable to archive the specified audit trail segment.',
+          });
+        },
       });
-  }
-
-  nextPage(): void {
-    if (this.page * this.pageSize < this.totalCount) {
-      this.page++;
-      this.load();
-    }
-  }
-
-  previousPage(): void {
-    if (this.page > 1) {
-      this.page--;
-      this.load();
-    }
   }
 
   private toRow(log: AuditLogEntry): AuditLogRow {

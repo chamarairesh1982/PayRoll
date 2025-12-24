@@ -1,76 +1,73 @@
-<div class="page-header">
-  <h1>Bank Branches</h1>
-  <button type="button" (click)="navigateToCreate()">New Branch</button>
+<div class="page-container">
+  <!-- Context Header: Branch Infrastructure -->
+  <div class="context-header">
+    <div class="header-content">
+      <div class="title-area">
+        <h1>Branch Infrastructure</h1>
+        <p>Manage systematically registered bank branches and regional disbursement nodes</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button pButton label="Register Branch" icon="pi pi-plus" class="p-button-primary shadow-2"
+        (click)="navigateToCreate()"></button>
+    </div>
+  </div>
+
+  <!-- Intelligence Filters -->
+  <div class="filter-runtime p-4 mb-4">
+    <div class="grid align-items-end">
+      <div class="col-12 md:col-3 field m-0">
+        <label class="block text-sm font-medium mb-2">Parent Institution</label>
+        <p-dropdown [options]="banks" [(ngModel)]="filterBankId" optionLabel="name" optionValue="id" [filter]="true"
+          filterBy="name,code" placeholder="All Registered Banks" (onChange)="handleFilterChange()" styleClass="w-full"
+          [showClear]="true">
+          <ng-template let-bank pTemplate="item">
+            <div class="flex flex-column gap-1">
+              <span class="font-bold">{{ bank.name }}</span>
+              <small class="text-500">{{ bank.code }}</small>
+            </div>
+          </ng-template>
+        </p-dropdown>
+      </div>
+      <div class="col-12 md:col-3 field m-0">
+        <label class="block text-sm font-medium mb-2">Registry Search</label>
+        <div class="p-input-icon-left w-full">
+          <i class="pi pi-search"></i>
+          <input type="text" pInputText [(ngModel)]="searchTerm" (keyup.enter)="handleSearch()"
+            placeholder="Search by code or name" class="w-full" />
+        </div>
+      </div>
+      <div class="col-12 md:col-3 field m-0">
+        <label class="block text-sm font-medium mb-2">Operational Status</label>
+        <p-dropdown
+          [options]="[{label: 'Show All', value: 'all'}, {label: 'Operational', value: 'active'}, {label: 'Decommissioned', value: 'inactive'}]"
+          [(ngModel)]="filterIsActive" (onChange)="handleFilterChange()" styleClass="w-full"></p-dropdown>
+      </div>
+      <div class="col-12 md:col-3 text-right font-medium text-500">
+        <span class="mr-2">{{ totalCount }} Regional Nodes Registered</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Power Grid: Branch Ledger -->
+  <div class="grid-container">
+    <app-data-table [data]="items" [columns]="columns" [loading]="isLoading" [totalRecords]="totalCount"
+      [paginator]="true" [rows]="pageSize" [showGlobalFilter]="true" (onLazyLoad)="load()">
+      <!-- Row Actions -->
+      <ng-template #rowActions let-row>
+        <div class="flex gap-2">
+          <button pButton icon="pi pi-eye" class="p-button-rounded p-button-secondary p-button-text"
+            pTooltip="Examine Node" (click)="navigateToView(row)"></button>
+          <button pButton icon="pi pi-pencil" class="p-button-rounded p-button-secondary p-button-text"
+            pTooltip="Modify parameters" (click)="navigateToEdit(row)"></button>
+          <button pButton icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-text"
+            pTooltip="Decommission Infrastructure" (click)="confirmDelete(row)"></button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
 </div>
 
-<div class="filters">
-  <label>
-    Bank
-    <select [(ngModel)]="filterBankId" (change)="handleFilterChange()">
-      <option value="">All banks</option>
-      <option *ngFor="let bank of banks" [value]="bank.id">{{ bank.name }} ({{ bank.code }})</option>
-    </select>
-  </label>
-  <label>
-    Search
-    <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="handleSearch()" placeholder="Search by code or name" />
-  </label>
-  <label>
-    Status
-    <select [(ngModel)]="filterIsActive" (change)="handleFilterChange()">
-      <option value="all">All</option>
-      <option value="active">Active</option>
-      <option value="inactive">Inactive</option>
-    </select>
-  </label>
-  <button type="button" (click)="handleSearch()">Apply</button>
-</div>
-
-<ng-template #loading>
-  <div class="loading">Loading bank branches...</div>
-</ng-template>
-
-<div class="table-wrapper" *ngIf="!isLoading; else loading">
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Bank</th>
-        <th>Branch Code</th>
-        <th>Branch Name</th>
-        <th>Active?</th>
-        <th class="actions">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let item of items">
-        <td>{{ item.bankName }} ({{ item.bankCode }})</td>
-        <td>{{ item.code }}</td>
-        <td>{{ item.name }}</td>
-        <td>{{ item.isActive ? 'Yes' : 'No' }}</td>
-        <td class="actions">
-          <button type="button" (click)="navigateToView(item)">View</button>
-          <button type="button" (click)="navigateToEdit(item)">Edit</button>
-          <button type="button" class="danger" (click)="confirmDelete(item)">Delete</button>
-        </td>
-      </tr>
-      <tr *ngIf="items.length === 0">
-        <td colspan="5" class="empty">No bank branches found.</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-<div class="pagination">
-  <button type="button" (click)="previousPage()" [disabled]="page === 1">Previous</button>
-  <span>Page {{ page }} of {{ totalPages || 1 }}</span>
-  <button type="button" (click)="nextPage()" [disabled]="page * pageSize >= totalCount">Next</button>
-</div>
-
-<div class="dialog-wrapper" *ngIf="showConfirm">
-  <app-confirm-dialog
-    title="Delete Bank Branch"
-    [message]="'Are you sure you want to delete ' + (selectedItem?.name || 'this branch') + '?'"
-    (confirmed)="deleteItem()"
-    (cancelled)="cancelDelete()"
-  ></app-confirm-dialog>
-</div>
+<!-- Infrastructure Decommissioning Confirmation -->
+<p-confirmDialog header="Strategic Decommissioning" icon="pi pi-exclamation-triangle"></p-confirmDialog>
+<p-toast></p-toast>
