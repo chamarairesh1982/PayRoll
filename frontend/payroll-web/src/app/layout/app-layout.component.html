@@ -85,7 +85,6 @@
     <aside class="app-layout__sidebar">
       <p-panelMenu
         [model]="menuItems"
-        [routerLinkActiveOptions]="routerLinkActiveOptions"
         (onNodeSelect)="onMenuSelect()"
       ></p-panelMenu>
     </aside>
@@ -106,7 +105,6 @@
   >
     <p-panelMenu
       [model]="menuItems"
-      [routerLinkActiveOptions]="routerLinkActiveOptions"
       (onNodeSelect)="onMenuSelect()"
     ></p-panelMenu>
   </p-sidebar>
