@@ -3,6 +3,7 @@ import { MessageService } from 'primeng/api';
 import { Subject, takeUntil } from 'rxjs';
 import { ApprovalAction, ApprovalRequest, ApprovalRequestType, ApprovalStatus } from '../../models/approval.models';
 import { ApprovalService } from '../../services/approval.service';
+import { DataTableColumn } from '../../../../shared/components/table/data-table.component';
 
 const STATUS_FILTERS: Array<ApprovalStatus | 'All'> = ['All', 'Pending', 'Approved', 'Rejected', 'Returned'];
 const TYPE_FILTERS: Array<ApprovalRequestType | 'All'> = [
@@ -20,6 +21,17 @@ const TYPE_FILTERS: Array<ApprovalRequestType | 'All'> = [
   styleUrls: ['./approvals-inbox-page.component.scss'],
 })
 export class ApprovalsInboxPageComponent implements OnInit, OnDestroy {
+  columns: DataTableColumn<ApprovalRequest>[] = [
+    { field: 'status', header: 'Status', type: 'status', sortable: true, minWidth: '120px' },
+    { field: 'type', header: 'Workflow Type', sortable: true, minWidth: '180px' },
+    { field: 'requestedBy', header: 'Petitioner', sortable: true, minWidth: '180px' },
+    { field: 'requestedDate', header: 'Submitted', type: 'date', sortable: true, minWidth: '130px' },
+    { field: 'employee', header: 'Staff Entity', sortable: true, minWidth: '180px' },
+    { field: 'amount', header: 'Magnitude', type: 'amount', sortable: true, minWidth: '130px' },
+    { field: 'id', header: 'Aging (Days)', type: 'number', sortable: false, minWidth: '100px' }, // We'll map aging here
+  ];
+
+  isLoading = false;
   requests: ApprovalRequest[] = [];
   filteredRequests: ApprovalRequest[] = [];
   statusFilters = STATUS_FILTERS;
@@ -35,7 +47,7 @@ export class ApprovalsInboxPageComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  constructor(private approvalService: ApprovalService, private messageService: MessageService) {}
+  constructor(private approvalService: ApprovalService, private messageService: MessageService) { }
 
   ngOnInit(): void {
     this.approvalService

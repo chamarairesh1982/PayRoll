@@ -1,0 +1,122 @@
+<div class="page-container">
+    <!-- Context Header: Loans Portfolio -->
+    <div class="context-header">
+        <div class="header-content">
+            <div class="title-area">
+                <h1>Loans Ledger</h1>
+                <p>Strategic employee credit facilities and capital recovery oversight</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button pButton label="Disburse Capital" icon="pi pi-plus" class="p-button-primary shadow-2"
+                (click)="onCreateLoan()"></button>
+        </div>
+    </div>
+
+    <!-- Exposure Analytics -->
+    <div class="grid mb-4 mt-2">
+        <div class="col-12 md:col-3">
+            <div class="card-metric animate-fadeIn">
+                <span class="label text-xs uppercase font-bold text-500 mb-2 block">Aggregate Principle</span>
+                <div class="flex align-items-center gap-3">
+                    <div class="icon-box bg-blue-50 text-blue-600 border-circle p-3">
+                        <i class="pi pi-briefcase text-xl"></i>
+                    </div>
+                    <div class="flex flex-column">
+                        <span class="value text-2xl font-extrabold text-900 line-height-1">Rs 4.2M</span>
+                        <span class="text-xs text-blue-600 font-medium">Systemic Portfolio</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 md:col-3">
+            <div class="card-metric animate-fadeIn" style="animation-delay: 0.1s">
+                <span class="label text-xs uppercase font-bold text-500 mb-2 block">Current Exposure</span>
+                <div class="flex align-items-center gap-3">
+                    <div class="icon-box bg-orange-50 text-orange-600 border-circle p-3">
+                        <i class="pi pi-chart-line text-xl"></i>
+                    </div>
+                    <div class="flex flex-column">
+                        <span class="value text-2xl font-extrabold text-900 line-height-1">Rs 1.8M</span>
+                        <span class="text-xs text-orange-600 font-medium">Unrecovered Balance</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 md:col-3">
+            <div class="card-metric animate-fadeIn" style="animation-delay: 0.2s">
+                <span class="label text-xs uppercase font-bold text-500 mb-2 block">Pending Verification</span>
+                <div class="flex align-items-center gap-3">
+                    <div class="icon-box bg-amber-50 text-amber-600 border-circle p-3">
+                        <i class="pi pi-clock text-xl"></i>
+                    </div>
+                    <div class="flex flex-column">
+                        <span class="value text-2xl font-extrabold text-900 line-height-1">08</span>
+                        <span class="text-xs text-amber-600 font-medium">Awaiting Authorization</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 md:col-3">
+            <div class="card-metric animate-fadeIn primary-metric" style="animation-delay: 0.3s">
+                <span class="label text-xs uppercase font-bold text-white-alpha-70 mb-2 block">Capital Recalled</span>
+                <div class="flex align-items-center gap-3">
+                    <div class="icon-box bg-white-alpha-20 text-white border-circle p-3">
+                        <i class="pi pi-sync text-xl"></i>
+                    </div>
+                    <div class="flex flex-column">
+                        <span class="value text-2xl font-extrabold text-white line-height-1">Rs 2.4M</span>
+                        <span class="text-xs text-white-alpha-90 font-medium">Successfully Repaid</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-container">
+        <app-data-table [data]="loans" [columns]="columns" [loading]="isLoading" [totalRecords]="totalRecords"
+            [paginator]="true" [rows]="10" [showGlobalFilter]="true" (onLazyLoad)="loadLoans($event)">
+            <!-- Personnel Identity Template -->
+            <ng-template #employeeNameTemplate let-row>
+                <div class="flex align-items-center gap-3">
+                    <p-avatar [label]="row.employeeName[0]" shape="circle"
+                        styleClass="bg-primary-light text-primary"></p-avatar>
+                    <div class="flex flex-column">
+                        <span class="font-bold text-900">{{ row.employeeName }}</span>
+                        <small class="text-500">ID: {{ row.employeeId }}</small>
+                    </div>
+                </div>
+            </ng-template>
+
+            <!-- Risk Status Template -->
+            <ng-template #statusTemplate let-row>
+                <p-tag [value]="row.status" [severity]="getStatusSeverity(row.status)" class="font-medium"></p-tag>
+            </ng-template>
+
+            <!-- Recovery Progress Template -->
+            <ng-template #repaidAmountTemplate let-row>
+                <div class="flex flex-column gap-2 w-full" style="min-width: 140px">
+                    <div class="flex justify-content-between text-xs font-bold">
+                        <span class="text-500">Progress</span>
+                        <span class="text-primary">{{ getProgress(row) }}%</span>
+                    </div>
+                    <p-progressBar [value]="getProgress(row)" [showValue]="false" styleClass="h-4px"></p-progressBar>
+                    <small class="text-400">Rs. {{ row.repaidAmount | number:'1.0-0' }} Paid</small>
+                </div>
+            </ng-template>
+
+            <!-- Operational Row Actions -->
+            <ng-template #rowActions let-row>
+                <div class="flex gap-2">
+                    <button pButton icon="pi pi-eye" class="p-button-rounded p-button-secondary p-button-text"
+                        pTooltip="View Dossier" (click)="onViewLoan(row)"></button>
+                    <button pButton icon="pi pi-wallet" class="p-button-rounded p-button-success p-button-text"
+                        pTooltip="Execute Installment"
+                        [disabled]="row.status === 'Settled' || row.status === 'Pending'"></button>
+                    <button pButton icon="pi pi-ellipsis-h"
+                        class="p-button-rounded p-button-secondary p-button-text"></button>
+                </div>
+            </ng-template>
+        </app-data-table>
+    </div>
+</div>

@@ -7,6 +7,7 @@ import {
   FileExportResult,
   StatutoryReportHistory,
 } from '../../models/statutory-report.model';
+import { DataTableColumn } from '../../../../shared/components/table/data-table.component';
 
 @Component({
   selector: 'app-statutory-reports-page',
@@ -20,13 +21,31 @@ export class StatutoryReportsPageComponent implements OnInit {
   isLoadingPayRuns = false;
   isGenerating = false;
   errorMessage: string | null = null;
+
+  historyColumns: DataTableColumn<StatutoryReportHistory>[] = [
+    { field: 'generatedAtUtc', header: 'Timestamp', type: 'datetime', sortable: true, minWidth: '180px' },
+    { field: 'payRunCode', header: 'Reference', sortable: true, minWidth: '120px' },
+    { field: 'payRunName', header: 'Cycle Name', sortable: true, minWidth: '200px' },
+    { field: 'status', header: 'Compliance Status', sortable: true, type: 'status', minWidth: '150px' },
+    { field: 'warningCount', header: 'Alerts', sortable: true, type: 'number', minWidth: '100px' },
+  ];
+
+  employeeColumns: DataTableColumn<any>[] = [
+    { field: 'employeeName', header: 'Personnel', sortable: true, minWidth: '200px' },
+    { field: 'epfNumber', header: 'EPF Registration', sortable: true, minWidth: '150px' },
+    { field: 'contributableBase', header: 'Base Pay', type: 'amount', sortable: true, minWidth: '150px' },
+    { field: 'employeeEpf', header: 'EE EPF (8%)', type: 'amount', sortable: true, minWidth: '130px' },
+    { field: 'employerEpf', header: 'ER EPF (12%)', type: 'amount', sortable: true, minWidth: '130px' },
+    { field: 'employerEtf', header: 'ER ETF (3%)', type: 'amount', sortable: true, minWidth: '130px' },
+  ];
+
   reportHistory: StatutoryReportHistory[] = [];
   reportPreview: EpfEtfReportResult | null = null;
 
   constructor(
     private payRunsApi: PayRunsApiService,
     private reportsApi: StatutoryReportsApiService,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadPayRuns();

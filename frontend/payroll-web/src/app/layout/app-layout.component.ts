@@ -130,6 +130,12 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
           routerLink: '/payroll/recurring-rules',
           roles: ['admin', 'approver'],
         },
+        {
+          label: 'Loan Management',
+          icon: 'pi pi-money-bill',
+          routerLink: '/loans',
+          roles: ['admin', 'approver'],
+        },
         { label: 'Payroll Insights', icon: 'pi pi-chart-line', disabled: true, roles: ['admin', 'approver'] },
       ],
     },

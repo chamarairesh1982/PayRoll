@@ -27,6 +27,8 @@ import { AvatarModule } from 'primeng/avatar';
 import { DividerModule } from 'primeng/divider';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { InputSwitchModule } from 'primeng/inputswitch';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { ProgressBarModule } from 'primeng/progressbar';
 
 const PRIMENG_MODULES = [
   TableModule,
@@ -56,6 +58,8 @@ const PRIMENG_MODULES = [
   DividerModule,
   ProgressSpinnerModule,
   InputSwitchModule,
+  OverlayPanelModule,
+  ProgressBarModule,
 ];
 
 @NgModule({

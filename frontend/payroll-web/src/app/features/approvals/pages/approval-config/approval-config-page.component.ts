@@ -3,6 +3,7 @@ import { FormBuilder, FormControl, Validators } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 import { ApprovalRouteConfig, ApprovalRequestType } from '../../models/approval.models';
 import { ApprovalService } from '../../services/approval.service';
+import { DataTableColumn } from '../../../../shared/components/table/data-table.component';
 
 const REQUEST_TYPES: ApprovalRequestType[] = [
   'Leave Request',
@@ -20,6 +21,14 @@ const LEVEL_OPTIONS = ['Level 1 Manager', 'Level 2 HR', 'Finance'];
   styleUrls: ['./approval-config-page.component.scss'],
 })
 export class ApprovalConfigPageComponent implements OnInit, OnDestroy {
+  columns: DataTableColumn<ApprovalRouteConfig>[] = [
+    { field: 'type', header: 'Workflow Specification', sortable: true, minWidth: '200px' },
+    { field: 'levels', header: 'Authorization Chain', sortable: false, minWidth: '250px' },
+    { field: 'approvers', header: 'Designated Approvers', sortable: false, minWidth: '200px' },
+    { field: 'threshold', header: 'Activation Threshold', type: 'amount', sortable: true, minWidth: '150px' },
+  ];
+
+  isLoading = false;
   configs: ApprovalRouteConfig[] = [];
   requestTypes = REQUEST_TYPES;
   levelOptions = LEVEL_OPTIONS;
@@ -34,7 +43,7 @@ export class ApprovalConfigPageComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  constructor(private approvalService: ApprovalService, private fb: FormBuilder) {}
+  constructor(private approvalService: ApprovalService, private fb: FormBuilder) { }
 
   ngOnInit(): void {
     this.approvalService

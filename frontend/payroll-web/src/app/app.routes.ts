@@ -61,6 +61,11 @@ export const appRoutes: Routes = [
         data: { breadcrumb: 'Time' },
       },
       {
+        path: 'loans',
+        loadChildren: () => import('./features/loans/loans.module').then(m => m.LoansModule),
+        data: { breadcrumb: 'Governance' },
+      },
+      {
         path: 'tax',
         loadChildren: () => import('./features/tax/tax.module').then(m => m.TaxModule),
         data: { breadcrumb: 'Statutory' },

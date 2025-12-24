@@ -12,6 +12,7 @@ import {
   TaxDocumentMetadata,
 } from '../../models/tax-document.model';
 import { FileExportResult } from '../../models/statutory-report.model';
+import { DataTableColumn } from '../../../../shared/components/table/data-table.component';
 
 @Component({
   selector: 'app-tax-reports-page',
@@ -19,6 +20,13 @@ import { FileExportResult } from '../../models/statutory-report.model';
   styleUrls: ['./tax-reports-page.component.scss'],
 })
 export class TaxReportsPageComponent implements OnInit {
+  historyColumns: DataTableColumn<TaxDocumentHistory>[] = [
+    { field: 'generatedAtUtc', header: 'Archive Date', type: 'datetime', sortable: true, minWidth: '180px' },
+    { field: 'type', header: 'Document Specification', sortable: true, minWidth: '150px' },
+    { field: 'periodLabel', header: 'Fiscal Interval', sortable: true, minWidth: '150px' },
+    { field: 'employeeName', header: 'Personnel Identity', sortable: true, minWidth: '180px' },
+    { field: 'status', header: 'Governance Status', sortable: true, type: 'status', minWidth: '150px' },
+  ];
   companies: CompanyOption[] = [];
   branches: BranchOption[] = [];
   costCenters: CostCenterOption[] = [];
@@ -55,7 +63,7 @@ export class TaxReportsPageComponent implements OnInit {
     private organizationApi: OrganizationApiService,
     private employeesApi: EmployeesApiService,
     private taxDocumentsApi: TaxDocumentsApiService,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadOrganizations();
@@ -103,7 +111,18 @@ export class TaxReportsPageComponent implements OnInit {
   loadHistory(): void {
     this.taxDocumentsApi.getDocuments().subscribe({
       next: history => {
-        this.history = history;
+        this.history = history.map(item => {
+          let periodLabel = `${item.year || ''}`;
+          if (item.periodStart && item.periodEnd) {
+            const start = new Date(item.periodStart);
+            const end = new Date(item.periodEnd);
+            const isSameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
+            periodLabel = isSameMonth
+              ? `${start.toLocaleString('default', { month: 'short' })} ${start.getFullYear()}`
+              : `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
+          }
+          return { ...item, periodLabel };
+        });
       },
       error: err => console.error('Failed to load tax document history', err),
     });

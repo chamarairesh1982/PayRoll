@@ -1,134 +1,173 @@
-<section class="statutory-reports">
-  <div class="page-header">
-    <h1>Statutory Reports</h1>
-  </div>
-
-  <div class="card">
-    <h2>EPF/ETF Report</h2>
-    <div class="form-row">
-      <label>
-        Locked Pay Run
-        <select [value]="selectedPayRunId" (change)="onPayRunChange($event.target.value)">
-          <option value="">Select a locked pay run</option>
-          <option *ngFor="let run of payRuns" [value]="run.id">
-            {{ run.code }} - {{ run.name }} ({{ run.periodStart | dateFormat }} to {{ run.periodEnd | dateFormat }})
-          </option>
-        </select>
-      </label>
-      <label>
-        Format
-        <select [(ngModel)]="format">
-          <option value="csv">CSV</option>
-          <option value="txt">TXT</option>
-        </select>
-      </label>
-      <button type="button" (click)="generateReport()" [disabled]="isGenerating || isLoadingPayRuns">
-        {{ isGenerating ? 'Generating...' : 'Generate EPF/ETF Report' }}
-      </button>
+<div class="page-container animate-fadeIn">
+  <!-- Context Header -->
+  <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-end gap-4 mb-6">
+    <div>
+      <h1 class="m-0 text-3xl font-extrabold tracking-tight text-900 line-height-1">Statutory Compliance</h1>
+      <p class="text-600 mt-2 mb-0">Management of EPF/ETF contributions and regulatory reporting for institutional
+        payroll cycles.</p>
     </div>
-    <div class="error" *ngIf="errorMessage">{{ errorMessage }}</div>
-  </div>
-
-  <div class="card" *ngIf="reportPreview">
-    <h2>Latest Report Summary</h2>
-    <div class="summary-grid">
-      <div><strong>Employee count:</strong> {{ reportPreview.employeeCount }}</div>
-      <div><strong>Contributable base:</strong> {{ reportPreview.contributableBase | number: '1.0-2' }}</div>
-      <div><strong>Employee EPF total:</strong> {{ reportPreview.employeeEpfTotal | number: '1.0-2' }}</div>
-      <div><strong>Employer EPF total:</strong> {{ reportPreview.employerEpfTotal | number: '1.0-2' }}</div>
-      <div><strong>Employer ETF total:</strong> {{ reportPreview.employerEtfTotal | number: '1.0-2' }}</div>
-    </div>
-    <div class="actions">
-      <button type="button" (click)="downloadPreview(reportPreview.file, 'epf-etf-report.csv')">Download Report</button>
-      <button
-        type="button"
-        *ngIf="reportPreview.warningFile"
-        (click)="downloadPreview(reportPreview.warningFile, 'epf-etf-warnings.csv')"
-      >
-        Download Warnings
-      </button>
-    </div>
-
-    <div class="warnings" *ngIf="reportPreview.warnings?.length">
-      <h3>Validation Warnings</h3>
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Employee</th>
-            <th>Message</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let warning of reportPreview.warnings">
-            <td>{{ warning.employeeCode || warning.employeeId }} - {{ warning.employeeName || 'N/A' }}</td>
-            <td>{{ warning.message }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="employee-report" *ngIf="reportPreview.employees?.length">
-      <h3>Employee Details</h3>
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Employee</th>
-            <th>NIC</th>
-            <th>EPF No.</th>
-            <th>Contributable Base</th>
-            <th>Employee EPF</th>
-            <th>Employer EPF</th>
-            <th>Employer ETF</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let row of reportPreview.employees">
-            <td>{{ row.employeeCode || row.employeeId }} - {{ row.employeeName || 'N/A' }}</td>
-            <td>{{ row.nicNumber || '—' }}</td>
-            <td>{{ row.epfNumber || '—' }}</td>
-            <td>{{ row.contributableBase | number: '1.0-2' }}</td>
-            <td>{{ row.employeeEpf | number: '1.0-2' }}</td>
-            <td>{{ row.employerEpf | number: '1.0-2' }}</td>
-            <td>{{ row.employerEtf | number: '1.0-2' }}</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="flex gap-2">
+      <button pButton icon="pi pi-history" label="Compliance Archive"
+        class="p-button-text p-button-secondary font-bold"></button>
+      <button pButton icon="pi pi-shield" label="Regulatory Status"
+        class="p-button-outlined p-button-success font-bold"></button>
     </div>
   </div>
 
-  <div class="card">
-    <h2>History</h2>
-    <table class="table" *ngIf="reportHistory?.length; else noHistory">
-      <thead>
-        <tr>
-          <th>Generated At</th>
-          <th>Pay Run</th>
-          <th>Status</th>
-          <th>Warnings</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let report of reportHistory">
-          <td>{{ report.generatedAtUtc | dateFormat }}</td>
-          <td>{{ report.payRunCode }} - {{ report.payRunName }}</td>
-          <td>{{ report.status }}</td>
-          <td>{{ report.warningCount }}</td>
-          <td>
-            <button type="button" (click)="downloadHistory(report)">Download</button>
-            <button
-              type="button"
-              *ngIf="report.warningCount > 0"
-              (click)="downloadHistory(report, true)"
-            >
-              Download Warnings
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <ng-template #noHistory>
-      <div>No EPF/ETF reports generated yet.</div>
-    </ng-template>
+  <!-- Intelligence Filter Bar -->
+  <div class="card border-none shadow-sm mb-6 p-4 surface-card border-round-xl">
+    <div class="grid p-fluid align-items-end">
+      <div class="col-12 md:col-5 field m-0">
+        <label class="text-900 font-bold mb-2 block text-sm">Target Pay Cycle</label>
+        <p-dropdown [options]="payRuns" [(ngModel)]="selectedPayRunId" optionLabel="name" optionValue="id"
+          [filter]="true" filterBy="name,code" placeholder="Select a locked pay run"
+          (onChange)="onPayRunChange($event.value)" [loading]="isLoadingPayRuns">
+          <ng-template let-run pTemplate="item">
+            <div class="flex flex-column">
+              <span class="font-bold text-900">{{ run.code }}</span>
+              <span class="text-xs text-500">{{ run.name }} ({{ run.periodStart | date:'MMM yyyy' }})</span>
+            </div>
+          </ng-template>
+        </p-dropdown>
+      </div>
+      <div class="col-12 md:col-3 field m-0">
+        <label class="text-900 font-bold mb-2 block text-sm">Transmission Format</label>
+        <p-dropdown [options]="[{label: 'CSV (Standard)', value: 'csv'}, {label: 'TXT (Legacy)', value: 'txt'}]"
+          [(ngModel)]="format"></p-dropdown>
+      </div>
+      <div class="col-12 md:col-4 m-0">
+        <button pButton icon="pi pi-cloud-download" label="Generate Compliance Report"
+          class="p-button-primary shadow-2 font-bold w-full h-3rem" (click)="generateReport()" [loading]="isGenerating"
+          [disabled]="!selectedPayRunId"></button>
+      </div>
+    </div>
+    <div
+      class="mt-3 p-3 bg-red-50 border-round-lg border-1 border-red-100 flex align-items-center gap-3 animate-slideIn"
+      *ngIf="errorMessage">
+      <i class="pi pi-exclamation-circle text-red-500 text-xl"></i>
+      <span class="text-red-700 text-sm font-medium">{{ errorMessage }}</span>
+    </div>
   </div>
-</section>
+
+  <!-- Analytics Dashboard (Conditional) -->
+  <div class="animate-fadeIn" *ngIf="reportPreview">
+    <div class="grid mb-6">
+      <div class="col-12 md:col-2">
+        <div
+          class="card border-none shadow-sm p-4 surface-card border-round-xl h-full flex flex-column justify-content-center align-items-center text-center">
+          <span class="text-500 font-bold text-xs uppercase cursor-default mb-2">Workforce Size</span>
+          <span class="text-4xl font-extrabold text-900">{{ reportPreview.employeeCount }}</span>
+        </div>
+      </div>
+      <div class="col-12 md:col-3">
+        <div
+          class="card border-none shadow-sm p-4 surface-card border-round-xl h-full flex flex-column justify-content-center">
+          <div class="flex align-items-center gap-3 mb-2">
+            <i class="pi pi-wallet text-primary font-bold"></i>
+            <span class="text-500 font-bold text-xs uppercase tracking-wider">Contributable Base</span>
+          </div>
+          <span class="text-2xl font-extrabold text-900">{{ reportPreview.contributableBase |
+            currency:'LKR':'symbol-narrow':'1.0-0' }}</span>
+        </div>
+      </div>
+      <div class="col-12 md:col-7 flex gap-3">
+        <div
+          class="card border-none shadow-sm p-4 surface-card border-round-xl flex-grow-1 flex flex-column justify-content-center">
+          <span class="text-500 font-bold text-xs uppercase mb-1">Employee EPF (8%)</span>
+          <span class="text-xl font-extrabold text-900">{{ reportPreview.employeeEpfTotal |
+            currency:'LKR':'symbol-narrow':'1.0-2' }}</span>
+        </div>
+        <div
+          class="card border-none shadow-sm p-4 surface-card border-round-xl flex-grow-1 flex flex-column justify-content-center">
+          <span class="text-500 font-bold text-xs uppercase mb-1">Employer EPF (12%)</span>
+          <span class="text-xl font-extrabold text-900">{{ reportPreview.employerEpfTotal |
+            currency:'LKR':'symbol-narrow':'1.0-2' }}</span>
+        </div>
+        <div
+          class="card border-none shadow-sm p-4 surface-card border-round-xl flex-grow-1 flex flex-column justify-content-center bg-primary-50">
+          <span class="text-primary-700 font-bold text-xs uppercase mb-1">Employer ETF (3%)</span>
+          <span class="text-xl font-extrabold text-primary-900">{{ reportPreview.employerEtfTotal |
+            currency:'LKR':'symbol-narrow':'1.0-2' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compliance Validation Alert -->
+    <div
+      class="p-4 bg-orange-50 border-round-xl border-1 border-orange-100 flex align-items-center justify-content-between mb-6 shadow-sm animate-pulse"
+      *ngIf="reportPreview.warnings?.length">
+      <div class="flex align-items-center gap-4">
+        <div class="p-3 bg-orange-500 border-round-circle shadow-1">
+          <i class="pi pi-bell text-white text-xl"></i>
+        </div>
+        <div class="flex flex-column">
+          <span class="font-bold text-orange-900 text-lg">Regulatory Warnings Identified</span>
+          <span class="text-sm text-orange-700">Detailed compliance gaps detected in {{ reportPreview.warnings.length }}
+            entity profiles.</span>
+        </div>
+      </div>
+      <button pButton icon="pi pi-eye" label="Review Alerts" class="p-button-warning p-button-rounded font-bold px-4"
+        (click)="op.toggle($event)"></button>
+    </div>
+
+    <!-- Personnel Detailed Grid -->
+    <div class="card border-none shadow-sm overflow-hidden p-0 mb-6">
+      <div class="p-4 border-bottom-1 border-surface-100 flex justify-content-between align-items-center bg-white">
+        <h2 class="m-0 text-xl font-extrabold tracking-tight">Personnel Contribution Ledger</h2>
+        <div class="flex gap-2">
+          <button pButton icon="pi pi-file-excel" label="Export Detailed CSV"
+            class="p-button-text p-button-sm font-bold"
+            (click)="downloadPreview(reportPreview.file, 'epf-etf-report.csv')"></button>
+          <button pButton icon="pi pi-file-pdf" *ngIf="reportPreview.warningFile" label="Export Warnings"
+            class="p-button-text p-button-danger p-button-sm font-bold"
+            (click)="downloadPreview(reportPreview.warningFile, 'epf-etf-warnings.csv')"></button>
+        </div>
+      </div>
+      <app-data-table [columns]="employeeColumns" [data]="reportPreview.employees" [paginator]="true" [rows]="10"
+        [showGlobalFilter]="true" emptyMessage="Zero contribution entries identified for this cycle.">
+      </app-data-table>
+    </div>
+  </div>
+
+  <!-- Governance History Archive -->
+  <div class="flex flex-column gap-3">
+    <div class="flex align-items-center gap-2 px-2">
+      <i class="pi pi-database text-primary font-bold"></i>
+      <h3 class="m-0 text-xl font-extrabold tracking-tight">Historical Compliance Archive</h3>
+    </div>
+    <div class="card border-none shadow-sm overflow-hidden p-0">
+      <app-data-table [columns]="historyColumns" [data]="reportHistory" [paginator]="true" [rows]="5"
+        [showGlobalFilter]="true"
+        emptyMessage="Institutional compliance archive is currently void of historical reporting.">
+
+        <ng-template #rowActions let-report>
+          <div class="flex gap-1 justify-content-end">
+            <button pButton icon="pi pi-download" class="p-button-text p-button-secondary p-button-sm"
+              (click)="downloadHistory(report)" pTooltip="Download Narrative"></button>
+            <button pButton icon="pi pi-exclamation-triangle" *ngIf="report.warningCount > 0"
+              class="p-button-text p-button-danger p-button-sm" (click)="downloadHistory(report, true)"
+              pTooltip="Download Warnings"></button>
+          </div>
+        </ng-template>
+      </app-data-table>
+    </div>
+  </div>
+</div>
+
+<!-- Validation Overlay -->
+<p-overlayPanel #op [showCloseIcon]="true" [style]="{width: '500px'}">
+  <div class="p-3">
+    <h4 class="m-0 mb-3 text-900 border-bottom-1 border-surface-100 pb-2">Compliance Alert Log</h4>
+    <div class="flex flex-column gap-3 max-h-30rem overflow-y-auto pr-2">
+      <div
+        class="flex align-items-start gap-3 p-3 surface-50 border-round-lg border-1 border-surface-100 hover:surface-100 transition-colors"
+        *ngFor="let warning of reportPreview?.warnings">
+        <i class="pi pi-info-circle text-orange-500 mt-1"></i>
+        <div class="flex flex-column gap-1">
+          <span class="font-bold text-900 text-sm">{{ warning.employeeCode }} - {{ warning.employeeName }}</span>
+          <span class="text-xs text-600 line-height-3">{{ warning.message }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</p-overlayPanel>
