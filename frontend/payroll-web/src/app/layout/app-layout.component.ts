@@ -56,7 +56,7 @@ interface TenantOption {
   ],
   templateUrl: './app-layout.component.html',
   styleUrls: ['./app-layout.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  // changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AppLayoutComponent implements OnInit, OnDestroy {
   public sidebarVisible = false;
@@ -191,7 +191,7 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
     private router: Router,
     private cdr: ChangeDetectorRef,
     private authService: AuthService,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.userRoles = this.authService.getRoles().map(role => role.toLowerCase());
