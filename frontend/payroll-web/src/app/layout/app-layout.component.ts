@@ -87,7 +87,6 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
   ];
   public userName = 'User';
   public userRole = 'Employee';
-  public readonly routerLinkActiveOptions = { exact: false };
 
   private readonly destroy$ = new Subject<void>();
   private userRoles: string[] = [];
