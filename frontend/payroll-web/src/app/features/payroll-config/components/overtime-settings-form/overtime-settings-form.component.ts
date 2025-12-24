@@ -32,7 +32,12 @@ export class OvertimeSettingsFormComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['initialValue'] && this.initialValue) {
-      this.form.patchValue(this.initialValue);
+      const formValue = {
+        ...this.initialValue,
+        effectiveFrom: this.initialValue.effectiveFrom ? new Date(this.initialValue.effectiveFrom) : null,
+        effectiveTo: this.initialValue.effectiveTo ? new Date(this.initialValue.effectiveTo) : null,
+      };
+      this.form.patchValue(formValue);
     }
   }
 
@@ -42,6 +47,17 @@ export class OvertimeSettingsFormComponent implements OnChanges {
       return;
     }
 
-    this.submitted.emit(this.form.value as OTRulePayload);
+    const formValue = this.form.value;
+    const payload: OTRulePayload = {
+      ...formValue,
+      effectiveFrom: formValue.effectiveFrom instanceof Date
+        ? formValue.effectiveFrom.toISOString().split('T')[0]
+        : formValue.effectiveFrom,
+      effectiveTo: formValue.effectiveTo instanceof Date
+        ? formValue.effectiveTo.toISOString().split('T')[0]
+        : formValue.effectiveTo,
+    };
+
+    this.submitted.emit(payload);
   }
 }

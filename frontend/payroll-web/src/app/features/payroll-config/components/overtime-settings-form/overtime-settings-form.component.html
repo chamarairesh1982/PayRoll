@@ -1,61 +1,129 @@
-<form [formGroup]="form" (ngSubmit)="submit()" class="form">
-  <div class="form-row">
-    <label>
-      OT type
-      <select formControlName="type">
-        <option *ngFor="let type of overtimeTypes" [value]="type">{{ type }}</option>
-      </select>
-    </label>
-    <label>
-      Multiplier
-      <input type="number" step="0.01" formControlName="multiplier" />
-    </label>
+<form [formGroup]="form" (ngSubmit)="submit()" class="overtime-form">
+  <!-- Form Grid Layout -->
+  <div class="form-grid">
+    <!-- Row 1: OT Type & Multiplier -->
+    <div class="grid">
+      <div class="col-12 md:col-6">
+        <div class="field">
+          <label class="font-bold text-sm mb-2 block uppercase tracking-wider text-500">
+            <i class="pi pi-tag mr-2"></i>OT Type
+          </label>
+          <p-dropdown [options]="overtimeTypes" formControlName="type" placeholder="Select Type" styleClass="w-full"
+            [showClear]="false">
+          </p-dropdown>
+        </div>
+      </div>
+      <div class="col-12 md:col-6">
+        <div class="field">
+          <label class="font-bold text-sm mb-2 block uppercase tracking-wider text-500">
+            <i class="pi pi-percentage mr-2"></i>Multiplier
+          </label>
+          <p-inputNumber formControlName="multiplier" [min]="0.01" [step]="0.1" [minFractionDigits]="2"
+            [maxFractionDigits]="2" suffix="x" styleClass="w-full">
+          </p-inputNumber>
+          <small class="text-500 block mt-1">Rate applied to base hourly wage</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Rounding Configuration -->
+    <div class="grid">
+      <div class="col-12 md:col-6">
+        <div class="field">
+          <label class="font-bold text-sm mb-2 block uppercase tracking-wider text-500">
+            <i class="pi pi-clock mr-2"></i>Round to Minutes
+          </label>
+          <p-inputNumber formControlName="roundToMinutes" [min]="1" [step]="1" suffix=" min" styleClass="w-full">
+          </p-inputNumber>
+          <small class="text-500 block mt-1">Allowed: 1, 5, 10, 15, 30, 60</small>
+        </div>
+      </div>
+      <div class="col-12 md:col-6">
+        <div class="field">
+          <label class="font-bold text-sm mb-2 block uppercase tracking-wider text-500">
+            <i class="pi pi-arrows-h mr-2"></i>Rounding Mode
+          </label>
+          <p-dropdown [options]="roundingModes" formControlName="roundingMode" placeholder="Select Mode"
+            styleClass="w-full" [showClear]="false">
+          </p-dropdown>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 3: Caps -->
+    <div class="grid">
+      <div class="col-12 md:col-6">
+        <div class="field">
+          <label class="font-bold text-sm mb-2 block uppercase tracking-wider text-500">
+            <i class="pi pi-calendar-times mr-2"></i>Daily Cap (hours)
+          </label>
+          <p-inputNumber formControlName="dailyHoursCap" [min]="0" [step]="0.5" [minFractionDigits]="1"
+            [maxFractionDigits]="1" suffix=" hrs" placeholder="No limit" styleClass="w-full">
+          </p-inputNumber>
+          <small class="text-500 block mt-1">Leave blank for no daily cap</small>
+        </div>
+      </div>
+      <div class="col-12 md:col-6">
+        <div class="field">
+          <label class="font-bold text-sm mb-2 block uppercase tracking-wider text-500">
+            <i class="pi pi-calendar mr-2"></i>Monthly Cap (hours)
+          </label>
+          <p-inputNumber formControlName="monthlyHoursCap" [min]="0" [step]="1" [minFractionDigits]="0"
+            [maxFractionDigits]="1" suffix=" hrs" placeholder="No limit" styleClass="w-full">
+          </p-inputNumber>
+          <small class="text-500 block mt-1">Leave blank for no monthly cap</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 4: Effective Dates -->
+    <div class="grid">
+      <div class="col-12 md:col-6">
+        <div class="field">
+          <label class="font-bold text-sm mb-2 block uppercase tracking-wider text-500">
+            <i class="pi pi-calendar-plus mr-2"></i>Effective From
+          </label>
+          <p-calendar formControlName="effectiveFrom" dateFormat="yy-mm-dd" [showIcon]="true" styleClass="w-full"
+            placeholder="Select start date">
+          </p-calendar>
+        </div>
+      </div>
+      <div class="col-12 md:col-6">
+        <div class="field">
+          <label class="font-bold text-sm mb-2 block uppercase tracking-wider text-500">
+            <i class="pi pi-calendar-minus mr-2"></i>Effective To
+          </label>
+          <p-calendar formControlName="effectiveTo" dateFormat="yy-mm-dd" [showIcon]="true" styleClass="w-full"
+            placeholder="Permanent (optional)">
+          </p-calendar>
+          <small class="text-500 block mt-1">Leave blank for permanent policy</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 5: Active Status -->
+    <div class="grid">
+      <div class="col-12">
+        <div class="field">
+          <div class="flex align-items-center gap-3 p-4 bg-surface-50 border-round-lg border-1 border-surface-200">
+            <p-inputSwitch formControlName="isActive"></p-inputSwitch>
+            <div class="flex-grow-1">
+              <span class="font-bold text-900 block mb-1">Active Rule</span>
+              <small class="text-500">Enable this policy for systemic overtime calculations</small>
+            </div>
+            <p-tag [value]="form.get('isActive')?.value ? 'ACTIVE' : 'INACTIVE'"
+              [severity]="form.get('isActive')?.value ? 'success' : 'danger'" styleClass="font-bold">
+            </p-tag>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="form-row">
-    <label>
-      Round to minutes
-      <input type="number" step="1" formControlName="roundToMinutes" />
-      <span class="helper-text">Allowed values: 1, 5, 10, 15, 30, 60.</span>
-    </label>
-    <label>
-      Rounding mode
-      <select formControlName="roundingMode">
-        <option *ngFor="let mode of roundingModes" [value]="mode">{{ mode }}</option>
-      </select>
-    </label>
+  <!-- Action Bar -->
+  <div class="flex justify-content-end gap-3 mt-6 pt-4 border-top-1 border-surface-200">
+    <button pButton type="submit" [disabled]="isSaving || form.invalid" [loading]="isSaving" label="Save Overtime Rules"
+      icon="pi pi-check" class="p-button-primary shadow-2 font-bold px-5">
+    </button>
   </div>
-
-  <div class="form-row">
-    <label>
-      Daily cap (hours)
-      <input type="number" step="0.1" formControlName="dailyHoursCap" />
-      <span class="helper-text">Leave blank for no daily cap.</span>
-    </label>
-    <label>
-      Monthly cap (hours)
-      <input type="number" step="0.1" formControlName="monthlyHoursCap" />
-      <span class="helper-text">Leave blank for no monthly cap.</span>
-    </label>
-  </div>
-
-  <div class="form-row">
-    <label>
-      Effective from
-      <input type="date" formControlName="effectiveFrom" />
-    </label>
-    <label>
-      Effective to
-      <input type="date" formControlName="effectiveTo" />
-    </label>
-  </div>
-
-  <div class="form-row">
-    <label class="checkbox">
-      <input type="checkbox" formControlName="isActive" />
-      Active rule
-    </label>
-  </div>
-
-  <button type="submit" [disabled]="isSaving">{{ isSaving ? 'Saving...' : 'Save overtime rules' }}</button>
 </form>
