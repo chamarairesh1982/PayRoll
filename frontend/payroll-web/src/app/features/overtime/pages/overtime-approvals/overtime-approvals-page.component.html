@@ -1,48 +1,41 @@
-<section class="page">
-  <header class="page-header">
+<div class="page-container animate-fadeIn">
+  <!-- Context Header -->
+  <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-end gap-4 mb-6">
     <div>
-      <h1>Overtime Approvals</h1>
-      <p class="muted">Review submitted overtime entries.</p>
+      <h1 class="m-0 text-3xl font-extrabold tracking-tight text-900 line-height-1">Approval Governance</h1>
+      <p class="text-600 mt-2 mb-0">Adjudicate recorded overtime sessions against operational compliance.</p>
     </div>
-    <button type="button" class="btn" (click)="loadRecords()">Refresh</button>
-  </header>
-
-  <div *ngIf="isLoading" class="loading">Loading submitted overtime entries...</div>
-  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
-
-  <div class="table-wrapper" *ngIf="!isLoading">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Employee</th>
-          <th>Minutes</th>
-          <th>Type</th>
-          <th>Comment</th>
-          <th class="actions">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let record of records">
-          <td>{{ record.workDate | date: 'yyyy-MM-dd' }}</td>
-          <td>
-            <div class="employee-cell">
-              <span class="code">{{ record.employeeCode || record.employeeId }}</span>
-              <span class="name" *ngIf="record.employeeName">{{ record.employeeName }}</span>
-            </div>
-          </td>
-          <td>{{ record.rawMinutes }}</td>
-          <td>{{ record.type }}</td>
-          <td>{{ record.comment || '-' }}</td>
-          <td class="actions">
-            <button type="button" class="success" (click)="approve(record)">Approve</button>
-            <button type="button" class="danger" (click)="reject(record)">Reject</button>
-          </td>
-        </tr>
-        <tr *ngIf="records.length === 0">
-          <td colspan="6" class="empty">No submitted overtime entries.</td>
-        </tr>
-      </tbody>
-    </table>
+    <button pButton icon="pi pi-refresh" label="Synchronize Inbox" class="p-button-outlined p-button-rounded"
+      (click)="loadRecords()"></button>
   </div>
-</section>
+
+  <!-- Communication Mechanism -->
+  <div class="p-4 bg-red-50 border-round-xl flex align-items-center gap-3 text-red-700 border-1 border-red-100 mb-6"
+    *ngIf="error">
+    <i class="pi pi-exclamation-triangle text-2xl"></i>
+    <div>
+      <div class="font-bold">Governance Synchronization Failure</div>
+      <div class="text-sm">{{ error }}</div>
+    </div>
+  </div>
+
+  <!-- Strategic Grid -->
+  <div class="card border-none shadow-sm overflow-hidden p-0">
+    <app-data-table [columns]="columns" [data]="records" [loading]="isLoading" [paginator]="true" [rows]="10"
+      [showGlobalFilter]="false" [lazy]="false"
+      emptyMessage="The approval repository represents a stable state with zero pending transactions.">
+      <!-- Custom Action Template -->
+      <ng-template #rowActions let-record>
+        <div class="flex gap-2 justify-content-end">
+          <button pButton icon="pi pi-check" label="Approve" class="p-button-success p-button-sm p-button-outlined"
+            (click)="approve(record)"></button>
+          <button pButton icon="pi pi-times" label="Reject" class="p-button-danger p-button-sm p-button-outlined"
+            (click)="reject(record)"></button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+</div>
+
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>

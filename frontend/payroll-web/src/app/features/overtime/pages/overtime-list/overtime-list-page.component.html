@@ -1,88 +1,57 @@
-<div class="page-header">
-  <h1>Overtime Records</h1>
-  <button type="button" (click)="goToCreate()">Create OT Record</button>
-</div>
-
-<div class="filters">
-  <label>
-    Employee
-    <input type="text" [(ngModel)]="selectedEmployeeId" placeholder="Employee ID or Code" />
-  </label>
-
-  <label>
-    From
-    <input type="date" [(ngModel)]="selectedFrom" />
-  </label>
-
-  <label>
-    To
-    <input type="date" [(ngModel)]="selectedTo" />
-  </label>
-
-  <label>
-    Status
-    <select [(ngModel)]="selectedStatus">
-      <option [ngValue]="''">All</option>
-      <option [ngValue]="'Draft'">Draft</option>
-      <option [ngValue]="'Submitted'">Submitted</option>
-      <option [ngValue]="'Approved'">Approved</option>
-      <option [ngValue]="'Rejected'">Rejected</option>
-    </select>
-  </label>
-
-  <div class="filter-actions">
-    <button type="button" (click)="applyFilters()">Apply</button>
-    <button type="button" class="secondary" (click)="resetFilters()">Reset</button>
+<div class="page-container animate-fadeIn">
+  <!-- Context Header -->
+  <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-end gap-4 mb-6">
+    <div>
+      <h1 class="m-0 text-3xl font-extrabold tracking-tight text-900 line-height-1">Overtime & Labor Intel</h1>
+      <p class="text-600 mt-2 mb-0">Analysis and governance of extended workforce engagements.</p>
+    </div>
+    <button pButton icon="pi pi-plus" label="Log Overtime Session" class="p-button-primary p-button-rounded shadow-2"
+      (click)="goToCreate()"></button>
   </div>
-</div>
 
-<ng-template #loading>
-  <div class="loading">Loading overtime records...</div>
-</ng-template>
+  <!-- Analytical Filters -->
+  <div
+    class="surface-card p-4 border-round-xl border-1 border-surface-100 shadow-sm mb-6 flex flex-wrap align-items-center gap-3">
+    <div class="flex-grow-1 min-w-0">
+      <span class="p-input-icon-left w-full">
+        <i class="pi pi-user"></i>
+        <input pInputText type="text" [(ngModel)]="selectedEmployeeId" placeholder="Identify Employee..."
+          class="w-full p-inputtext-sm border-none bg-surface-50" />
+      </span>
+    </div>
 
-<div class="table-wrapper" *ngIf="!isLoading; else loading">
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Employee</th>
-        <th>Minutes</th>
-        <th>Type</th>
-        <th>Status</th>
-        <th>Locked</th>
-        <th class="actions">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let record of records">
-        <td>{{ record.workDate | date: 'yyyy-MM-dd' }}</td>
-        <td>
-          <div class="employee-cell">
-            <span class="code">{{ record.employeeCode || record.employeeId }}</span>
-            <span class="name" *ngIf="record.employeeName">{{ record.employeeName }}</span>
-          </div>
-        </td>
-        <td>{{ record.rawMinutes }}</td>
-        <td>{{ record.type }}</td>
-        <td>{{ record.status }}</td>
-        <td>{{ record.isLockedForPayroll ? 'Yes' : 'No' }}</td>
-        <td class="actions">
-          <button type="button" (click)="viewRecord(record)">View</button>
-          <button type="button" (click)="editRecord(record)" [disabled]="!canEdit(record)">Edit</button>
-          <button type="button" class="secondary" (click)="submitRecord(record)" [disabled]="!canSubmit(record)">
-            Submit
-          </button>
-        </td>
-      </tr>
-      <tr *ngIf="records.length === 0">
-        <td colspan="7" class="empty">No overtime records found.</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+    <p-calendar [(ngModel)]="selectedFrom" placeholder="From" dateFormat="yy-mm-dd"
+      styleClass="p-inputtext-sm"></p-calendar>
+    <p-calendar [(ngModel)]="selectedTo" placeholder="To" dateFormat="yy-mm-dd"
+      styleClass="p-inputtext-sm"></p-calendar>
 
-<div class="pagination">
-  <button type="button" (click)="previousPage()" [disabled]="page === 1">Previous</button>
-  <span>Page {{ page }} of {{ totalPages || 1 }}</span>
-  <button type="button" (click)="nextPage()" [disabled]="page * pageSize >= totalCount">Next</button>
+    <p-dropdown [options]="statusOptions" [(ngModel)]="selectedStatus" placeholder="Workflow Status" [showClear]="true"
+      styleClass="p-inputtext-sm" (onChange)="onFilterChange()"></p-dropdown>
+
+    <div class="flex gap-2">
+      <button pButton icon="pi pi-filter" label="Apply Analytics" class="p-button-sm p-button-outlined"
+        (click)="applyFilters()"></button>
+      <button pButton icon="pi pi-refresh" class="p-button-sm p-button-text p-button-secondary" (click)="resetFilters()"
+        pTooltip="Clear Search Parameters"></button>
+    </div>
+  </div>
+
+  <!-- Strategic Data Grid -->
+  <div class="card border-none shadow-sm overflow-hidden p-0">
+    <app-data-table [columns]="columns" [data]="records" [loading]="isLoading" [totalRecords]="totalCount"
+      [rows]="pageSize" [first]="tableFirst" [paginator]="true" [lazy]="true" [showGlobalFilter]="false"
+      emptyMessage="No overtime engagements aligned with current parameters." (lazyLoad)="handleLazyLoad($event)">
+      <!-- Custom Action Template -->
+      <ng-template #rowActions let-record>
+        <div class="flex gap-1 justify-content-end">
+          <button pButton icon="pi pi-eye" class="p-button-text p-button-secondary p-button-sm"
+            (click)="viewRecord(record)" pTooltip="Examine Metadata"></button>
+          <button pButton icon="pi pi-pencil" class="p-button-text p-button-secondary p-button-sm"
+            (click)="editRecord(record)" [disabled]="!canEdit(record)" pTooltip="Modify Entry"></button>
+          <button pButton icon="pi pi-send" class="p-button-text p-button-success p-button-sm"
+            (click)="submitRecord(record)" [disabled]="!canSubmit(record)" pTooltip="Commit to Workflow"></button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
 </div>

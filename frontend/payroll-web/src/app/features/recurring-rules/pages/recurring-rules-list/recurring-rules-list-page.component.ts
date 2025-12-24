@@ -13,6 +13,8 @@ import {
 } from '../../models/recurring-rule.model';
 import { RecurringRuleService } from '../../services/recurring-rule.service';
 
+import { DataTableColumn } from '../../../../shared/components/table/data-table.component';
+
 @Component({
   selector: 'app-recurring-rules-list-page',
   templateUrl: './recurring-rules-list-page.component.html',
@@ -26,6 +28,7 @@ export class RecurringRulesListPageComponent implements OnInit, OnDestroy {
   filteredRules: RecurringRule[] = [];
   selectedRules: RecurringRule[] = [];
   searchTerm = '';
+  isLoading = true;
 
   companies: CompanyOption[] = [];
   branches: BranchOption[] = [];
@@ -38,6 +41,15 @@ export class RecurringRulesListPageComponent implements OnInit, OnDestroy {
   filterCompanyId: string | null = null;
   filterBranchId: string | null = null;
   filterCostCenterId: string | null = null;
+
+  columns: DataTableColumn<RecurringRule>[] = [
+    { field: 'name', header: 'Rule Name', sortable: true, filterable: true },
+    { field: 'type', header: 'Type', sortable: true, filterable: true, minWidth: '150px' },
+    { field: 'amountValue', header: 'Amount', sortable: true, minWidth: '150px', type: 'amount' },
+    { field: 'frequency', header: 'Frequency', sortable: true, minWidth: '130px' },
+    { field: 'startDate', header: 'Effective Date', sortable: true, minWidth: '150px', type: 'date' },
+    { field: 'status', header: 'Status', sortable: true, minWidth: '120px', type: 'status' },
+  ];
 
   typeOptions = [
     { label: 'Allowance', value: 'Allowance' as RecurringRuleType },
@@ -65,16 +77,25 @@ export class RecurringRulesListPageComponent implements OnInit, OnDestroy {
     private router: Router,
     private confirmationService: ConfirmationService,
     private messageService: MessageService,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadOrganizations();
+    this.loadRules();
+  }
+
+  loadRules(): void {
+    this.isLoading = true;
     this.recurringRuleService
       .getRules()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(rules => {
-        this.rules = rules;
-        this.applyFilters();
+      .subscribe({
+        next: rules => {
+          this.rules = rules;
+          this.applyFilters();
+          this.isLoading = false;
+        },
+        error: () => this.isLoading = false
       });
   }
 
@@ -136,9 +157,7 @@ export class RecurringRulesListPageComponent implements OnInit, OnDestroy {
 
   onGlobalSearch(value: string): void {
     this.searchTerm = value;
-    if (this.rulesTable) {
-      this.rulesTable.filterGlobal(value, 'contains');
-    }
+    this.applyFilters();
   }
 
   clearFilters(): void {
@@ -149,6 +168,7 @@ export class RecurringRulesListPageComponent implements OnInit, OnDestroy {
     this.filterCompanyId = null;
     this.filterBranchId = null;
     this.filterCostCenterId = null;
+    this.searchTerm = '';
     this.selectedRules = [];
     this.loadBranches();
     this.loadCostCenters();
@@ -168,20 +188,18 @@ export class RecurringRulesListPageComponent implements OnInit, OnDestroy {
   }
 
   confirmDeactivate(rule: RecurringRule): void {
+    const isActivating = rule.status === 'Inactive';
     this.confirmationService.confirm({
-      header: `${rule.status === 'Active' ? 'Deactivate' : 'Activate'} Rule`,
-      message: `Are you sure you want to ${rule.status === 'Active' ? 'deactivate' : 'activate'} ${rule.name}?`,
+      header: `${isActivating ? 'Activate' : 'Deactivate'} Rule`,
+      message: `Are you sure you want to ${isActivating ? 'activate' : 'deactivate'} ${rule.name}?`,
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel: rule.status === 'Active' ? 'Deactivate' : 'Activate',
+      acceptLabel: isActivating ? 'Activate' : 'Deactivate',
       rejectLabel: 'Cancel',
       accept: () => {
-        const nextStatus = rule.status === 'Active' ? 'Inactive' : 'Active';
+        const nextStatus: RecurringRuleStatus = isActivating ? 'Active' : 'Inactive';
         this.recurringRuleService.setStatus(rule.id, nextStatus).subscribe(() => {
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Status updated',
-            detail: `${rule.name} is now ${nextStatus.toLowerCase()}.`,
-          });
+          this.messageService.add({ severity: 'success', summary: 'Updated', detail: `${rule.name} updated.` });
+          this.loadRules();
         });
       },
     });
@@ -190,18 +208,14 @@ export class RecurringRulesListPageComponent implements OnInit, OnDestroy {
   confirmDelete(rule: RecurringRule): void {
     this.confirmationService.confirm({
       header: 'Delete Rule',
-      message: `Delete ${rule.name}? This cannot be undone.`,
-      icon: 'pi pi-info-circle',
+      message: `Delete ${rule.name}?`,
+      icon: 'pi pi-trash',
       acceptButtonStyleClass: 'p-button-danger',
       acceptLabel: 'Delete',
-      rejectLabel: 'Cancel',
       accept: () => {
         this.recurringRuleService.deleteRule(rule.id).subscribe(() => {
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Rule deleted',
-            detail: `${rule.name} has been removed.`,
-          });
+          this.messageService.add({ severity: 'success', summary: 'Deleted', detail: `${rule.name} removed.` });
+          this.loadRules();
         });
       },
     });
@@ -209,99 +223,45 @@ export class RecurringRulesListPageComponent implements OnInit, OnDestroy {
 
   bulkUpdate(status: RecurringRuleStatus): void {
     const ids = this.selectedRules.map(rule => rule.id);
-    if (!ids.length) {
-      return;
-    }
+    if (!ids.length) return;
 
     this.confirmationService.confirm({
-      header: `${status === 'Active' ? 'Activate' : 'Deactivate'} Rules`,
-      message: `Apply ${status.toLowerCase()} status to ${ids.length} selected rules?`,
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: status === 'Active' ? 'Activate' : 'Deactivate',
-      rejectLabel: 'Cancel',
+      header: 'Bulk Update',
+      message: `Update ${ids.length} rules to ${status}?`,
       accept: () => {
         this.recurringRuleService.bulkUpdateStatus(ids, status).subscribe(() => {
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Bulk update complete',
-            detail: `Updated ${ids.length} rules.`,
-          });
+          this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Rules updated.' });
           this.selectedRules = [];
+          this.loadRules();
         });
       },
     });
   }
 
-  exportCsv(): void {
-    if (this.rulesTable) {
-      this.rulesTable.exportCSV();
-    }
-  }
-
   getScopeLabel(rule: RecurringRule): string {
-    if (rule.scope.type === 'All') {
-      return 'All employees';
-    }
-    if (rule.scope.type === 'Selected') {
-      const count = rule.scope.employeeIds?.length ?? 0;
-      return `Selected (${count})`;
-    }
+    if (rule.scope.type === 'All') return 'Everyone';
+    if (rule.scope.type === 'Selected') return `Selected (${rule.scope.employeeIds?.length ?? 0})`;
 
     const parts = [
       rule.scope.companyId ? `Company: ${rule.scope.companyId}` : null,
       rule.scope.branchId ? `Branch: ${rule.scope.branchId}` : null,
-      rule.scope.costCenterId ? `Cost center: ${rule.scope.costCenterId}` : null,
-      rule.scope.employeeCategory ? `Category: ${rule.scope.employeeCategory}` : null,
     ].filter(Boolean);
 
-    return parts.length ? parts.join(' · ') : 'Group (all)';
+    return parts.length ? parts.join(' · ') : 'Group';
   }
 
   private applyFilters(): void {
     let data = [...this.rules];
 
-    if (this.filterType) {
-      data = data.filter(rule => rule.type === this.filterType);
-    }
+    if (this.filterType) data = data.filter(r => r.type === this.filterType);
+    if (this.filterStatus) data = data.filter(r => r.status === this.filterStatus);
+    if (this.filterFrequency) data = data.filter(r => r.frequency === this.filterFrequency);
 
-    if (this.filterStatus) {
-      data = data.filter(rule => rule.status === this.filterStatus);
-    }
-
-    if (this.filterFrequency) {
-      data = data.filter(rule => rule.frequency === this.filterFrequency);
-    }
-
-    if (this.filterCompanyId) {
-      data = data.filter(rule => rule.scope.type === 'Group' && rule.scope.companyId === this.filterCompanyId);
-    }
-
-    if (this.filterBranchId) {
-      data = data.filter(rule => rule.scope.type === 'Group' && rule.scope.branchId === this.filterBranchId);
-    }
-
-    if (this.filterCostCenterId) {
-      data = data.filter(rule => rule.scope.type === 'Group' && rule.scope.costCenterId === this.filterCostCenterId);
-    }
-
-    if (this.filterDateRange?.length === 2) {
-      const [start, end] = this.filterDateRange;
-      const rangeStart = start ? new Date(start) : null;
-      const rangeEnd = end ? new Date(end) : null;
-
-      data = data.filter(rule => {
-        const ruleStart = new Date(rule.startDate);
-        const ruleEnd = rule.endDate ? new Date(rule.endDate) : null;
-        const startsBeforeEnd = rangeEnd ? ruleStart <= rangeEnd : true;
-        const endsAfterStart = rangeStart ? (!ruleEnd || ruleEnd >= rangeStart) : true;
-        return startsBeforeEnd && endsAfterStart;
-      });
+    if (this.searchTerm) {
+      const s = this.searchTerm.toLowerCase();
+      data = data.filter(r => r.name.toLowerCase().includes(s) || r.type.toLowerCase().includes(s));
     }
 
     this.filteredRules = data;
-
-    if (this.rulesTable) {
-      this.rulesTable.filterGlobal(this.searchTerm, 'contains');
-    }
   }
 }

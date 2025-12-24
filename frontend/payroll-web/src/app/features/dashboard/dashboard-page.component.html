@@ -1,215 +1,149 @@
-<form class="page" [formGroup]="filtersForm">
-  <app-page-header
-    title="Dashboard"
-    subtitle="Track pay runs, statutory compliance, and approvals across tenants."
-  >
-    <div page-actions class="page-actions">
-      <div class="page-actions__period">
-        <label for="periodStart" class="field-label">Pay Period</label>
-        <div class="period-inputs">
-          <p-calendar
-            inputId="periodStart"
-            [showIcon]="true"
-            formControlName="periodStart"
-            dateFormat="yy-mm-dd"
-            aria-label="Pay period start date"
-          ></p-calendar>
-          <span class="period-separator" aria-hidden="true">→</span>
-          <p-calendar
-            inputId="periodEnd"
-            [showIcon]="true"
-            formControlName="periodEnd"
-            dateFormat="yy-mm-dd"
-            aria-label="Pay period end date"
-          ></p-calendar>
-        </div>
-      </div>
-      <button
-        pButton
-        type="button"
-        class="p-button-outlined"
-        icon="pi pi-filter"
-        label="Apply"
-        aria-label="Apply pay period filters"
-        (click)="applyFilters()"
-      ></button>
-      <button
-        pButton
-        type="button"
-        icon="pi pi-play"
-        label="Start Pay Run"
-        routerLink="/payroll/pay-runs"
-        aria-label="Start a new pay run"
-      ></button>
+<form class="dashboard-page animate-fadeIn" [formGroup]="filtersForm">
+  <!-- Top Context Bar -->
+  <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-center gap-4">
+    <div>
+      <h1 class="m-0 text-3xl font-extrabold tracking-tight text-900 line-height-1">Payroll Intelligence</h1>
+      <p class="text-600 mt-2 mb-0">Operational overview and compliance health for all managed entities.</p>
     </div>
-  </app-page-header>
+    <div class="flex gap-2">
+      <button pButton icon="pi pi-play-circle" label="Start New Pay Run"
+        class="p-button-primary p-button-rounded shadow-2" routerLink="/payroll/pay-runs"></button>
+      <button pButton icon="pi pi-cog" class="p-button-text p-button-secondary p-button-rounded"></button>
+    </div>
+  </div>
 
-  <section class="filters">
-    <div class="filters__group">
-      <label class="field-label" for="companyId">Company</label>
-      <p-dropdown
-        inputId="companyId"
-        [options]="companies"
-        optionLabel="name"
-        optionValue="id"
-        [showClear]="true"
-        placeholder="All companies"
-        aria-label="Filter by company"
-        formControlName="companyId"
-      ></p-dropdown>
+  <!-- Smart Filters -->
+  <div class="filters-bar">
+    <div class="filter-group">
+      <label>Organization</label>
+      <p-dropdown [options]="companies" optionLabel="name" optionValue="id" [showClear]="true"
+        placeholder="All Companies" formControlName="companyId"
+        styleClass="p-inputtext-sm border-none bg-transparent"></p-dropdown>
     </div>
-    <div class="filters__group">
-      <label class="field-label" for="branchId">Branch</label>
-      <p-dropdown
-        inputId="branchId"
-        [options]="branches"
-        optionLabel="name"
-        optionValue="id"
-        [showClear]="true"
-        placeholder="All branches"
-        aria-label="Filter by branch"
-        [disabled]="!filtersForm.value.companyId"
-        formControlName="branchId"
-      ></p-dropdown>
+    <p-divider layout="vertical" class="hidden md:block"></p-divider>
+    <div class="filter-group">
+      <label>Pay Period</label>
+      <p-calendar formControlName="periodStart" dateFormat="yy-mm-dd" placeholder="Start"
+        styleClass="p-inputtext-sm border-none bg-transparent" [showIcon]="true"></p-calendar>
+      <span class="text-400">→</span>
+      <p-calendar formControlName="periodEnd" dateFormat="yy-mm-dd" placeholder="End"
+        styleClass="p-inputtext-sm border-none bg-transparent" [showIcon]="true"></p-calendar>
     </div>
-    <div class="filters__group">
-      <label class="field-label" for="costCenterId">Cost Center</label>
-      <p-dropdown
-        inputId="costCenterId"
-        [options]="costCenters"
-        optionLabel="name"
-        optionValue="id"
-        [showClear]="true"
-        placeholder="All cost centers"
-        aria-label="Filter by cost center"
-        [disabled]="!filtersForm.value.companyId"
-        formControlName="costCenterId"
-      ></p-dropdown>
+    <div class="ml-auto flex gap-2">
+      <button pButton icon="pi pi-filter" label="Apply" class="p-button-sm p-button-outlined"
+        (click)="applyFilters()"></button>
+      <button pButton icon="pi pi-refresh" class="p-button-sm p-button-text p-button-secondary"
+        (click)="filtersForm.reset()"></button>
     </div>
-  </section>
+  </div>
 
-  <app-error-banner
-    *ngIf="errorMessage"
-    title="Dashboard unavailable"
-    [message]="errorMessage"
-  ></app-error-banner>
+  <!-- Error Banner Integration -->
+  <div *ngIf="errorMessage"
+    class="p-4 bg-red-50 border-round-xl flex align-items-center gap-3 text-red-700 border-1 border-red-100">
+    <i class="pi pi-exclamation-triangle text-2xl"></i>
+    <div>
+      <div class="font-bold">Dashboard Synchronization Error</div>
+      <div class="text-sm">{{ errorMessage }}</div>
+    </div>
+  </div>
 
-  <section class="kpi-grid" *ngIf="!isLoading; else kpiLoading">
-    <p-card>
-      <div class="kpi-card">
-        <div class="kpi-card__label">Next Pay Date</div>
-        <div class="kpi-card__value">
-          {{ summary?.kpis?.nextPayDate ? (summary?.kpis?.nextPayDate | date: 'mediumDate') : 'Not scheduled' }}
-        </div>
-        <div class="kpi-card__meta">Plan the next pay run cycle</div>
+  <!-- Key Metrics Grid -->
+  <div class="kpi-grid" *ngIf="!isLoading; else kpiLoading">
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <div class="icon-box bg-indigo-50 text-indigo-600"><i class="pi pi-calendar"></i></div>
+        <p-tag severity="info" value="Cycle" styleClass="text-xs"></p-tag>
       </div>
-    </p-card>
-    <p-card>
-      <div class="kpi-card">
-        <div class="kpi-card__label">Active Employees</div>
-        <div class="kpi-card__value">{{ summary?.kpis?.employeeCount ?? 0 }}</div>
-        <div class="kpi-card__meta">NIC & EPF No coverage in scope</div>
+      <div class="kpi-content">
+        <span class="label">Next Pay Date</span>
+        <span class="value">{{ summary?.kpis?.nextPayDate ? (summary?.kpis?.nextPayDate | date: 'mediumDate') :
+          'Pending' }}</span>
       </div>
-    </p-card>
-    <p-card>
-      <div class="kpi-card">
-        <div class="kpi-card__label">Latest Pay Run Status</div>
-        <div class="kpi-card__value">
-          {{ summary?.kpis?.latestPayRunStatus || 'Not started' }}
-        </div>
-        <div class="kpi-card__meta">Progress of the most recent run</div>
+      <div class="kpi-meta"><i class="pi pi-clock"></i> Scheduled automatically</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <div class="icon-box bg-emerald-50 text-emerald-600"><i class="pi pi-users"></i></div>
+        <p-tag severity="success" value="Active" styleClass="text-xs"></p-tag>
       </div>
-    </p-card>
-    <p-card>
-      <div class="kpi-card">
-        <div class="kpi-card__label">Exceptions</div>
-        <div class="kpi-card__value">{{ summary?.kpis?.exceptionsCount ?? 0 }}</div>
-        <div class="kpi-card__meta">Issues impacting pay run readiness</div>
+      <div class="kpi-content">
+        <span class="label">Total Workforce</span>
+        <span class="value">{{ summary?.kpis?.employeeCount ?? 0 }}</span>
       </div>
-    </p-card>
-  </section>
+      <div class="kpi-meta"><i class="pi pi-verified"></i> Verified system identities</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <div class="icon-box bg-amber-50 text-amber-600"><i class="pi pi-spin pi-spinner"></i></div>
+        <p-tag [severity]="getStatusSeverity(summary?.kpis?.latestPayRunStatus)"
+          [value]="summary?.kpis?.latestPayRunStatus || 'Inactive'" styleClass="text-xs"></p-tag>
+      </div>
+      <div class="kpi-content">
+        <span class="label">Last Run Progress</span>
+        <span class="value">{{ summary?.kpis?.latestPayRunStatus || 'N/A' }}</span>
+      </div>
+      <div class="kpi-meta"><i class="pi pi-chart-line"></i> Real-time status tracking</div>
+    </div>
+
+    <div class="kpi-card border-red-100">
+      <div class="kpi-header">
+        <div class="icon-box bg-red-50 text-red-600"><i class="pi pi-exclamation-circle"></i></div>
+        <p-tag severity="danger" value="Critical" styleClass="text-xs"></p-tag>
+      </div>
+      <div class="kpi-content">
+        <span class="label">Compliance Alerts</span>
+        <span class="value">{{ summary?.kpis?.exceptionsCount ?? 0 }}</span>
+      </div>
+      <div class="kpi-meta text-red-400"><i class="pi pi-shield"></i> Requires immediate attention</div>
+    </div>
+  </div>
+
+  <!-- Skeleton Loaders for KPIs -->
   <ng-template #kpiLoading>
     <div class="kpi-grid">
-      <app-skeleton-block height="7rem"></app-skeleton-block>
-      <app-skeleton-block height="7rem"></app-skeleton-block>
-      <app-skeleton-block height="7rem"></app-skeleton-block>
-      <app-skeleton-block height="7rem"></app-skeleton-block>
+      <div class="kpi-card border-none surface-50" *ngFor="let i of [1,2,3,4]">
+        <p-skeleton width="40px" height="40px" borderRadius="8px"></p-skeleton>
+        <div class="mt-4">
+          <p-skeleton width="60%" height="12px" styleClass="mb-2"></p-skeleton>
+          <p-skeleton width="40%" height="24px"></p-skeleton>
+        </div>
+      </div>
     </div>
   </ng-template>
 
-  <section class="health-grid">
-    <div class="section-header">
-      <div>
-        <h2>Payroll Health</h2>
-        <p>Resolve compliance risks before the next pay run.</p>
-      </div>
-      <button pButton class="p-button-text" icon="pi pi-arrow-right" label="View all"></button>
+  <!-- Payroll Health Monitoring -->
+  <section class="health-section">
+    <h2 class="section-title"><i class="pi pi-shield-check text-primary"></i>System Health Monitoring</h2>
+    <div class="health-grid">
+      <a *ngFor="let item of healthItems" [routerLink]="item.route" class="health-card">
+        <div class="info">
+          <span class="title">{{ item.label }}</span>
+          <span class="desc">{{ item.description }}</span>
+        </div>
+        <p-tag [value]="item.count" [severity]="item.severity" styleClass="px-3"></p-tag>
+      </a>
     </div>
-
-    <div *ngIf="isLoading" class="health-list">
-      <app-skeleton-block height="4.5rem"></app-skeleton-block>
-      <app-skeleton-block height="4.5rem"></app-skeleton-block>
-      <app-skeleton-block height="4.5rem"></app-skeleton-block>
-    </div>
-
-    <ul class="health-list" *ngIf="!isLoading">
-      <li *ngFor="let item of healthItems; trackBy: trackByHealth">
-        <a
-          class="health-item"
-          [routerLink]="item.route"
-          aria-label="Open {{ item.label }} list"
-        >
-          <div>
-            <div class="health-item__label">{{ item.label }}</div>
-            <div class="health-item__description">{{ item.description }}</div>
-          </div>
-          <p-tag [value]="item.count" [severity]="item.severity"></p-tag>
-        </a>
-      </li>
-    </ul>
   </section>
 
+  <!-- Recent Intelligence Activity -->
   <section class="activity-section">
     <div class="section-header">
       <div>
-        <h2>Recent Activity</h2>
-        <p>Latest pay run adjustments, approvals, and statutory checks.</p>
+        <h2>Audit & Event Intelligence</h2>
+        <p>Track ledger modifications, approvals, and compliance validations.</p>
       </div>
-      <div class="section-actions">
-        <button pButton type="button" icon="pi pi-bookmark" label="Saved Views" class="p-button-outlined"></button>
-        <button pButton type="button" icon="pi pi-download" label="Export CSV" class="p-button-outlined"></button>
-        <button pButton type="button" icon="pi pi-file-pdf" label="Export PDF" class="p-button-outlined"></button>
+      <div class="flex gap-2">
+        <button pButton icon="pi pi-file-excel" label="Export" class="p-button-text p-button-sm"></button>
+        <button pButton icon="pi pi-list" class="p-button-text p-button-sm p-button-rounded"></button>
       </div>
     </div>
 
-    <div class="table-toolbar">
-      <p-multiSelect
-        [options]="activityColumns"
-        [(ngModel)]="selectedActivityColumns"
-        optionLabel="header"
-        display="chip"
-        placeholder="Columns"
-        aria-label="Choose table columns"
-      ></p-multiSelect>
+    <div class="card border-none shadow-sm overflow-hidden p-0">
+      <app-data-table [columns]="activityColumns" [data]="summary?.recentActivity ?? []" [loading]="isLoading"
+        [paginator]="true" [rows]="10" [showGlobalFilter]="true"
+        emptyMessage="No strategic events recorded in this period."></app-data-table>
     </div>
-
-    <app-data-table
-      [columns]="selectedActivityColumns"
-      [data]="summary?.recentActivity ?? []"
-      [loading]="isLoading"
-      [paginator]="true"
-      [rows]="5"
-      [rowsPerPageOptions]="[5, 10, 25]"
-      [showGlobalFilter]="true"
-      [showColumnFilters]="true"
-      emptyMessage="No recent activity yet."
-    ></app-data-table>
-
-    <app-empty-state
-      *ngIf="!isLoading && (summary?.recentActivity?.length ?? 0) === 0"
-      icon="pi pi-history"
-      title="No recent activity"
-      message="Activity events will appear after pay runs, approvals, or adjustments."
-    ></app-empty-state>
   </section>
 </form>

@@ -3,7 +3,7 @@ import { LazyLoadEvent, MenuItem } from 'primeng/api';
 import { Table } from 'primeng/table';
 
 export type DataColumnAlign = 'left' | 'center' | 'right';
-export type DataColumnType = 'text' | 'date' | 'datetime' | 'number' | 'currency' | 'badge' | 'boolean';
+export type DataColumnType = 'text' | 'date' | 'datetime' | 'number' | 'currency' | 'badge' | 'boolean' | 'status' | 'amount';
 
 export interface DataTableColumn<T> {
   field: keyof T | string;
@@ -57,6 +57,8 @@ export class DataTableComponent<T extends Record<string, any>> {
   // Custom Templates
   @ContentChild('rowActions') rowActionsTemplate?: TemplateRef<any>;
   @ContentChild('headerActions') headerActionsTemplate?: TemplateRef<any>;
+  @ContentChild('statusTemplate') statusTemplate?: TemplateRef<any>;
+  @ContentChild('amountTemplate') amountTemplate?: TemplateRef<any>;
 
   @Output() selectionChange = new EventEmitter<T | T[] | null>();
   @Output() lazyLoad = new EventEmitter<LazyLoadEvent>();

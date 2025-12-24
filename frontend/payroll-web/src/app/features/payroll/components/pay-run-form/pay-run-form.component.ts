@@ -6,6 +6,8 @@ import { BranchOption, CompanyOption, CostCenterOption } from '../../../../share
 import { OrganizationApiService } from '../../../../shared/services/organization-api.service';
 import { PayPeriodType, PayRunSummary } from '../../models/pay-run.model';
 
+import { Router } from '@angular/router';
+
 @Component({
   selector: 'app-pay-run-form',
   templateUrl: './pay-run-form.component.html',
@@ -44,6 +46,7 @@ export class PayRunFormComponent implements OnInit, OnChanges {
     private fb: FormBuilder,
     private employeesApi: EmployeesApiService,
     private organizationApi: OrganizationApiService,
+    public router: Router,
   ) {
     this.form = this.fb.group(
       {
@@ -62,6 +65,10 @@ export class PayRunFormComponent implements OnInit, OnChanges {
       { validators: [this.periodRangeValidator, this.scopeValidator] },
     );
   }
+
+  getEmployeeLabel = (emp: Employee) => {
+    return `${emp.employeeCode} - ${emp.firstName} ${emp.lastName}`;
+  };
 
   ngOnInit(): void {
     if (this.initialValue) {

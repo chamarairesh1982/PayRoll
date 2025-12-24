@@ -24,6 +24,8 @@ import { TimelineModule } from 'primeng/timeline';
 import { TabMenuModule } from 'primeng/tabmenu';
 import { TabViewModule } from 'primeng/tabview';
 import { AvatarModule } from 'primeng/avatar';
+import { DividerModule } from 'primeng/divider';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 const PRIMENG_MODULES = [
   TableModule,
@@ -50,6 +52,8 @@ const PRIMENG_MODULES = [
   TabMenuModule,
   TabViewModule,
   AvatarModule,
+  DividerModule,
+  ProgressSpinnerModule,
 ];
 
 @NgModule({

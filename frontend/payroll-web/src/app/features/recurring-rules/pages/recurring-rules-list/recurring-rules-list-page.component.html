@@ -1,252 +1,81 @@
-<p-toast></p-toast>
-<p-confirmDialog></p-confirmDialog>
-
-<div class="page-header">
-  <div>
-    <h2>Recurring Rules</h2>
-    <p class="subtitle">Define recurring earnings and deductions applied in each payroll run.</p>
+<div class="page-container animate-fadeIn">
+  <div class="flex justify-content-between align-items-end mb-6">
+    <div>
+      <h1 class="m-0 text-3xl font-extrabold tracking-tight text-900 line-height-1">Recurring Financial Rules</h1>
+      <p class="text-600 mt-2 mb-0">Manage systematic earnings, deductions, and loan installments.</p>
+    </div>
+    <button pButton icon="pi pi-plus" label="Define New Rule" class="p-button-primary p-button-rounded shadow-2"
+      (click)="goToCreate()"></button>
   </div>
-  <div class="page-actions">
-    <button pButton type="button" label="New rule" icon="pi pi-plus" (click)="goToCreate()"></button>
+
+  <!-- Intelligent Filters -->
+  <div
+    class="surface-card p-4 border-round-xl border-1 border-surface-100 shadow-sm mb-6 flex flex-wrap align-items-center gap-3">
+    <span class="p-input-icon-left flex-grow-1">
+      <i class="pi pi-search"></i>
+      <input pInputText type="text" placeholder="Search rules (name, type)..."
+        class="w-full p-inputtext-sm border-none bg-surface-50" (input)="onGlobalSearch($event.target.value)" />
+    </span>
+
+    <p-dropdown [options]="typeOptions" [(ngModel)]="filterType" placeholder="Any Type" (onChange)="onFilterChange()"
+      [showClear]="true" styleClass="p-inputtext-sm"></p-dropdown>
+    <p-dropdown [options]="statusOptions" [(ngModel)]="filterStatus" placeholder="Status" (onChange)="onFilterChange()"
+      [showClear]="true" styleClass="p-inputtext-sm"></p-dropdown>
+
+    <p-divider layout="vertical" class="hidden lg:block"></p-divider>
+
+    <button pButton icon="pi pi-filter-slash" class="p-button-text p-button-secondary p-button-sm"
+      (click)="clearFilters()" pTooltip="Clear all filters"></button>
+  </div>
+
+  <!-- Power Grid -->
+  <div class="card border-none shadow-sm overflow-hidden p-0">
+    <app-data-table [columns]="columns" [data]="filteredRules" [loading]="isLoading" [paginator]="true" [rows]="10"
+      selectionMode="multiple" [(selection)]="selectedRules" [showGlobalFilter]="false">
+      <!-- Custom Cell Rendition -->
+      <ng-template #amountTemplate let-rule>
+        <div class="amount-cell flex flex-column" *ngIf="rule.amountValue !== undefined">
+          <span class="font-bold text-900">{{ rule.amountValue | number : '1.0-2' }}</span>
+          <span class="text-xs text-500">{{ rule.amountType === 'Fixed' ? 'Flat Amount' : '% of Basic' }}</span>
+        </div>
+      </ng-template>
+
+      <!-- Custom Status Tag -->
+      <ng-template #statusTemplate let-rule>
+        <p-tag [value]="rule.status" [severity]="rule.status === 'Active' ? 'success' : 'warning'"
+          styleClass="text-xs font-bold px-3"></p-tag>
+      </ng-template>
+
+      <!-- Operational Actions -->
+      <ng-template #rowActions let-rule>
+        <div class="flex gap-1 justify-content-end">
+          <button pButton icon="pi pi-pencil" class="p-button-text p-button-secondary p-button-sm"
+            (click)="editRule(rule)"></button>
+          <button pButton [icon]="rule.status === 'Active' ? 'pi pi-ban' : 'pi pi-check'"
+            class="p-button-text p-button-sm" [severity]="rule.status === 'Active' ? 'warning' : 'success'"
+            (click)="confirmDeactivate(rule)"></button>
+          <button pButton icon="pi pi-trash" class="p-button-text p-button-danger p-button-sm"
+            (click)="confirmDelete(rule)"></button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+
+  <!-- Bulk Perspective -->
+  <div
+    class="fixed bottom-0 left-0 w-full p-3 bg-primary-900 text-white flex justify-content-center align-items-center gap-4 animate-slideIn"
+    *ngIf="selectedRules.length > 0" style="z-index: 100;">
+    <span class="font-bold">{{ selectedRules.length }} rules selected</span>
+    <div class="flex gap-2">
+      <button pButton label="Activate" icon="pi pi-check" class="p-button-sm p-button-success"
+        (click)="bulkUpdate('Active')"></button>
+      <button pButton label="Deactivate" icon="pi pi-ban" class="p-button-sm p-button-warning"
+        (click)="bulkUpdate('Inactive')"></button>
+      <button pButton label="Cancel Selection" class="p-button-sm p-button-text text-white"
+        (click)="selectedRules = []"></button>
+    </div>
   </div>
 </div>
 
-<p-card>
-  <div class="filters">
-    <div class="search">
-      <span class="p-input-icon-left">
-        <i class="pi pi-search"></i>
-        <input
-          pInputText
-          type="text"
-          placeholder="Search by rule name, type, scope"
-          (input)="onGlobalSearch($event.target.value)"
-        />
-      </span>
-    </div>
-    <div class="filter-row">
-      <p-dropdown
-        [options]="typeOptions"
-        placeholder="Type"
-        optionLabel="label"
-        optionValue="value"
-        [(ngModel)]="filterType"
-        (onChange)="onFilterChange()"
-        [showClear]="true"
-      ></p-dropdown>
-      <p-dropdown
-        [options]="statusOptions"
-        placeholder="Status"
-        optionLabel="label"
-        optionValue="value"
-        [(ngModel)]="filterStatus"
-        (onChange)="onFilterChange()"
-        [showClear]="true"
-      ></p-dropdown>
-      <p-dropdown
-        [options]="frequencyOptions"
-        placeholder="Frequency"
-        optionLabel="label"
-        optionValue="value"
-        [(ngModel)]="filterFrequency"
-        (onChange)="onFilterChange()"
-        [showClear]="true"
-      ></p-dropdown>
-      <p-calendar
-        selectionMode="range"
-        [(ngModel)]="filterDateRange"
-        dateFormat="yy-mm-dd"
-        placeholder="Effective range"
-        (onSelect)="onDateRangeChange()"
-        showIcon="true"
-      ></p-calendar>
-      <p-dropdown
-        [options]="companies"
-        optionLabel="name"
-        optionValue="id"
-        placeholder="Company"
-        [(ngModel)]="filterCompanyId"
-        (onChange)="onCompanyChange($event.value)"
-        [showClear]="true"
-      ></p-dropdown>
-      <p-dropdown
-        [options]="branches"
-        optionLabel="name"
-        optionValue="id"
-        placeholder="Branch"
-        [(ngModel)]="filterBranchId"
-        (onChange)="onBranchChange($event.value)"
-        [showClear]="true"
-      ></p-dropdown>
-      <p-dropdown
-        [options]="costCenters"
-        optionLabel="name"
-        optionValue="id"
-        placeholder="Cost center"
-        [(ngModel)]="filterCostCenterId"
-        (onChange)="onCostCenterChange($event.value)"
-        [showClear]="true"
-      ></p-dropdown>
-      <button
-        pButton
-        type="button"
-        label="Clear"
-        icon="pi pi-filter-slash"
-        class="p-button-text"
-        (click)="clearFilters()"
-      ></button>
-    </div>
-    <div class="bulk-actions" *ngIf="selectedRules.length">
-      <button
-        pButton
-        type="button"
-        label="Activate"
-        icon="pi pi-check"
-        class="p-button-success"
-        (click)="bulkUpdate('Active')"
-      ></button>
-      <button
-        pButton
-        type="button"
-        label="Deactivate"
-        icon="pi pi-ban"
-        class="p-button-warning"
-        (click)="bulkUpdate('Inactive')"
-      ></button>
-    </div>
-  </div>
-
-  <p-table
-    #rulesTable
-    [value]="filteredRules"
-    dataKey="id"
-    [paginator]="true"
-    [rows]="10"
-    [rowsPerPageOptions]="[10, 20, 50]"
-    [globalFilterFields]="['name', 'type', 'frequency']"
-    [(selection)]="selectedRules"
-  >
-    <ng-template pTemplate="header">
-      <tr>
-        <th class="table-select-column">
-          <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
-        </th>
-        <th pSortableColumn="name">Name <p-sortIcon field="name"></p-sortIcon></th>
-        <th pSortableColumn="type">
-          Type
-          <p-sortIcon field="type"></p-sortIcon>
-          <p-columnFilter field="type" matchMode="equals" display="menu" [showMatchModes]="false" [showOperator]="false">
-            <ng-template pTemplate="filter" let-value let-filter="filterCallback">
-              <p-dropdown
-                [options]="typeOptions"
-                optionLabel="label"
-                optionValue="value"
-                [ngModel]="value"
-                (onChange)="filter($event.value)"
-                placeholder="All"
-                [showClear]="true"
-              ></p-dropdown>
-            </ng-template>
-          </p-columnFilter>
-        </th>
-        <th>Amount</th>
-        <th pSortableColumn="frequency">
-          Frequency
-          <p-sortIcon field="frequency"></p-sortIcon>
-          <p-columnFilter
-            field="frequency"
-            matchMode="equals"
-            display="menu"
-            [showMatchModes]="false"
-            [showOperator]="false"
-          >
-            <ng-template pTemplate="filter" let-value let-filter="filterCallback">
-              <p-dropdown
-                [options]="frequencyOptions"
-                optionLabel="label"
-                optionValue="value"
-                [ngModel]="value"
-                (onChange)="filter($event.value)"
-                placeholder="All"
-                [showClear]="true"
-              ></p-dropdown>
-            </ng-template>
-          </p-columnFilter>
-        </th>
-        <th>Effective</th>
-        <th>Scope</th>
-        <th pSortableColumn="status">
-          Status
-          <p-sortIcon field="status"></p-sortIcon>
-          <p-columnFilter field="status" matchMode="equals" display="menu" [showMatchModes]="false" [showOperator]="false">
-            <ng-template pTemplate="filter" let-value let-filter="filterCallback">
-              <p-dropdown
-                [options]="statusOptions"
-                optionLabel="label"
-                optionValue="value"
-                [ngModel]="value"
-                (onChange)="filter($event.value)"
-                placeholder="All"
-                [showClear]="true"
-              ></p-dropdown>
-            </ng-template>
-          </p-columnFilter>
-        </th>
-        <th pSortableColumn="priority">Priority <p-sortIcon field="priority"></p-sortIcon></th>
-        <th>Actions</th>
-      </tr>
-    </ng-template>
-    <ng-template pTemplate="body" let-rule>
-      <tr>
-        <td>
-          <p-tableCheckbox [value]="rule"></p-tableCheckbox>
-        </td>
-        <td>{{ rule.name }}</td>
-        <td>{{ rule.type }}</td>
-        <td>
-          <div class="amount">
-            <span class="value">{{ rule.amountValue | number : '1.0-2' }}</span>
-            <span class="meta">{{ rule.amountType === 'Fixed' ? 'LKR' : '% of salary' }}</span>
-          </div>
-        </td>
-        <td>{{ rule.frequency }}</td>
-        <td>
-          <div>{{ rule.startDate | dateFormat }}</div>
-          <div class="muted">{{ rule.endDate ? (rule.endDate | dateFormat) : 'Open-ended' }}</div>
-        </td>
-        <td>{{ getScopeLabel(rule) }}</td>
-        <td>
-          <p-tag [value]="rule.status" [severity]="rule.status === 'Active' ? 'success' : 'warning'"></p-tag>
-        </td>
-        <td>{{ rule.priority }}</td>
-        <td>
-          <div class="table-actions">
-            <button pButton icon="pi pi-eye" class="p-button-text" (click)="viewRule(rule)"></button>
-            <button pButton icon="pi pi-pencil" class="p-button-text" (click)="editRule(rule)"></button>
-            <button
-              pButton
-              icon="pi pi-ban"
-              class="p-button-text"
-              (click)="confirmDeactivate(rule)"
-            ></button>
-            <button
-              pButton
-              icon="pi pi-trash"
-              class="p-button-text p-button-danger"
-              (click)="confirmDelete(rule)"
-            ></button>
-          </div>
-        </td>
-      </tr>
-    </ng-template>
-    <ng-template pTemplate="emptymessage">
-      <tr>
-        <td colspan="10">No recurring rules found. Adjust filters or create a new rule.</td>
-      </tr>
-    </ng-template>
-  </p-table>
-
-  <div class="table-footer">
-    <button pButton type="button" label="Export CSV" icon="pi pi-download" class="p-button-outlined" (click)="exportCsv()"></button>
-  </div>
-</p-card>
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>

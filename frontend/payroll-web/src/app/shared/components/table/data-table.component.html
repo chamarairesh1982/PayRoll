@@ -84,6 +84,23 @@
                 [ngClass]="{'pi-check-circle text-green-500': rowData[col.field], 'pi-times-circle text-red-500': !rowData[col.field]}"></i>
             </span>
 
+            <!-- Status -->
+            <span *ngSwitchCase="'status'">
+              <ng-container *ngTemplateOutlet="statusTemplate; context: { $implicit: rowData }"></ng-container>
+              <ng-container *ngIf="!statusTemplate">
+                <p-tag [value]="rowData[col.field]"
+                  [severity]="rowData[col.field] === 'Active' ? 'success' : 'warning'"></p-tag>
+              </ng-container>
+            </span>
+
+            <!-- Amount -->
+            <span *ngSwitchCase="'amount'">
+              <ng-container *ngTemplateOutlet="amountTemplate; context: { $implicit: rowData }"></ng-container>
+              <ng-container *ngIf="!amountTemplate">
+                {{ rowData[col.field] | number : '1.0-2' }}
+              </ng-container>
+            </span>
+
             <!-- Default -->
             <span *ngSwitchDefault>
               {{ rowData[col.field] }}

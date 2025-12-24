@@ -1,109 +1,104 @@
-<form [formGroup]="form" (ngSubmit)="onSubmit()" class="pay-run-form">
-  <div class="grid">
-    <label>
-      Name
-      <input type="text" formControlName="name" />
-      <app-form-field-error [control]="form.get('name')"></app-form-field-error>
-    </label>
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="pay-run-form-container animate-slideUp">
+  <div class="form-card">
+    <!-- Configuration Section -->
+    <h3 class="section-title"><i class="pi pi-cog text-primary"></i>Runtime Configuration</h3>
 
-    <label>
-      Period Type
-      <select formControlName="periodType">
-        <option *ngFor="let type of periodTypes" [value]="type">{{ type }}</option>
-      </select>
-      <app-form-field-error [control]="form.get('periodType')"></app-form-field-error>
-    </label>
-
-    <label>
-      Period Start
-      <input type="date" formControlName="periodStart" />
-      <app-form-field-error [control]="form.get('periodStart')"></app-form-field-error>
-    </label>
-
-    <label>
-      Period End
-      <input type="date" formControlName="periodEnd" />
-      <app-form-field-error [control]="form.get('periodEnd')"></app-form-field-error>
-      <div class="error" *ngIf="periodRangeInvalid">Period end must be on or after start.</div>
-    </label>
-
-    <label>
-      Pay Date
-      <input type="date" formControlName="payDate" />
-      <app-form-field-error [control]="form.get('payDate')"></app-form-field-error>
-    </label>
-
-    <label>
-      Company
-      <select formControlName="companyId">
-        <option value="">All companies</option>
-        <option *ngFor="let company of companies" [value]="company.id">
-          {{ company.name }} ({{ company.code }})
-        </option>
-      </select>
-    </label>
-
-    <label>
-      Branch
-      <select formControlName="branchId">
-        <option value="">All branches</option>
-        <option *ngFor="let branch of branches" [value]="branch.id">
-          {{ branch.name }} ({{ branch.code }})
-        </option>
-      </select>
-    </label>
-
-    <label>
-      Cost Center
-      <select formControlName="costCenterId">
-        <option value="">All cost centers</option>
-        <option *ngFor="let costCenter of costCenters" [value]="costCenter.id">
-          {{ costCenter.name }} ({{ costCenter.code }})
-        </option>
-      </select>
-      <div class="error" *ngIf="scopeInvalid">
-        Select a company, branch, or cost center for non-consolidated pay runs.
+    <div class="form-grid mb-6">
+      <div class="field-group col-span-2">
+        <label>Reference Name <span class="text-red-500">*</span></label>
+        <input pInputText type="text" formControlName="name" placeholder="e.g. October 2025 Regular Pay"
+          class="w-full" />
+        <app-form-field-error [control]="form.get('name')"></app-form-field-error>
       </div>
-    </label>
 
-    <label class="checkbox-field">
-      <input type="checkbox" formControlName="isConsolidated" />
-      <span>Consolidated pay run across scope</span>
-    </label>
-
-    <label class="checkbox-field">
-      <input type="checkbox" formControlName="includeActiveEmployeesOnly" />
-      <span>Include Active Employees Only</span>
-    </label>
-
-    <label class="full-width">
-      Employees
-      <input
-        type="text"
-        [value]="employeeSearch"
-        (input)="onEmployeeSearchChange($event.target.value)"
-        placeholder="Search by name, code, or initials"
-      />
-      <select
-        multiple
-        formControlName="employeeIds"
-        [disabled]="loadingEmployees || !!employeesLoadError"
-        [attr.aria-busy]="loadingEmployees"
-      >
-        <option *ngFor="let employee of filteredEmployees" [value]="employee.id">
-          {{ employee.employeeCode }} - {{ employee.firstName }} {{ employee.lastName }}
-          ({{ employee.isActive ? 'Active' : 'Inactive' }})
-        </option>
-      </select>
-      <div class="helper-text" *ngIf="loadingEmployees">Loading employees...</div>
-      <div class="helper-text error" *ngIf="employeesLoadError">{{ employeesLoadError }}</div>
-      <div class="helper-text" *ngIf="!loadingEmployees && !employeesLoadError">
-        Hold Ctrl/⌘ to select multiple employees.
+      <div class="field-group">
+        <label>Period Type <span class="text-red-500">*</span></label>
+        <p-dropdown [options]="periodTypes" formControlName="periodType" placeholder="Select Cycle"
+          styleClass="w-full"></p-dropdown>
+        <app-form-field-error [control]="form.get('periodType')"></app-form-field-error>
       </div>
-    </label>
-  </div>
 
-  <div class="actions">
-    <button type="submit">{{ mode === 'create' ? 'Create Pay Run' : 'Save Changes' }}</button>
+      <div class="field-group">
+        <label>Pay Settlement Date <span class="text-red-500">*</span></label>
+        <p-calendar formControlName="payDate" [showIcon]="true" dateFormat="yy-mm-dd" styleClass="w-full"></p-calendar>
+        <app-form-field-error [control]="form.get('payDate')"></app-form-field-error>
+      </div>
+
+      <div class="field-group">
+        <label>Cycle Start <span class="text-red-500">*</span></label>
+        <p-calendar formControlName="periodStart" [showIcon]="true" dateFormat="yy-mm-dd"
+          styleClass="w-full"></p-calendar>
+      </div>
+
+      <div class="field-group">
+        <label>Cycle End <span class="text-red-500">*</span></label>
+        <p-calendar formControlName="periodEnd" [showIcon]="true" dateFormat="yy-mm-dd"
+          styleClass="w-full"></p-calendar>
+        <div class="text-xs text-red-500 mt-1" *ngIf="periodRangeInvalid">Constraint: End date cannot precede start
+          date.</div>
+      </div>
+    </div>
+
+    <!-- Scope & Targeting Section -->
+    <h3 class="section-title border-top-1 border-surface-50 pt-5"><i class="pi pi-map text-primary"></i>Operational
+      Scope</h3>
+
+    <div class="form-grid mb-6">
+      <div class="field-group">
+        <label>Company Entity</label>
+        <p-dropdown [options]="companies" formControlName="companyId" optionValue="id" optionLabel="name"
+          [filter]="true" [showClear]="true" placeholder="All Global Entities" styleClass="w-full"></p-dropdown>
+      </div>
+
+      <div class="field-group">
+        <label>Branch / Location</label>
+        <p-dropdown [options]="branches" formControlName="branchId" optionValue="id" optionLabel="name" [filter]="true"
+          [showClear]="true" placeholder="All Regional Branches" styleClass="w-full"></p-dropdown>
+      </div>
+
+      <div class="field-group">
+        <label>Budgetary Cost Center</label>
+        <p-dropdown [options]="costCenters" formControlName="costCenterId" optionValue="id" optionLabel="name"
+          [filter]="true" [showClear]="true" placeholder="All Cost Centers" styleClass="w-full"></p-dropdown>
+        <div class="text-xs text-red-500 mt-1" *ngIf="scopeInvalid">A scope (Company, Branch or Center) is required for
+          non-consolidated runs.</div>
+      </div>
+
+      <div class="flex flex-column gap-3 justify-content-center">
+        <p-checkbox formControlName="isConsolidated" [binary]="true" label="Is Consolidated Run"></p-checkbox>
+        <p-checkbox formControlName="includeActiveEmployeesOnly" [binary]="true"
+          label="Active Personnel Only"></p-checkbox>
+      </div>
+    </div>
+
+    <!-- Advanced Targeting -->
+    <div class="employee-selection mt-4">
+      <h4 class="m-0 mb-3 text-sm font-bold text-700">Granular Employee Selection</h4>
+      <div class="search-input">
+        <span class="p-input-icon-left w-full">
+          <i class="pi pi-search"></i>
+          <input pInputText type="text" [value]="employeeSearch" (input)="onEmployeeSearchChange($event.target.value)"
+            placeholder="Filter candidates by name, code, or department..." class="w-full" />
+        </span>
+      </div>
+
+      <p-multiSelect [options]="filteredEmployees" formControlName="employeeIds" optionValue="id"
+        [optionLabel]="getEmployeeLabel" [loading]="loadingEmployees" placeholder="Target Specific Employees (Optional)"
+        styleClass="w-full" display="chip"></p-multiSelect>
+
+      <div class="flex align-items-center gap-2 mt-3 text-500">
+        <i class="pi pi-info-circle text-xs"></i>
+        <span class="text-xs">If no employees are selected, the entire scope will be processed.</span>
+      </div>
+    </div>
+
+    <!-- Sticky Footer Actions -->
+    <div class="action-footer">
+      <button pButton type="button" label="Cancel" class="p-button-text p-button-secondary"
+        (click)="router.navigate(['/payroll'])"></button>
+      <button pButton type="submit" [icon]="mode === 'create' ? 'pi pi-plus' : 'pi pi-save'"
+        [label]="mode === 'create' ? 'Initialize Pay Run' : 'Commit Changes'"
+        class="p-button-primary p-button-rounded px-5"></button>
+    </div>
   </div>
 </form>

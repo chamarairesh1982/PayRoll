@@ -1,8 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
-import { FormControl, FormGroup } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
+import { ButtonModule } from 'primeng/button';
+import { DropdownModule } from 'primeng/dropdown';
+import { CalendarModule } from 'primeng/calendar';
+import { DividerModule } from 'primeng/divider';
+import { TagModule } from 'primeng/tag';
+import { SkeletonModule } from 'primeng/skeleton';
 import { SharedModule } from '../../shared/shared.module';
 import { OrganizationApiService } from '../../shared/services/organization-api.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
@@ -10,6 +16,7 @@ import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.com
 import { ErrorBannerComponent } from '../../shared/ui/error-banner/error-banner.component';
 import { SkeletonBlockComponent } from '../../shared/ui/skeleton-block/skeleton-block.component';
 import { BranchOption, CompanyOption, CostCenterOption } from '../../shared/models/organization.model';
+import { DataTableColumn } from '../../shared/components/table/data-table.component';
 import { DashboardApiService } from './services/dashboard-api.service';
 import { DashboardActivity, DashboardSummary } from './models/dashboard-summary.model';
 
@@ -19,11 +26,18 @@ import { DashboardActivity, DashboardSummary } from './models/dashboard-summary.
   imports: [
     CommonModule,
     RouterModule,
+    ReactiveFormsModule,
     SharedModule,
     PageHeaderComponent,
     EmptyStateComponent,
     ErrorBannerComponent,
     SkeletonBlockComponent,
+    ButtonModule,
+    DropdownModule,
+    CalendarModule,
+    DividerModule,
+    TagModule,
+    SkeletonModule,
   ],
   templateUrl: './dashboard-page.component.html',
   styleUrls: ['./dashboard-page.component.scss'],
@@ -38,13 +52,13 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
   branches: BranchOption[] = [];
   costCenters: CostCenterOption[] = [];
 
-  activityColumns = [
-    { field: 'occurredAt', header: 'Timestamp', type: 'datetime', sortable: true, filter: true },
-    { field: 'activity', header: 'Activity', sortable: true, filter: true },
-    { field: 'actor', header: 'Actor', sortable: true, filter: true },
-    { field: 'context', header: 'Tenant Scope', sortable: true, filter: true },
+  activityColumns: DataTableColumn<DashboardActivity>[] = [
+    { field: 'occurredAt', header: 'Timestamp', type: 'datetime', sortable: true },
+    { field: 'activity', header: 'Activity', sortable: true },
+    { field: 'actor', header: 'Actor', sortable: true },
+    { field: 'context', header: 'Tenant Scope', sortable: true },
   ];
-  selectedActivityColumns = [...this.activityColumns];
+  selectedActivityColumns: DataTableColumn<DashboardActivity>[] = [...this.activityColumns];
 
   filtersForm = new FormGroup({
     periodStart: new FormControl<Date | null>(this.startOfCurrentMonth()),
@@ -60,7 +74,7 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
     private dashboardApi: DashboardApiService,
     private organizationApi: OrganizationApiService,
     private cdr: ChangeDetectorRef,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadOrganizations();
@@ -234,5 +248,15 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
       return undefined;
     }
     return value.toISOString().split('T')[0];
+  }
+
+  getStatusSeverity(status?: string): string {
+    switch (status) {
+      case 'Draft': return 'info';
+      case 'Prepared': return 'warning';
+      case 'Approved': return 'success';
+      case 'Locked': return 'danger';
+      default: return 'secondary';
+    }
   }
 }
