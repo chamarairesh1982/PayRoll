@@ -11,7 +11,10 @@
         (click)="toggleSidebar()"
         aria-label="Toggle menu"
       ></button>
-      <span class="app-layout__logo">WorldBets Payroll</span>
+      <div class="app-layout__brand">
+        <span class="app-layout__logo">WorldBets Payroll</span>
+        <small class="app-layout__context">{{ selectedCompanyLabel }}</small>
+      </div>
       <p-dropdown
         class="app-layout__tenant"
         [options]="companyOptions"
@@ -19,6 +22,7 @@
         optionLabel="label"
         placeholder="Company"
         aria-label="Select company"
+        (onChange)="onCompanyChange($event)"
       ></p-dropdown>
       <p-dropdown
         class="app-layout__tenant"
@@ -65,14 +69,14 @@
         icon="pi pi-bell"
         aria-label="Notifications"
       ></button>
-      <button
-        pButton
-        type="button"
-        class="p-button-text p-button-rounded"
-        icon="pi pi-user"
-        (click)="userMenu.toggle($event)"
-        aria-label="User menu"
-      ></button>
+      <div class="app-layout__user" (click)="userMenu.toggle($event)" tabindex="0" role="button">
+        <span class="pi pi-user app-layout__user-avatar" aria-hidden="true"></span>
+        <div class="app-layout__user-meta">
+          <div class="app-layout__user-name">{{ userName }}</div>
+          <div class="app-layout__user-role">{{ userRole }}</div>
+        </div>
+        <span class="pi pi-chevron-down" aria-hidden="true"></span>
+      </div>
       <p-menu #userMenu [popup]="true" [model]="userMenuItems"></p-menu>
     </div>
   </p-toolbar>

@@ -15,7 +15,7 @@ export class AuthService {
     localStorage.setItem(TOKEN_KEY, fakeToken);
     localStorage.setItem(USERNAME_KEY, username);
     const isAdmin = username.trim().toLowerCase() === 'admin';
-    const roles = isAdmin ? ['Admin', 'Approver'] : ['Approver'];
+    const roles = isAdmin ? ['Admin', 'Approver'] : ['Employee'];
     localStorage.setItem(ROLES_KEY, JSON.stringify(roles));
     this.isAuthenticatedSubject.next(true);
   }
@@ -55,6 +55,10 @@ export class AuthService {
 
   isApprover(): boolean {
     return this.hasRole('approver') || this.hasRole('admin');
+  }
+
+  isEmployee(): boolean {
+    return this.hasRole('employee');
   }
 
   private hasToken(): boolean {
