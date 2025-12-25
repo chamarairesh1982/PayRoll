@@ -12,7 +12,7 @@ test.describe('Smoke Tests @smoke', () => {
         const baseURL = process.env.BASE_URL || 'http://localhost:4200';
         await page.goto(baseURL);
 
-        // Verify page loads
-        await expect(page).toHaveURL(baseURL);
+        // Verify page loads (either at root or redirected to login)
+        await expect(page).toHaveURL(/.*localhost:4200/);
     });
 });

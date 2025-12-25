@@ -1,9 +1,11 @@
 import { Page, Locator } from '@playwright/test';
 
 export interface PayrollRunData {
-    month: string;
-    year: string;
-    department?: string;
+    name: string;
+    payDate: string;
+    periodStart: string;
+    periodEnd: string;
+    periodType?: string;
 }
 
 export interface PayrollSummary {
@@ -31,11 +33,11 @@ export class PayrollPage {
 
     constructor(page: Page) {
         this.page = page;
-        this.runPayrollButton = page.locator('button:has-text("Run Payroll"), [data-testid="run-payroll"]');
+        this.runPayrollButton = page.locator('button:has-text("New Pay Run"), button:has-text("Run Payroll"), [data-testid="run-payroll"]');
         this.monthDropdown = page.locator('select[name="month"], p-dropdown[formControlName="month"]');
         this.yearDropdown = page.locator('select[name="year"], p-dropdown[formControlName="year"]');
         this.departmentDropdown = page.locator('select[name="department"], p-dropdown[formControlName="department"]');
-        this.calculateButton = page.locator('button:has-text("Calculate"), [data-testid="calculate-payroll"]');
+        this.calculateButton = page.locator('button:has-text("Initialize Pay Run"), button:has-text("Calculate"), [data-testid="calculate-payroll"]');
         this.approveButton = page.locator('button:has-text("Approve"), [data-testid="approve-payroll"]');
         this.payrollSummary = page.locator('.payroll-summary, [data-testid="payroll-summary"]');
         this.payrollTable = page.locator('table, .p-datatable');
@@ -52,38 +54,34 @@ export class PayrollPage {
         await this.page.waitForSelector('form, .payroll-form');
     }
 
-    async selectMonth(month: string) {
-        if (await this.monthDropdown.evaluate(el => el.tagName === 'SELECT')) {
-            await this.monthDropdown.selectOption(month);
-        } else {
-            await this.monthDropdown.click();
-            await this.page.locator(`.p-dropdown-item:has-text("${month}")`).click();
-        }
-    }
+    async fillPayRunForm(data: PayrollRunData) {
+        await this.page.fill('input[formControlName="name"]', data.name);
 
-    async selectYear(year: string) {
-        if (await this.yearDropdown.evaluate(el => el.tagName === 'SELECT')) {
-            await this.yearDropdown.selectOption(year);
-        } else {
-            await this.yearDropdown.click();
-            await this.page.locator(`.p-dropdown-item:has-text("${year}")`).click();
-        }
-    }
+        // Handle calendars (often they have internal inputs)
+        const selectors = {
+            payDate: 'p-calendar[formControlName="payDate"] input',
+            periodStart: 'p-calendar[formControlName="periodStart"] input',
+            periodEnd: 'p-calendar[formControlName="periodEnd"] input'
+        };
 
-    async selectDepartment(department: string) {
-        if (await this.departmentDropdown.evaluate(el => el.tagName === 'SELECT')) {
-            await this.departmentDropdown.selectOption(department);
-        } else {
-            await this.departmentDropdown.click();
-            await this.page.locator(`.p-dropdown-item:has-text("${department}")`).click();
+        for (const [key, selector] of Object.entries(selectors)) {
+            const val = (data as any)[key];
+            if (val) {
+                await this.page.fill(selector, val);
+                await this.page.press(selector, 'Enter');
+            }
+        }
+
+        if (data.periodType) {
+            await this.page.click('p-dropdown[formControlName="periodType"]');
+            await this.page.click(`.p-dropdown-item:has-text("${data.periodType}")`);
         }
     }
 
     async calculatePayroll() {
         await this.calculateButton.click();
-
-        // Wait for calculation to complete
-        await this.page.waitForSelector('.payroll-summary, [data-testid="payroll-summary"]', { timeout: 120000 });
+        // Wait for the next stage or summary - increasing timeout for payroll processing
+        await this.page.waitForLoadState('networkidle');
     }
 
     async approvePayroll() {

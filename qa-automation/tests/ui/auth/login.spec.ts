@@ -34,7 +34,7 @@ test.describe('Authentication Tests @smoke @regression', () => {
     });
 
     test('TC-004: Login with invalid username', async ({ page }) => {
-        await loginPage.login('invalid@test.lk', 'Test@1234');
+        await loginPage.login('WrongAdminUser', '123456');
 
         // Should show error message
         await expect(loginPage.errorMessage).toBeVisible();
@@ -46,7 +46,7 @@ test.describe('Authentication Tests @smoke @regression', () => {
     });
 
     test('TC-005: Login with invalid password', async ({ page }) => {
-        await loginPage.login('admin@test.lk', 'WrongPassword');
+        await loginPage.login('Admin', 'WrongPassword');
 
         await expect(loginPage.errorMessage).toBeVisible();
         expect(await loginPage.isLoggedIn()).toBeFalsy();

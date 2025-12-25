@@ -14,7 +14,7 @@ export class LoginPage {
         this.passwordInput = page.locator('input[formcontrolname="password"], input[name="password"], input[type="password"]');
         this.loginButton = page.locator('button[type="submit"], button:has-text("Login")');
         this.errorMessage = page.locator('.error-message, .p-toast-message-error, .alert-danger');
-        this.welcomeMessage = page.locator('.welcome-message, h1, .dashboard-title');
+        this.welcomeMessage = page.locator('h1, .dashboard-title');
     }
 
     async goto() {
@@ -32,8 +32,8 @@ export class LoginPage {
 
     async loginAsAdmin() {
         await this.login(
-            process.env.ADMIN_USERNAME || 'admin@test.lk',
-            process.env.ADMIN_PASSWORD || 'Test@1234'
+            process.env.ADMIN_USERNAME || 'Admin',
+            process.env.ADMIN_PASSWORD || '123456'
         );
     }
 
@@ -53,7 +53,8 @@ export class LoginPage {
 
     async isLoggedIn(): Promise<boolean> {
         try {
-            await this.page.waitForSelector('.user-menu, .avatar, [data-testid="user-menu"]', { timeout: 5000 });
+            // Wait for dashboard indicators
+            await this.page.waitForSelector('p-avatar, h1, .dashboard-title, .pi-home', { timeout: 10000 });
             return true;
         } catch {
             return false;
@@ -65,8 +66,10 @@ export class LoginPage {
     }
 
     async logout() {
-        await this.page.click('.user-menu, .avatar, [data-testid="user-menu"]');
-        await this.page.click('text=Logout, text=Sign Out');
+        // Click on the user profile area to reveal the menu
+        await this.page.click('.cursor-pointer:has(p-avatar), p-avatar');
+        // Click on Sign Out
+        await this.page.click('text=Sign Out, text=Logout, .pi-sign-out');
         await this.page.waitForURL('**/login');
     }
 }

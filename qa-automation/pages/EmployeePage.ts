@@ -3,22 +3,18 @@ import { Page, Locator } from '@playwright/test';
 export interface EmployeeData {
     firstName: string;
     lastName: string;
-    nic: string;
+    employeeCode: string;
+    nicNumber: string;
     dateOfBirth: string;
     gender: string;
     email: string;
     mobile: string;
     address: string;
-    department: string;
-    designation: string;
-    employmentType: string;
-    joinDate: string;
-    basicSalary: number;
-    bankName: string;
-    bankBranch: string;
-    bankAccountNumber: string;
+    employmentStartDate: string;
+    baseSalary: number;
     epfNumber: string;
-    taxId: string;
+    bankCode: string;
+    bankAccountNumber: string;
 }
 
 export class EmployeePage {
@@ -36,7 +32,7 @@ export class EmployeePage {
         this.addEmployeeButton = page.locator('button:has-text("Add"), button:has-text("New Employee"), [data-testid="add-employee"]');
         this.searchInput = page.locator('input[placeholder*="Search"], [data-testid="search-input"]');
         this.employeeTable = page.locator('table, .p-datatable, [data-testid="employee-table"]');
-        this.saveButton = page.locator('button:has-text("Save"), button[type="submit"]');
+        this.saveButton = page.locator('button:has-text("Create Employee"), button:has-text("Save"), button[type="submit"]');
         this.cancelButton = page.locator('button:has-text("Cancel")');
         this.successMessage = page.locator('.p-toast-message-success, .success-message');
         this.errorMessage = page.locator('.p-toast-message-error, .error-message');
@@ -53,39 +49,38 @@ export class EmployeePage {
     }
 
     async fillEmployeeForm(employee: EmployeeData) {
-        // Personal Details
+        // Identity & Profile Tab
+        await this.page.click('.p-tabview-nav li:has-text("Identity")');
+        await this.fillField('employeeCode', employee.employeeCode);
         await this.fillField('firstName', employee.firstName);
         await this.fillField('lastName', employee.lastName);
-        await this.fillField('nic', employee.nic);
-        await this.fillField('dateOfBirth', employee.dateOfBirth);
+        await this.fillField('nicNumber', employee.nicNumber);
+        await this.fillCalendar('dateOfBirth', employee.dateOfBirth);
         await this.selectDropdown('gender', employee.gender);
-        await this.fillField('email', employee.email);
-        await this.fillField('mobile', employee.mobile);
-        await this.fillField('address', employee.address);
 
-        // Employment Details
-        await this.selectDropdown('department', employee.department);
-        await this.fillField('designation', employee.designation);
-        await this.selectDropdown('employmentType', employee.employmentType);
-        await this.fillField('joinDate', employee.joinDate);
+        // Employment Tab
+        await this.page.click('.p-tabview-nav li:has-text("Employment")');
+        await this.fillCalendar('employmentStartDate', employee.employmentStartDate);
 
-        // Salary Details
-        await this.fillField('basicSalary', employee.basicSalary.toString());
-
-        // Bank Details
-        await this.selectDropdown('bankName', employee.bankName);
-        await this.fillField('bankBranch', employee.bankBranch);
-        await this.fillField('bankAccountNumber', employee.bankAccountNumber);
-
-        // Statutory Details
+        // Financials Tab
+        await this.page.click('.p-tabview-nav li:has-text("Financials")');
+        await this.fillInputNumber('baseSalary', employee.baseSalary.toString());
         await this.fillField('epfNumber', employee.epfNumber);
-        await this.fillField('taxId', employee.taxId);
+
+        // Use the bank name instead of code for selection if that's what's in the UI
+        await this.selectDropdown('bankCode', employee.bankCode);
+        // If bank branch is needed, we should add it to the interface
+        if ((employee as any).branchCode) {
+            await this.selectDropdown('branchCode', (employee as any).branchCode);
+        }
+        await this.fillField('bankAccountNumber', employee.bankAccountNumber);
     }
 
     private async fillField(fieldName: string, value: string) {
         const selectors = [
             `input[name="${fieldName}"]`,
             `input[formControlName="${fieldName}"]`,
+            `textarea[formControlName="${fieldName}"]`,
             `input[id="${fieldName}"]`,
             `[data-testid="${fieldName}"]`
         ];
@@ -93,7 +88,7 @@ export class EmployeePage {
         for (const selector of selectors) {
             try {
                 const field = this.page.locator(selector).first();
-                if (await field.isVisible({ timeout: 2000 })) {
+                if (await field.isVisible({ timeout: 1000 })) {
                     await field.fill(value);
                     return;
                 }
@@ -101,16 +96,54 @@ export class EmployeePage {
                 continue;
             }
         }
-
         console.warn(`Field ${fieldName} not found, skipping...`);
+    }
+
+    private async fillInputNumber(fieldName: string, value: string) {
+        const selectors = [
+            `p-inputNumber[formControlName="${fieldName}"] input`,
+            `[formControlName="${fieldName}"] input`,
+            `input[name="${fieldName}"]`
+        ];
+
+        for (const selector of selectors) {
+            try {
+                const field = this.page.locator(selector).first();
+                if (await field.isVisible({ timeout: 1000 })) {
+                    await field.fill(value);
+                    return;
+                }
+            } catch {
+                continue;
+            }
+        }
+    }
+
+    private async fillCalendar(fieldName: string, value: string) {
+        const selectors = [
+            `p-calendar[formControlName="${fieldName}"] input`,
+            `[formControlName="${fieldName}"] input`
+        ];
+
+        for (const selector of selectors) {
+            try {
+                const field = this.page.locator(selector).first();
+                if (await field.isVisible({ timeout: 1000 })) {
+                    await field.fill(value);
+                    await this.page.keyboard.press('Escape'); // Close calendar overlay
+                    return;
+                }
+            } catch {
+                continue;
+            }
+        }
     }
 
     private async selectDropdown(fieldName: string, value: string) {
         const selectors = [
-            `select[name="${fieldName}"]`,
-            `select[formControlName="${fieldName}"]`,
             `p-dropdown[formControlName="${fieldName}"]`,
-            `[data-testid="${fieldName}"]`
+            `[formControlName="${fieldName}"]`,
+            `select[name="${fieldName}"]`
         ];
 
         for (const selector of selectors) {
@@ -118,14 +151,17 @@ export class EmployeePage {
                 const field = this.page.locator(selector).first();
                 if (await field.isVisible({ timeout: 2000 })) {
                     // Handle native select
-                    if (await field.evaluate(el => el.tagName === 'SELECT')) {
+                    const tagName = await field.evaluate(el => el.tagName);
+                    if (tagName === 'SELECT') {
                         await field.selectOption(value);
                         return;
                     }
 
                     // Handle PrimeNG dropdown
                     await field.click();
-                    await this.page.locator(`.p-dropdown-item:has-text("${value}")`).first().click();
+                    const item = this.page.locator(`.p-dropdown-item:has-text("${value}"), .p-dropdown-item >> text="${value}"`).first();
+                    await item.waitFor({ state: 'visible', timeout: 2000 });
+                    await item.click();
                     return;
                 }
             } catch {
