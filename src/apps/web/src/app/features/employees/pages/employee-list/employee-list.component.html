@@ -1,0 +1,54 @@
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h1 style="font-size: 1.875rem; font-weight: 700; color: var(--slate-900); margin: 0;">Employees</h1>
+            <p style="color: var(--slate-500); margin-top: 0.5rem;">Manage your organization's workforce</p>
+        </div>
+        <button class="btn btn-primary" routerLink="/employees/new">
+            + Add Employee
+        </button>
+    </div>
+
+    <div class="card">
+        <div *ngIf="isLoading" style="padding: 2rem; text-align: center; color: var(--slate-500);">
+            Loading employees...
+        </div>
+
+        <div *ngIf="!isLoading && employees.length === 0"
+            style="padding: 2rem; text-align: center; color: var(--slate-500);">
+            No employees found. Click "Add Employee" to get started.
+        </div>
+
+        <table *ngIf="!isLoading && employees.length > 0">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Join Date</th>
+                    <th>Salary</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let employee of employees">
+                    <td><span
+                            style="font-family: monospace; background: var(--slate-100); padding: 0.2rem 0.4rem; border-radius: 4px;">{{
+                            employee.employeeCode }}</span></td>
+                    <td>
+                        <div style="font-weight: 500;">{{ employee.firstName }} {{ employee.lastName }}</div>
+                    </td>
+                    <td>{{ employee.email }}</td>
+                    <td>{{ employee.joinDate | date }}</td>
+                    <td>{{ employee.baseSalary | currency:'LKR ':'symbol':'1.2-2' }}</td>
+                    <td style="text-align: right;">
+                        <button class="btn" style="color: var(--primary-600); margin-right: 0.5rem;"
+                            [routerLink]="['/employees', employee.id]">Edit</button>
+                        <button class="btn" style="color: #ef4444;"
+                            (click)="deleteEmployee(employee.id)">Delete</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

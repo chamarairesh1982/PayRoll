@@ -1,0 +1,61 @@
+<div class="container" *ngIf="payRun">
+    <div style="margin-bottom: 2rem;">
+        <button class="btn" style="color: var(--slate-500); padding-left: 0;" routerLink="/payrolls">
+            &larr; Back to Pay Runs
+        </button>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 0.5rem;">
+            <div>
+                <h1 style="font-size: 1.875rem; font-weight: 700; color: var(--slate-900); margin: 0;">
+                    {{ payRun.name }}
+                </h1>
+                <p style="color: var(--slate-500); margin-top: 0.25rem;">
+                    {{ payRun.periodStart | date }} - {{ payRun.periodEnd | date }}
+                </p>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 0.875rem; color: var(--slate-500);">Total Net Pay</div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--primary-600);">
+                    {{ payRun.totalNet | currency:'LKR ':'symbol':'1.2-2' }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <table style="width: 100%;">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th style="text-align: right;">Base Salary</th>
+                    <th style="text-align: right;">Gross Pay</th>
+                    <th style="text-align: right;">EPF (8%)</th>
+                    <th style="text-align: right;">Tax</th>
+                    <th style="text-align: right;">Net Pay</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let item of payRun.lineItems">
+                    <td>
+                        <div style="font-weight: 500;">{{ item.employeeName }}</div>
+                        <div style="font-size: 0.75rem; color: var(--slate-500);">{{ item.employeeCode }}</div>
+                    </td>
+                    <td style="text-align: right;">{{ item.baseSalary | number:'1.2-2' }}</td>
+                    <td style="text-align: right;">{{ item.grossAmount | number:'1.2-2' }}</td>
+                    <td style="text-align: right; color: #dc2626;">-{{ item.epfEmployee | number:'1.2-2' }}</td>
+                    <td style="text-align: right; color: #dc2626;">-{{ item.tax | number:'1.2-2' }}</td>
+                    <td style="text-align: right; font-weight: 600;">{{ item.netAmount | number:'1.2-2' }}</td>
+                    <td style="text-align: right;">
+                        <button class="btn btn-sm"
+                            style="color: var(--primary-600); border: 1px solid var(--border-color);"
+                            (click)="downloadPayslip(item.employeeId)">
+                            Download PDF
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div *ngIf="isLoading" style="padding: 3rem; text-align: center;">Loading details...</div>

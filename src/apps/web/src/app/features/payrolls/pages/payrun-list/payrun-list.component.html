@@ -1,0 +1,88 @@
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h1 style="font-size: 1.875rem; font-weight: 700; color: var(--slate-900); margin: 0;">Pay Runs</h1>
+            <p style="color: var(--slate-500); margin-top: 0.5rem;">Process payroll for your employees</p>
+        </div>
+        <button class="btn btn-primary" (click)="showCreateModal = true">
+            + New Pay Run
+        </button>
+    </div>
+
+    <div class="card">
+        <div *ngIf="isLoading && payRuns.length === 0"
+            style="padding: 2rem; text-align: center; color: var(--slate-500);">
+            Loading...
+        </div>
+
+        <div *ngIf="!isLoading && payRuns.length === 0"
+            style="padding: 2rem; text-align: center; color: var(--slate-500);">
+            No pay runs found.
+        </div>
+
+        <table *ngIf="payRuns.length > 0">
+            <thead>
+                <tr>
+                    <th>Period</th>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Employees</th>
+                    <th>Total Net (LKR)</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let run of payRuns">
+                    <td>{{ run.periodStart | date:'mediumDate' }} - {{ run.periodEnd | date:'mediumDate' }}</td>
+                    <td>{{ run.name }}</td>
+                    <td>
+                        <span style="padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600;"
+                            [style.background-color]="run.status === 'Draft' ? '#f3f4f6' : '#dcfce7'"
+                            [style.color]="run.status === 'Draft' ? '#374151' : '#166534'">
+                            {{ run.status }}
+                        </span>
+                    </td>
+                    <td>{{ run.employeeCount }}</td>
+                    <td>{{ run.totalNet | currency:'LKR ':'symbol':'1.2-2' }}</td>
+                    <td style="text-align: right;">
+                        <button class="btn" style="color: var(--primary-600);"
+                            [routerLink]="['/payrolls', run.id]">View</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Simple Modal for creation -->
+<div *ngIf="showCreateModal"
+    style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;">
+    <div class="card" style="width: 400px; padding: 2rem;">
+        <h2 style="margin-top: 0;">New Pay Run</h2>
+
+        <div class="form-group">
+            <label class="form-label">Description</label>
+            <input class="form-input" [(ngModel)]="newPayRun.name" placeholder="e.g. Jan 2025 Salary">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Period Start</label>
+            <input class="form-input" type="date" [(ngModel)]="newPayRun.periodStart">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Period End</label>
+            <input class="form-input" type="date" [(ngModel)]="newPayRun.periodEnd">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Payment Date</label>
+            <input class="form-input" type="date" [(ngModel)]="newPayRun.paymentDate">
+        </div>
+
+        <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.5rem;">
+            <button class="btn" (click)="showCreateModal = false">Cancel</button>
+            <button class="btn btn-primary" (click)="createPayRun()" [disabled]="isLoading">Create</button>
+        </div>
+    </div>
+</div>

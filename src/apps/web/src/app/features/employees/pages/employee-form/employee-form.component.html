@@ -1,0 +1,61 @@
+<div class="container">
+    <div style="margin-bottom: 2rem;">
+        <button class="btn" style="color: var(--slate-500); padding-left: 0;" routerLink="/employees">
+            &larr; Back to Employees
+        </button>
+        <h1 style="font-size: 1.875rem; font-weight: 700; color: var(--slate-900); margin-top: 0.5rem;">
+            {{ isEditMode ? 'Edit Employee' : 'Add Employee' }}
+        </h1>
+    </div>
+
+    <div class="card" style="max-width: 600px;">
+        <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+            <div class="form-group">
+                <label class="form-label" for="employeeCode">Employee Code</label>
+                <input type="text" id="employeeCode" class="form-input" formControlName="employeeCode"
+                    placeholder="EMP-001">
+                <div *ngIf="form.get('employeeCode')?.touched && form.get('employeeCode')?.invalid"
+                    style="color: #ef4444; font-size: 0.8rem; margin-top: 0.25rem;">
+                    Employee Code is required.
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label class="form-label" for="firstName">First Name</label>
+                    <input type="text" id="firstName" class="form-input" formControlName="firstName">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="lastName">Last Name</label>
+                    <input type="text" id="lastName" class="form-input" formControlName="lastName">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="email">Email Address</label>
+                <input type="email" id="email" class="form-input" formControlName="email"
+                    placeholder="john@example.com">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="joinDate">Join Date</label>
+                <input type="date" id="joinDate" class="form-input" formControlName="joinDate">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="baseSalary">Base Salary (LKR)</label>
+                <input type="number" id="baseSalary" class="form-input" formControlName="baseSalary">
+            </div>
+
+            <div style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 1rem;">
+                <button type="button" class="btn" routerLink="/employees"
+                    style="background: var(--slate-100);">Cancel</button>
+                <button type="submit" class="btn btn-primary" [disabled]="form.invalid || isLoading">
+                    {{ isLoading ? 'Saving...' : 'Save Employee' }}
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
