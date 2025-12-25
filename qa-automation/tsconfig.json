@@ -1,0 +1,38 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "lib": [
+            "ESNext",
+            "DOM"
+        ],
+        "types": [
+            "node",
+            "@playwright/test"
+        ],
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "strict": true,
+        "skipLibCheck": true,
+        "resolveJsonModule": true,
+        "baseUrl": ".",
+        "paths": {
+            "@pages/*": [
+                "pages/*"
+            ],
+            "@tests/*": [
+                "tests/*"
+            ],
+            "@utils/*": [
+                "utils/*"
+            ]
+        }
+    },
+    "include": [
+        "**/*.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

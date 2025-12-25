@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../../pages/LoginPage';
-import { PayrollPage } from '../../pages/PayrollPage';
+import { LoginPage } from '../../../pages/LoginPage';
+import { PayrollPage } from '../../../pages/PayrollPage';
 
 test.describe('Statutory Compliance Tests @regression @critical', () => {
     let loginPage: LoginPage;
@@ -37,7 +37,7 @@ test.describe('Statutory Compliance Tests @regression @critical', () => {
          * Monthly APIT: LKR 396,000 / 12 = LKR 33,000
          */
 
-        const expectedMonthlyAPITconst grossSalary = 300000;
+        const grossSalary = 300000;
         const expectedMonthlyAPIT = 33000;
 
         expect(payslipData.grossSalary).toBe(grossSalary);

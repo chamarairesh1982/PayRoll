@@ -10,11 +10,11 @@ export class LoginPage {
 
     constructor(page: Page) {
         this.page = page;
-        this.usernameInput = page.locator('input[name="username"], input[type="email"]');
-        this.passwordInput = page.locator('input[name="password"], input[type="password"]');
+        this.usernameInput = page.locator('input[formcontrolname="username"], input[name="username"], input[type="email"]');
+        this.passwordInput = page.locator('input[formcontrolname="password"], input[name="password"], input[type="password"]');
         this.loginButton = page.locator('button[type="submit"], button:has-text("Login")');
-        this.errorMessage = page.locator('.error-message, .p-toast-message-error');
-        this.welcomeMessage = page.locator('.welcome-message, h1');
+        this.errorMessage = page.locator('.error-message, .p-toast-message-error, .alert-danger');
+        this.welcomeMessage = page.locator('.welcome-message, h1, .dashboard-title');
     }
 
     async goto() {

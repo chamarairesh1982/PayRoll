@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../../pages/LoginPage';
-import { EmployeePage, EmployeeData } from '../../pages/EmployeePage';
-import { faker } from '@faker-js/faker';
+import { LoginPage } from '../../../pages/LoginPage';
+import { EmployeePage, EmployeeData } from '../../../pages/EmployeePage';
 
 test.describe('Employee Management Tests @regression', () => {
     let loginPage: LoginPage;

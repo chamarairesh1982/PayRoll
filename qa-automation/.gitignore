@@ -1,0 +1,23 @@
+# Playwright
+node_modules/
+playwright-report/
+test-results/
+test_output.txt
+results.json
+.last-run.json
+junit.xml
+
+# Allure
+allure-results/
+allure-report/
+
+# Environment
+.env
+
+# MacOS
+.DS_Store
+
+# Generated Test Data (if you want to keep data clean)
+fixtures/*.json
+fixtures/*.csv
+!fixtures/sample_*.json
