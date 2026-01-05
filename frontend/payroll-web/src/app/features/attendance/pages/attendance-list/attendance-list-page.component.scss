@@ -1,0 +1,30 @@
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  h1 {
+    margin: 0;
+  }
+
+  .subtitle {
+    margin: 0.25rem 0 0;
+    color: #64748b;
+  }
+}
+
+.create-section {
+  margin-bottom: 1.5rem;
+
+  h2 {
+    margin-bottom: 0.75rem;
+  }
+}
+
+.error {
+  margin-bottom: 1rem;
+  color: #b91c1c;
+  font-weight: 600;
+}

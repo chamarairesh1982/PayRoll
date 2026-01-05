@@ -1,0 +1,14 @@
+<section class="empty-state" role="status" aria-live="polite">
+  <i class="empty-state__icon" [ngClass]="icon" aria-hidden="true"></i>
+  <h3 class="empty-state__title">{{ title }}</h3>
+  <p class="empty-state__message">{{ message }}</p>
+  <button
+    *ngIf="actionLabel"
+    pButton
+    type="button"
+    class="p-button-rounded"
+    [label]="actionLabel"
+    (click)="action.emit()"
+    aria-label="Primary action"
+  ></button>
+</section>

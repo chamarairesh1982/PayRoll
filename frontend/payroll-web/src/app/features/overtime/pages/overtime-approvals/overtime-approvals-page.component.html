@@ -1,0 +1,41 @@
+<div class="page-container animate-fadeIn">
+  <!-- Context Header -->
+  <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-end gap-4 mb-6">
+    <div>
+      <h1 class="m-0 text-3xl font-extrabold tracking-tight text-900 line-height-1">Approval Governance</h1>
+      <p class="text-600 mt-2 mb-0">Adjudicate recorded overtime sessions against operational compliance.</p>
+    </div>
+    <button pButton icon="pi pi-refresh" label="Synchronize Inbox" class="p-button-outlined p-button-rounded"
+      (click)="loadRecords()"></button>
+  </div>
+
+  <!-- Communication Mechanism -->
+  <div class="p-4 bg-red-50 border-round-xl flex align-items-center gap-3 text-red-700 border-1 border-red-100 mb-6"
+    *ngIf="error">
+    <i class="pi pi-exclamation-triangle text-2xl"></i>
+    <div>
+      <div class="font-bold">Governance Synchronization Failure</div>
+      <div class="text-sm">{{ error }}</div>
+    </div>
+  </div>
+
+  <!-- Strategic Grid -->
+  <div class="card border-none shadow-sm overflow-hidden p-0">
+    <app-data-table [columns]="columns" [data]="records" [loading]="isLoading" [paginator]="true" [rows]="10"
+      [showGlobalFilter]="false" [lazy]="false"
+      emptyMessage="The approval repository represents a stable state with zero pending transactions.">
+      <!-- Custom Action Template -->
+      <ng-template #rowActions let-record>
+        <div class="flex gap-2 justify-content-end">
+          <button pButton icon="pi pi-check" label="Approve" class="p-button-success p-button-sm p-button-outlined"
+            (click)="approve(record)"></button>
+          <button pButton icon="pi pi-times" label="Reject" class="p-button-danger p-button-sm p-button-outlined"
+            (click)="reject(record)"></button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+</div>
+
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>

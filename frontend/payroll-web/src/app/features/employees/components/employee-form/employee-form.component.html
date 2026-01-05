@@ -1,0 +1,167 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="employee-form p-fluid">
+  <p-tabView styleClass="section-tabs">
+    <!-- Identity & Personal -->
+    <p-tabPanel header="Identity & Profile">
+      <div class="grid">
+        <div class="col-12 md:col-6 lg:col-4 field">
+          <label for="employeeCode">Employee Code <span class="text-red-500">*</span></label>
+          <input pInputText id="employeeCode" type="text" formControlName="employeeCode"
+            [ngClass]="{ 'ng-invalid ng-dirty': isInvalid('employeeCode') }" placeholder="e.g. EMP-001" />
+          <app-form-field-error [control]="form.get('employeeCode')"></app-form-field-error>
+        </div>
+        <div class="col-12 md:col-6 lg:col-4 field">
+          <label for="firstName">First Name <span class="text-red-500">*</span></label>
+          <input pInputText id="firstName" type="text" formControlName="firstName"
+            [ngClass]="{ 'ng-invalid ng-dirty': isInvalid('firstName') }" placeholder="Enter first name" />
+          <app-form-field-error [control]="form.get('firstName')"></app-form-field-error>
+        </div>
+        <div class="col-12 md:col-6 lg:col-4 field">
+          <label for="lastName">Last Name <span class="text-red-500">*</span></label>
+          <input pInputText id="lastName" type="text" formControlName="lastName"
+            [ngClass]="{ 'ng-invalid ng-dirty': isInvalid('lastName') }" placeholder="Enter last name" />
+          <app-form-field-error [control]="form.get('lastName')"></app-form-field-error>
+        </div>
+        <div class="col-12 md:col-6 lg:col-4 field">
+          <label for="initials">Initials</label>
+          <input pInputText id="initials" type="text" formControlName="initials" placeholder="S. P." />
+        </div>
+        <div class="col-12 md:col-6 lg:col-4 field">
+          <label for="callingName">Calling Name</label>
+          <input pInputText id="callingName" type="text" formControlName="callingName" placeholder="Sam" />
+        </div>
+        <div class="col-12 md:col-6 lg:col-4 field">
+          <label for="nicNumber">NIC Number <span class="text-red-500">*</span></label>
+          <input pInputText id="nicNumber" type="text" formControlName="nicNumber"
+            [ngClass]="{ 'ng-invalid ng-dirty': isInvalid('nicNumber') }" placeholder="200012345678" />
+          <small class="field-hint">Supports 12-digit or legacy format</small>
+          <app-form-field-error [control]="form.get('nicNumber')"></app-form-field-error>
+        </div>
+        <div class="col-12 md:col-6 lg:col-4 field">
+          <label for="dateOfBirth">Date of Birth <span class="text-red-500">*</span></label>
+          <p-calendar inputId="dateOfBirth" formControlName="dateOfBirth" showIcon="true" dateFormat="yy-mm-dd"
+            dataType="string" [inputStyleClass]="isInvalid('dateOfBirth') ? 'ng-invalid ng-dirty' : ''"
+            placeholder="YYYY-MM-DD"></p-calendar>
+          <app-form-field-error [control]="form.get('dateOfBirth')"></app-form-field-error>
+        </div>
+        <div class="col-12 md:col-6 lg:col-4 field">
+          <label for="gender">Gender</label>
+          <p-dropdown inputId="gender" formControlName="gender" [options]="genders"
+            placeholder="Select gender"></p-dropdown>
+        </div>
+        <div class="col-12 md:col-6 lg:col-4 field">
+          <label for="maritalStatus">Marital Status</label>
+          <p-dropdown inputId="maritalStatus" formControlName="maritalStatus" [options]="maritalStatuses"
+            placeholder="Select status"></p-dropdown>
+        </div>
+      </div>
+    </p-tabPanel>
+
+    <!-- Employment & Organization -->
+    <p-tabPanel header="Employment">
+      <div class="grid">
+        <div class="col-12 md:col-6 lg:col-4 field">
+          <label for="employmentStartDate">Join Date <span class="text-red-500">*</span></label>
+          <p-calendar inputId="employmentStartDate" formControlName="employmentStartDate" showIcon="true"
+            dateFormat="yy-mm-dd" dataType="string"
+            [inputStyleClass]="isInvalid('employmentStartDate') ? 'ng-invalid ng-dirty' : ''"
+            placeholder="YYYY-MM-DD"></p-calendar>
+          <app-form-field-error [control]="form.get('employmentStartDate')"></app-form-field-error>
+        </div>
+        <div class="col-12 md:col-6 lg:col-4 field">
+          <label for="probationEndDate">Probation Until</label>
+          <p-calendar inputId="probationEndDate" formControlName="probationEndDate" showIcon="true"
+            dateFormat="yy-mm-dd" dataType="string" placeholder="YYYY-MM-DD"></p-calendar>
+        </div>
+        <div class="col-12 md:col-6 lg:col-4 field">
+          <label for="confirmationDate">Confirmation Date</label>
+          <p-calendar inputId="confirmationDate" formControlName="confirmationDate" showIcon="true"
+            dateFormat="yy-mm-dd" dataType="string" placeholder="YYYY-MM-DD"></p-calendar>
+        </div>
+        <div class="col-12 md:col-6 lg:col-4 field">
+          <label for="companyId">Company</label>
+          <p-dropdown inputId="companyId" formControlName="companyId" [options]="companies" optionLabel="name"
+            optionValue="id" placeholder="Select company" [showClear]="true" [filter]="true"></p-dropdown>
+        </div>
+        <div class="col-12 md:col-6 lg:col-4 field">
+          <label for="branchId">Branch</label>
+          <p-dropdown inputId="branchId" formControlName="branchId" [options]="branches" optionLabel="name"
+            optionValue="id" placeholder="Select branch" [showClear]="true" [disabled]="!form.get('companyId')?.value"
+            [filter]="true"></p-dropdown>
+        </div>
+        <div class="col-12 md:col-6 lg:col-4 field">
+          <label for="costCenterId">Cost Center</label>
+          <p-dropdown inputId="costCenterId" formControlName="costCenterId" [options]="costCenters" optionLabel="name"
+            optionValue="id" placeholder="Select cost center" [showClear]="true"
+            [disabled]="!form.get('companyId')?.value" [filter]="true"></p-dropdown>
+        </div>
+        <div class="col-12 field checkbox-field">
+          <p-checkbox inputId="isActive" formControlName="isActive" [binary]="true"></p-checkbox>
+          <label for="isActive">Employee is Active and eligible for payroll</label>
+        </div>
+      </div>
+    </p-tabPanel>
+
+    <!-- Financials & Banking -->
+    <p-tabPanel header="Financials">
+      <div class="grid">
+        <div class="col-12 md:col-6 lg:col-4 field">
+          <label for="baseSalary">Base Monthly Salary <span class="text-red-500">*</span></label>
+          <p-inputNumber inputId="baseSalary" formControlName="baseSalary" mode="currency" currency="LKR" locale="en-LK"
+            [min]="0" [inputStyleClass]="isInvalid('baseSalary') ? 'ng-invalid ng-dirty' : ''"
+            placeholder="0.00"></p-inputNumber>
+          <app-form-field-error [control]="form.get('baseSalary')"></app-form-field-error>
+        </div>
+        <div class="col-12 md:col-6 lg:col-4 field">
+          <label for="hourlyRate">Hourly Overtime Rate</label>
+          <p-inputNumber inputId="hourlyRate" formControlName="hourlyRate" mode="currency" currency="LKR" locale="en-LK"
+            [min]="0" placeholder="0.00"></p-inputNumber>
+        </div>
+        <div class="col-12 md:col-6 lg:col-4 field">
+          <label for="epfNumber">EPF Registration Number</label>
+          <input pInputText id="epfNumber" type="text" formControlName="epfNumber" placeholder="e.g. EPF-123456" />
+        </div>
+
+        <!-- Banking Subdivision -->
+        <div class="col-12">
+          <h4 class="mt-4 mb-3 pb-2 border-bottom-1 border-surface-100 text-primary">Banking Information</h4>
+        </div>
+
+        <div class="col-12 md:col-6 lg:col-4 field">
+          <label for="bankCode">Select Institution</label>
+          <p-dropdown inputId="bankCode" formControlName="bankCode" [options]="banks" optionLabel="name"
+            optionValue="code" placeholder="Choose Bank" [showClear]="true" [filter]="true">
+            <ng-template pTemplate="item" let-bank>
+              <div class="flex justify-content-between align-items-center">
+                <span>{{ bank.name }}</span>
+                <small class="text-500">{{ bank.code }}</small>
+              </div>
+            </ng-template>
+          </p-dropdown>
+        </div>
+        <div class="col-12 md:col-6 lg:col-4 field">
+          <label for="branchCode">Bank Branch</label>
+          <p-dropdown inputId="branchCode" formControlName="branchCode" [options]="bankBranches" optionLabel="name"
+            optionValue="code" placeholder="Choose Branch" [disabled]="!form.get('bankCode')?.value"
+            [filter]="true"></p-dropdown>
+        </div>
+        <div class="col-12 md:col-6 lg:col-4 field">
+          <label for="bankAccountNumber">Account Number</label>
+          <div *ngIf="mode === 'edit' && initialValue?.maskedBankAccountNumber" class="text-xs text-500 mb-1">
+            Currently: {{ initialValue?.maskedBankAccountNumber }}
+          </div>
+          <input pInputText id="bankAccountNumber" type="text" formControlName="bankAccountNumber"
+            [ngClass]="{ 'ng-invalid ng-dirty': isInvalid('bankAccountNumber') }"
+            placeholder="Enter full account number" />
+          <app-form-field-error [control]="form.get('bankAccountNumber')"></app-form-field-error>
+        </div>
+      </div>
+    </p-tabPanel>
+  </p-tabView>
+
+  <div class="action-bar flex justify-content-end p-4">
+    <button pButton type="button" class="p-button-text p-button-secondary" label="Cancel" icon="pi pi-times"
+      (click)="cancel()"></button>
+    <button pButton type="submit" [label]="mode === 'create' ? 'Create Employee' : 'Save Changes'" icon="pi pi-check"
+      class="px-5 p-button-rounded"></button>
+  </div>
+</form>

@@ -1,0 +1,81 @@
+<div class="page-container animate-fadeIn">
+  <div class="flex justify-content-between align-items-end mb-6">
+    <div>
+      <h1 class="m-0 text-3xl font-extrabold tracking-tight text-900 line-height-1">Recurring Financial Rules</h1>
+      <p class="text-600 mt-2 mb-0">Manage systematic earnings, deductions, and loan installments.</p>
+    </div>
+    <button pButton icon="pi pi-plus" label="Define New Rule" class="p-button-primary p-button-rounded shadow-2"
+      (click)="goToCreate()"></button>
+  </div>
+
+  <!-- Intelligent Filters -->
+  <div
+    class="surface-card p-4 border-round-xl border-1 border-surface-100 shadow-sm mb-6 flex flex-wrap align-items-center gap-3">
+    <span class="p-input-icon-left flex-grow-1">
+      <i class="pi pi-search"></i>
+      <input pInputText type="text" placeholder="Search rules (name, type)..."
+        class="w-full p-inputtext-sm border-none bg-surface-50" (input)="onGlobalSearch($event.target.value)" />
+    </span>
+
+    <p-dropdown [options]="typeOptions" [(ngModel)]="filterType" placeholder="Any Type" (onChange)="onFilterChange()"
+      [showClear]="true" styleClass="p-inputtext-sm"></p-dropdown>
+    <p-dropdown [options]="statusOptions" [(ngModel)]="filterStatus" placeholder="Status" (onChange)="onFilterChange()"
+      [showClear]="true" styleClass="p-inputtext-sm"></p-dropdown>
+
+    <p-divider layout="vertical" class="hidden lg:block"></p-divider>
+
+    <button pButton icon="pi pi-filter-slash" class="p-button-text p-button-secondary p-button-sm"
+      (click)="clearFilters()" pTooltip="Clear all filters"></button>
+  </div>
+
+  <!-- Power Grid -->
+  <div class="card border-none shadow-sm overflow-hidden p-0">
+    <app-data-table [columns]="columns" [data]="filteredRules" [loading]="isLoading" [paginator]="true" [rows]="10"
+      selectionMode="multiple" [(selection)]="selectedRules" [showGlobalFilter]="false">
+      <!-- Custom Cell Rendition -->
+      <ng-template #amountTemplate let-rule>
+        <div class="amount-cell flex flex-column" *ngIf="rule.amountValue !== undefined">
+          <span class="font-bold text-900">{{ rule.amountValue | number : '1.0-2' }}</span>
+          <span class="text-xs text-500">{{ rule.amountType === 'Fixed' ? 'Flat Amount' : '% of Basic' }}</span>
+        </div>
+      </ng-template>
+
+      <!-- Custom Status Tag -->
+      <ng-template #statusTemplate let-rule>
+        <p-tag [value]="rule.status" [severity]="rule.status === 'Active' ? 'success' : 'warning'"
+          styleClass="text-xs font-bold px-3"></p-tag>
+      </ng-template>
+
+      <!-- Operational Actions -->
+      <ng-template #rowActions let-rule>
+        <div class="flex gap-1 justify-content-end">
+          <button pButton icon="pi pi-pencil" class="p-button-text p-button-secondary p-button-sm"
+            (click)="editRule(rule)"></button>
+          <button pButton [icon]="rule.status === 'Active' ? 'pi pi-ban' : 'pi pi-check'"
+            class="p-button-text p-button-sm" [severity]="rule.status === 'Active' ? 'warning' : 'success'"
+            (click)="confirmDeactivate(rule)"></button>
+          <button pButton icon="pi pi-trash" class="p-button-text p-button-danger p-button-sm"
+            (click)="confirmDelete(rule)"></button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+
+  <!-- Bulk Perspective -->
+  <div
+    class="fixed bottom-0 left-0 w-full p-3 bg-primary-900 text-white flex justify-content-center align-items-center gap-4 animate-slideIn"
+    *ngIf="selectedRules.length > 0" style="z-index: 100;">
+    <span class="font-bold">{{ selectedRules.length }} rules selected</span>
+    <div class="flex gap-2">
+      <button pButton label="Activate" icon="pi pi-check" class="p-button-sm p-button-success"
+        (click)="bulkUpdate('Active')"></button>
+      <button pButton label="Deactivate" icon="pi pi-ban" class="p-button-sm p-button-warning"
+        (click)="bulkUpdate('Inactive')"></button>
+      <button pButton label="Cancel Selection" class="p-button-sm p-button-text text-white"
+        (click)="selectedRules = []"></button>
+    </div>
+  </div>
+</div>
+
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>

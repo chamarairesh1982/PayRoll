@@ -1,0 +1,246 @@
+<div class="page">
+  <div class="page__header">
+    <h2>Recurring Pay Items</h2>
+    <div class="page__filters">
+      <label>
+        Show
+        <select [(ngModel)]="filterIsActive" (change)="handleFilterChange()">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="all">All</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <div class="page__content">
+    <section class="form-card">
+      <h3>{{ selectedRuleId ? 'Edit Rule' : 'Create Rule' }}</h3>
+      <form [formGroup]="ruleForm" (ngSubmit)="submitRule()">
+        <div class="form-grid">
+          <label>
+            Name
+            <input type="text" formControlName="name" />
+          </label>
+          <label>
+            Type
+            <select formControlName="ruleType">
+              <option value="Allowance">Allowance</option>
+              <option value="Deduction">Deduction</option>
+            </select>
+          </label>
+          <label>
+            Pay Component
+            <select formControlName="payComponentId">
+              <option value="">Select component</option>
+              <option *ngFor="let component of payComponentOptions" [value]="component.id">
+                {{ component.label }}
+              </option>
+            </select>
+          </label>
+          <label>
+            Frequency
+            <select formControlName="frequency">
+              <option value="Monthly">Monthly</option>
+              <option value="Weekly">Weekly</option>
+              <option value="Custom">Custom</option>
+            </select>
+          </label>
+          <label>
+            Start Date
+            <input type="date" formControlName="startDate" />
+          </label>
+          <label>
+            End Date
+            <input type="date" formControlName="endDate" />
+          </label>
+          <label>
+            Amount (LKR)
+            <input type="number" step="0.01" formControlName="amount" />
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" formControlName="taxable" />
+            Taxable
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" formControlName="epfEtfContributable" />
+            EPF/ETF Contributable
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" formControlName="prorate" />
+            Prorate
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" formControlName="isActive" />
+            Active
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" [disabled]="isSaving">{{ selectedRuleId ? 'Update' : 'Create' }}</button>
+          <button type="button" (click)="resetRuleForm()">Reset</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="list-card">
+      <div class="list-card__header">
+        <h3>Rules</h3>
+        <span *ngIf="isLoading">Loading...</span>
+        <span class="error" *ngIf="loadError">{{ loadError }}</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Component</th>
+            <th>Amount</th>
+            <th>Active</th>
+            <th>Start</th>
+            <th>End</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let rule of rules">
+            <td>{{ rule.name }}</td>
+            <td>{{ rule.ruleType }}</td>
+            <td>{{ rule.payComponentCode }} - {{ rule.payComponentName }}</td>
+            <td>{{ rule.amount | number: '1.2-2' }}</td>
+            <td>{{ rule.isActive ? 'Yes' : 'No' }}</td>
+            <td>{{ rule.startDate }}</td>
+            <td>{{ rule.endDate || '-' }}</td>
+            <td class="actions">
+              <button type="button" (click)="edit(rule)">Edit</button>
+              <button type="button" (click)="delete(rule)">Disable</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="pager">
+        <button (click)="previousPage()" [disabled]="page <= 1">Previous</button>
+        <span>Page {{ page }} / {{ totalPages }}</span>
+        <button (click)="nextPage()" [disabled]="page >= totalPages">Next</button>
+      </div>
+    </section>
+
+    <section class="form-card">
+      <h3>Assignments</h3>
+      <p *ngIf="!selectedRuleId">Select a rule to manage assignments.</p>
+      <div *ngIf="selectedRuleId">
+        <form [formGroup]="assignmentForm" (ngSubmit)="submitAssignments()">
+          <div class="form-grid">
+            <label>
+              Employees
+              <select multiple formControlName="employeeIds">
+                <option *ngFor="let employee of employees" [value]="employee.id">
+                  {{ employee.fullName }}
+                </option>
+              </select>
+            </label>
+            <label>
+              Start Date
+              <input type="date" formControlName="startDate" />
+            </label>
+            <label>
+              End Date
+              <input type="date" formControlName="endDate" />
+            </label>
+            <label class="checkbox">
+              <input type="checkbox" formControlName="isActive" />
+              Active
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="submit" [disabled]="isAssignmentsLoading">Assign</button>
+          </div>
+        </form>
+        <div class="error" *ngIf="assignmentError">{{ assignmentError }}</div>
+        <div *ngIf="isAssignmentsLoading">Loading assignments...</div>
+        <table *ngIf="assignments.length">
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Start</th>
+              <th>End</th>
+              <th>Active</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let assignment of assignments">
+              <td>{{ assignment.employeeName }}</td>
+              <td>{{ assignment.startDate }}</td>
+              <td>{{ assignment.endDate || '-' }}</td>
+              <td>{{ assignment.isActive ? 'Yes' : 'No' }}</td>
+              <td class="actions">
+                <button type="button" (click)="removeAssignment(assignment)">Remove</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="form-card">
+      <h3>Preview recurring items</h3>
+      <form [formGroup]="previewForm" (ngSubmit)="preview()">
+        <div class="form-grid">
+          <label>
+            Employee
+            <select formControlName="employeeId">
+              <option value="">Select employee</option>
+              <option *ngFor="let employee of employees" [value]="employee.id">
+                {{ employee.fullName }}
+              </option>
+            </select>
+          </label>
+          <label>
+            Period Start
+            <input type="date" formControlName="periodStart" />
+          </label>
+          <label>
+            Period End
+            <input type="date" formControlName="periodEnd" />
+          </label>
+        </div>
+        <div class="form-actions">
+          <button type="submit" [disabled]="isPreviewLoading">Preview</button>
+        </div>
+      </form>
+      <div class="error" *ngIf="previewError">{{ previewError }}</div>
+      <div *ngIf="isPreviewLoading">Loading preview...</div>
+      <div *ngIf="simulationResult">
+        <h4>Totals</h4>
+        <div class="totals">
+          <span>Allowances: {{ simulationResult.totalAllowances | number: '1.2-2' }}</span>
+          <span>Deductions: {{ simulationResult.totalDeductions | number: '1.2-2' }}</span>
+        </div>
+        <table *ngIf="simulationResult.items.length">
+          <thead>
+            <tr>
+              <th>Rule</th>
+              <th>Type</th>
+              <th>Component</th>
+              <th>Effective</th>
+              <th>Amount</th>
+              <th>Prorated</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of simulationResult.items">
+              <td>{{ item.name }}</td>
+              <td>{{ item.ruleType }}</td>
+              <td>{{ item.payComponentCode }}</td>
+              <td>{{ item.effectiveStart }} - {{ item.effectiveEnd }}</td>
+              <td>{{ item.amount | number: '1.2-2' }}</td>
+              <td>{{ item.prorated ? 'Yes' : 'No' }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div *ngIf="!simulationResult.items.length">No recurring items for the selected period.</div>
+      </div>
+    </section>
+  </div>
+</div>

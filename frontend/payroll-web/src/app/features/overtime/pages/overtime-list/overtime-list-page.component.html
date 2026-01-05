@@ -1,0 +1,57 @@
+<div class="page-container animate-fadeIn">
+  <!-- Context Header -->
+  <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-end gap-4 mb-6">
+    <div>
+      <h1 class="m-0 text-3xl font-extrabold tracking-tight text-900 line-height-1">Overtime & Labor Intel</h1>
+      <p class="text-600 mt-2 mb-0">Analysis and governance of extended workforce engagements.</p>
+    </div>
+    <button pButton icon="pi pi-plus" label="Log Overtime Session" class="p-button-primary p-button-rounded shadow-2"
+      (click)="goToCreate()"></button>
+  </div>
+
+  <!-- Analytical Filters -->
+  <div
+    class="surface-card p-4 border-round-xl border-1 border-surface-100 shadow-sm mb-6 flex flex-wrap align-items-center gap-3">
+    <div class="flex-grow-1 min-w-0">
+      <span class="p-input-icon-left w-full">
+        <i class="pi pi-user"></i>
+        <input pInputText type="text" [(ngModel)]="selectedEmployeeId" placeholder="Identify Employee..."
+          class="w-full p-inputtext-sm border-none bg-surface-50" />
+      </span>
+    </div>
+
+    <p-calendar [(ngModel)]="selectedFrom" placeholder="From" dateFormat="yy-mm-dd"
+      styleClass="p-inputtext-sm"></p-calendar>
+    <p-calendar [(ngModel)]="selectedTo" placeholder="To" dateFormat="yy-mm-dd"
+      styleClass="p-inputtext-sm"></p-calendar>
+
+    <p-dropdown [options]="statusOptions" [(ngModel)]="selectedStatus" placeholder="Workflow Status" [showClear]="true"
+      styleClass="p-inputtext-sm" (onChange)="onFilterChange()"></p-dropdown>
+
+    <div class="flex gap-2">
+      <button pButton icon="pi pi-filter" label="Apply Analytics" class="p-button-sm p-button-outlined"
+        (click)="applyFilters()"></button>
+      <button pButton icon="pi pi-refresh" class="p-button-sm p-button-text p-button-secondary" (click)="resetFilters()"
+        pTooltip="Clear Search Parameters"></button>
+    </div>
+  </div>
+
+  <!-- Strategic Data Grid -->
+  <div class="card border-none shadow-sm overflow-hidden p-0">
+    <app-data-table [columns]="columns" [data]="records" [loading]="isLoading" [totalRecords]="totalCount"
+      [rows]="pageSize" [first]="tableFirst" [paginator]="true" [lazy]="true" [showGlobalFilter]="false"
+      emptyMessage="No overtime engagements aligned with current parameters." (lazyLoad)="handleLazyLoad($event)">
+      <!-- Custom Action Template -->
+      <ng-template #rowActions let-record>
+        <div class="flex gap-1 justify-content-end">
+          <button pButton icon="pi pi-eye" class="p-button-text p-button-secondary p-button-sm"
+            (click)="viewRecord(record)" pTooltip="Examine Metadata"></button>
+          <button pButton icon="pi pi-pencil" class="p-button-text p-button-secondary p-button-sm"
+            (click)="editRecord(record)" [disabled]="!canEdit(record)" pTooltip="Modify Entry"></button>
+          <button pButton icon="pi pi-send" class="p-button-text p-button-success p-button-sm"
+            (click)="submitRecord(record)" [disabled]="!canSubmit(record)" pTooltip="Commit to Workflow"></button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+</div>

@@ -1,0 +1,55 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="rule-set-form">
+  <div class="grid">
+    <label>
+      Name
+      <input type="text" formControlName="name" />
+      <app-form-field-error [control]="form.get('name')"></app-form-field-error>
+    </label>
+    <label>
+      Effective From
+      <input type="date" formControlName="effectiveFrom" />
+      <app-form-field-error [control]="form.get('effectiveFrom')"></app-form-field-error>
+    </label>
+    <label>
+      Effective To
+      <input type="date" formControlName="effectiveTo" />
+    </label>
+    <label>
+      Employee EPF %
+      <input type="number" step="0.01" formControlName="employeeEpfRate" />
+      <app-form-field-error [control]="form.get('employeeEpfRate')"></app-form-field-error>
+    </label>
+    <label>
+      Employer EPF %
+      <input type="number" step="0.01" formControlName="employerEpfRate" />
+      <app-form-field-error [control]="form.get('employerEpfRate')"></app-form-field-error>
+    </label>
+    <label>
+      Employer ETF %
+      <input type="number" step="0.01" formControlName="employerEtfRate" />
+      <app-form-field-error [control]="form.get('employerEtfRate')"></app-form-field-error>
+    </label>
+    <label>
+      Minimum Wage for EPF
+      <input type="number" step="0.01" formControlName="minimumWageForEpf" />
+    </label>
+    <label>
+      Maximum Earnings for EPF
+      <input type="number" step="0.01" formControlName="maximumEarningForEpf" />
+    </label>
+    <label>
+      Maximum Earnings for ETF
+      <input type="number" step="0.01" formControlName="maximumEarningForEtf" />
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" formControlName="isDefault" /> Default Rule
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" formControlName="isActive" /> Active
+    </label>
+  </div>
+
+  <div class="actions">
+    <button type="submit">{{ mode === 'create' ? 'Create Rule Set' : 'Save Changes' }}</button>
+  </div>
+</form>

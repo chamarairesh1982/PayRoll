@@ -1,0 +1,97 @@
+<div class="page-container">
+  <!-- Context Header: Approvals Governance -->
+  <div class="context-header">
+    <div class="header-content">
+      <div class="title-area">
+        <h1>Approvals Governance</h1>
+        <p>Institutional multi-level verification and workflow authorization center</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button pButton label="Refresh Queue" icon="pi pi-refresh" class="p-button-outlined p-button-sm"></button>
+    </div>
+  </div>
+
+  <!-- Intelligence Filters -->
+  <div class="filter-runtime p-4 mb-4">
+    <div class="grid align-items-end">
+      <div class="col-12 md:col-3">
+        <label class="block text-sm font-medium mb-2">Workflow Status</label>
+        <p-dropdown [options]="statusFilters" [(ngModel)]="selectedStatus" (onChange)="applyFilters()"
+          styleClass="w-full" placeholder="Select Status">
+          <ng-template pTemplate="selectedItem">
+            <div class="flex align-items-center" *ngIf="selectedStatus">
+              <p-tag [value]="selectedStatus"
+                [severity]="getStatusSeverity(selectedStatus === 'All' ? 'Pending' : selectedStatus)"
+                class="mr-2"></p-tag>
+            </div>
+          </ng-template>
+        </p-dropdown>
+      </div>
+      <div class="col-12 md:col-3">
+        <label class="block text-sm font-medium mb-2">Requirement Category</label>
+        <p-dropdown [options]="typeFilters" [(ngModel)]="selectedType" (onChange)="applyFilters()" styleClass="w-full"
+          placeholder="Select Type"></p-dropdown>
+      </div>
+      <div class="col-12 md:col-6 text-right">
+        <div class="flex gap-3 justify-content-end">
+          <div class="metric-mini">
+            <span class="label">Pending Total</span>
+            <span class="value">{{ requests.length }}</span>
+          </div>
+          <p-button label="Clear Parameters" icon="pi pi-filter-slash" class="p-button-text"
+            (onClick)="selectedStatus = 'All'; selectedType = 'All'; applyFilters()"></p-button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Governance Workforce Queue -->
+  <div class="grid-container">
+    <app-data-table [data]="filteredRequests" [columns]="columns" [loading]="isLoading" [showGlobalFilter]="true">
+      <!-- Personnel Identity Template -->
+      <ng-template #employeeTemplate let-row>
+        <div class="flex align-items-center gap-3">
+          <p-avatar [label]="row.employee[0]" shape="circle" styleClass="bg-primary-light text-primary"></p-avatar>
+          <div class="flex flex-column">
+            <span class="font-bold text-900">{{ row.employee }}</span>
+            <small class="text-500">{{ row.requestedBy }} (Requestor)</small>
+          </div>
+        </div>
+      </ng-template>
+
+      <!-- Aging Velocity Template -->
+      <ng-template #idTemplate let-row>
+        <div class="flex align-items-center gap-2">
+          <i class="pi pi-clock" [class.text-danger]="getAgingDays(row.requestedDate) > 3"
+            [class.text-warning]="getAgingDays(row.requestedDate) <= 3 && getAgingDays(row.requestedDate) > 1"></i>
+          <span [class.font-bold]="getAgingDays(row.requestedDate) > 3">
+            {{ getAgingDays(row.requestedDate) }} days
+          </span>
+        </div>
+      </ng-template>
+
+      <!-- Institutional Row Actions -->
+      <ng-template #rowActions let-row>
+        <div class="flex gap-2">
+          <button pButton icon="pi pi-check" class="p-button-rounded p-button-success p-button-text"
+            pTooltip="Authorize Request" tooltipPosition="top" [disabled]="row.status !== 'Pending'"
+            (click)="openAction(row, 'Approve')"></button>
+          <button pButton icon="pi pi-times" class="p-button-rounded p-button-danger p-button-text"
+            pTooltip="Decline Request" tooltipPosition="top" [disabled]="row.status !== 'Pending'"
+            (click)="openAction(row, 'Reject')"></button>
+          <button pButton icon="pi pi-external-link" class="p-button-rounded p-button-secondary p-button-text"
+            pTooltip="Examine Dossier" tooltipPosition="top" (click)="openDetail(row)"></button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+</div>
+
+<!-- Verification Side Panel -->
+<app-approval-detail-panel [visible]="detailVisible" [request]="selectedRequest" (closed)="closeDetail()"
+  (actionSelected)="handlePanelAction($event)"></app-approval-detail-panel>
+
+<!-- Strategic Decision Dialog -->
+<app-approval-action-dialog [visible]="actionDialogVisible" [action]="selectedAction" [request]="selectedRequest"
+  (closed)="closeActionDialog()" (confirmed)="handleActionConfirm($event)"></app-approval-action-dialog>

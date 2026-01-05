@@ -1,0 +1,34 @@
+<div class="export-toolbar">
+  <div>
+    <h3>Export Actions</h3>
+    <p class="subtitle">Download or share the report snapshot.</p>
+  </div>
+  <div class="actions">
+    <button pButton type="button" icon="pi pi-file" label="CSV" class="p-button-outlined" (click)="exportCsv()"></button>
+    <button
+      pButton
+      type="button"
+      icon="pi pi-file-excel"
+      label="Excel"
+      class="p-button-outlined"
+      [disabled]="!excelSupported"
+      pTooltip="Excel export will be enabled once a safe library is available."
+    ></button>
+    <button
+      *ngIf="pdfSupported"
+      pButton
+      type="button"
+      icon="pi pi-file-pdf"
+      label="PDF"
+      class="p-button-outlined"
+    ></button>
+    <a
+      *ngIf="!pdfSupported && reportKey"
+      pButton
+      class="p-button-outlined"
+      [routerLink]="['/statutory-reports/print', reportKey]"
+      icon="pi pi-print"
+      label="Print-friendly view"
+    ></a>
+  </div>
+</div>

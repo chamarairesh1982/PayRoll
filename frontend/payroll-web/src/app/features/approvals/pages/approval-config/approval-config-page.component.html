@@ -1,0 +1,98 @@
+<div class="page-container">
+  <!-- Context Header: Hierarchy Architect -->
+  <div class="context-header">
+    <div class="header-content">
+      <div class="title-area">
+        <h1>Hierarchy Architect</h1>
+        <p>Define multi-level institutional authorization chains and financial thresholds</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid mt-4">
+    <!-- Policy Frameworks: Left Column -->
+    <div class="col-12 lg:col-7">
+      <div class="card-container h-full">
+        <div class="flex justify-content-between align-items-center mb-4">
+          <h2 class="text-xl font-bold m-0 text-900 font-outfit">Policy Frameworks</h2>
+          <p-tag [value]="configs.length + ' Active Routes'" severity="info"></p-tag>
+        </div>
+
+        <app-data-table [data]="configs" [columns]="columns" [loading]="isLoading">
+          <!-- Authorization Chain Template -->
+          <ng-template #levelsTemplate let-row>
+            <div class="flex align-items-center flex-wrap gap-2">
+              <ng-container *ngFor="let level of row.levels; let last = last">
+                <span class="text-sm font-medium px-2 py-1 bg-gray-100 border-round">{{ level }}</span>
+                <i *ngIf="!last" class="pi pi-angle-right text-400"></i>
+              </ng-container>
+            </div>
+          </ng-template>
+
+          <!-- Approvers Template -->
+          <ng-template #approversTemplate let-row>
+            <div class="flex flex-column gap-1">
+              <div class="flex align-items-center gap-1">
+                <i class="pi pi-users text-primary text-sm"></i>
+                <span class="text-sm">{{ row.approvers.join(', ') }}</span>
+              </div>
+            </div>
+          </ng-template>
+
+          <!-- Institutional Row Actions -->
+          <ng-template #rowActions let-row>
+            <button pButton icon="pi pi-pencil" class="p-button-rounded p-button-secondary p-button-text"
+              pTooltip="Modify Framework" (click)="selectConfig(row)"></button>
+          </ng-template>
+        </app-data-table>
+      </div>
+    </div>
+
+    <!-- Orchestration Builder: Right Column -->
+    <div class="col-12 lg:col-5">
+      <div class="card-container h-full">
+        <div class="flex align-items-center gap-2 mb-4">
+          <i class="pi pi-cog text-primary text-xl"></i>
+          <h2 class="text-xl font-bold m-0 text-900 font-outfit">Orchestration Builder</h2>
+        </div>
+
+        <form [formGroup]="configForm" (ngSubmit)="saveConfig()" class="p-fluid">
+          <div class="field mb-4">
+            <label class="block text-sm font-medium mb-2">Requirement Category</label>
+            <p-dropdown formControlName="type" [options]="requestTypes" placeholder="Select workflow type"
+              styleClass="w-full"></p-dropdown>
+          </div>
+
+          <div class="field mb-4">
+            <label class="block text-sm font-medium mb-2">Sequential Levels</label>
+            <p-multiSelect formControlName="levels" [options]="levelOptions" placeholder="Designate authorization steps"
+              display="chip" styleClass="w-full"></p-multiSelect>
+          </div>
+
+          <div class="field mb-4">
+            <label class="block text-sm font-medium mb-2">Designated Personnel/Roles</label>
+            <div class="p-inputgroup">
+              <span class="p-inputgroup-addon"><i class="pi pi-user-plus"></i></span>
+              <input pInputText formControlName="approvers" placeholder="e.g. Manager, HR, finance.head" />
+            </div>
+            <small class="text-500 block mt-1">Separate identifiers with commas</small>
+          </div>
+
+          <div class="field mb-4">
+            <label class="block text-sm font-medium mb-2">Financial Activation Threshold (LKR)</label>
+            <p-inputNumber formControlName="threshold" mode="decimal" [min]="0" placeholder="0.00" [showButtons]="true"
+              prefix="Rs. "></p-inputNumber>
+            <small class="text-500 block mt-1">Leave empty for unconditional routing</small>
+          </div>
+
+          <div class="flex gap-3 pt-4 border-top-1 border-gray-200 mt-4">
+            <p-button type="button" label="Discard Changes" icon="pi pi-refresh"
+              class="p-button-outlined p-button-secondary flex-grow-1" (onClick)="resetForm()"></p-button>
+            <p-button type="submit" label="Commit Protocol" icon="pi pi-save" class="flex-grow-1"
+              [disabled]="configForm.invalid"></p-button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

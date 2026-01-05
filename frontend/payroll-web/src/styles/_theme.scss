@@ -1,0 +1,175 @@
+:root {
+  /* -------------------------------------------------------------------------
+     1. COLOR PALETTE
+     ------------------------------------------------------------------------- */
+
+  /* Primary Brand (Indigo) */
+  --p-primary-50: #eef2ff;
+  --p-primary-100: #e0e7ff;
+  --p-primary-200: #c7d2fe;
+  --p-primary-300: #a5b4fc;
+  --p-primary-400: #818cf8;
+  --p-primary-500: #6366f1;
+  /* Main Brand Color */
+  --p-primary-600: #4f46e5;
+  --p-primary-700: #4338ca;
+  --p-primary-800: #3730a3;
+  --p-primary-900: #312e81;
+
+  /* Surfaces (Slate) */
+  --p-surface-0: #ffffff;
+  --p-surface-50: #f8fafc;
+  /* Page Background */
+  --p-surface-100: #f1f5f9;
+  --p-surface-200: #e2e8f0;
+  /* Borders */
+  --p-surface-300: #cbd5e1;
+  --p-surface-400: #94a3b8;
+  --p-surface-500: #64748b;
+  /* Secondary Text, Icons */
+  --p-surface-600: #475569;
+  --p-surface-700: #334155;
+  --p-surface-800: #1e293b;
+  --p-surface-900: #0f172a;
+  /* Main Text */
+
+  /* Functional Colors */
+  --p-success: #10b981;
+  /* Emerald */
+  --p-success-bg: #d1fae5;
+  --p-warning: #f59e0b;
+  /* Amber */
+  --p-warning-bg: #fef3c7;
+  --p-danger: #ef4444;
+  /* Red */
+  --p-danger-bg: #fee2e2;
+  --p-info: #0ea5e9;
+  /* Sky */
+  --p-info-bg: #e0f2fe;
+
+  /* -------------------------------------------------------------------------
+     2. TYPOGRAPHY
+     ------------------------------------------------------------------------- */
+  --font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  --text-xs: 0.75rem;
+  /* 12px */
+  --text-sm: 0.875rem;
+  /* 14px */
+  --text-base: 1rem;
+  /* 16px */
+  --text-lg: 1.125rem;
+  /* 18px */
+  --text-xl: 1.5rem;
+  /* 24px */
+  --text-2xl: 1.875rem;
+  /* 30px */
+
+  /* -------------------------------------------------------------------------
+     3. SPACING (8px Grid)
+     ------------------------------------------------------------------------- */
+  --sp-1: 0.25rem;
+  /* 4px */
+  --sp-2: 0.5rem;
+  /* 8px */
+  --sp-3: 0.75rem;
+  /* 12px */
+  --sp-4: 1rem;
+  /* 16px - Standard Padding */
+  --sp-5: 1.25rem;
+  /* 20px */
+  --sp-6: 1.5rem;
+  /* 24px */
+  --sp-8: 2rem;
+  /* 32px */
+  --sp-10: 2.5rem;
+  /* 40px */
+
+  /* -------------------------------------------------------------------------
+     4. COMPONENT PROPERTIES
+     ------------------------------------------------------------------------- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  /* Standard */
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* Transition */
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 250ms ease-in-out;
+}
+
+/* -------------------------------------------------------------------------
+   GLOBAL RESETS
+   ------------------------------------------------------------------------- */
+html {
+  font-size: 16px;
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-family);
+  color: var(--p-surface-900);
+  background-color: var(--p-surface-50);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* -------------------------------------------------------------------------
+   TYPOGRAPHY HELPERS
+   ------------------------------------------------------------------------- */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0 0 var(--sp-4);
+  font-weight: 600;
+  color: var(--p-surface-900);
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: var(--text-2xl);
+}
+
+h2 {
+  font-size: var(--text-xl);
+}
+
+h3 {
+  font-size: var(--text-lg);
+}
+
+p {
+  margin: 0 0 var(--sp-4);
+  font-size: var(--text-base);
+  color: var(--p-surface-600);
+}
+
+small,
+.text-sm {
+  font-size: var(--text-sm);
+}
+
+.text-muted {
+  color: var(--p-surface-500);
+}
+
+/* -------------------------------------------------------------------------
+   LAYOUT UTILITIES
+   ------------------------------------------------------------------------- */
+.card {
+  background: var(--p-surface-0);
+  border: 1px solid var(--p-surface-200);
+  border-radius: var(--radius-md);
+  padding: var(--sp-4);
+  box-shadow: var(--shadow-sm);
+}

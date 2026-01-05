@@ -5,7 +5,13 @@ namespace Payroll.Application.Interfaces;
 
 public interface IEmployeeService
 {
-    Task<PaginatedResult<EmployeeDto>> GetEmployeesAsync(int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<PaginatedResult<EmployeeDto>> GetEmployeesAsync(
+        int page,
+        int pageSize,
+        Guid? companyId = null,
+        Guid? branchId = null,
+        Guid? costCenterId = null,
+        CancellationToken cancellationToken = default);
     Task<EmployeeDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<EmployeeDto> CreateAsync(CreateEmployeeRequestDto request, CancellationToken cancellationToken = default);
     Task UpdateAsync(Guid id, UpdateEmployeeRequestDto request, CancellationToken cancellationToken = default);

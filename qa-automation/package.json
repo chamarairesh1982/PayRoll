@@ -1,0 +1,40 @@
+{
+    "name": "srilanka-payroll-qa-automation",
+    "version": "1.0.0",
+    "description": "Automated testing framework for Sri Lanka Payroll System",
+    "main": "index.js",
+    "scripts": {
+        "test": "playwright test",
+        "test:headed": "playwright test --headed",
+        "test:debug": "playwright test --debug",
+        "test:smoke": "playwright test --grep @smoke",
+        "test:regression": "playwright test --grep @regression",
+        "test:employees": "playwright test tests/ui/employees",
+        "test:payroll": "playwright test tests/ui/payroll",
+        "test:api": "playwright test tests/api",
+        "test:ci": "playwright test --reporter=html,json",
+        "test:report": "npx allure generate allure-results --clean && npx allure open",
+        "generate:data": "python scripts/generate_test_data.py"
+    },
+    "keywords": [
+        "playwright",
+        "automation",
+        "payroll",
+        "sri-lanka",
+        "testing"
+    ],
+    "author": "QA Automation Team",
+    "license": "MIT",
+    "devDependencies": {
+        "@playwright/test": "^1.40.0",
+        "@types/node": "^20.10.0",
+        "allure-commandline": "^2.24.0",
+        "allure-playwright": "^2.15.0",
+        "dotenv": "^16.3.1",
+        "typescript": "^5.3.0"
+    },
+    "dependencies": {
+        "csv-parse": "^5.5.0",
+        "date-fns": "^2.30.0"
+    }
+}

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Payroll.Domain.Employees;
+using Payroll.Domain.Organizations;
 
 namespace Payroll.Infrastructure.Persistence.Configurations;
 
@@ -23,6 +24,9 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .HasMaxLength(20);
 
         builder.HasIndex(e => e.NicNumber).IsUnique();
+
+        builder.Property(e => e.EpfNumber)
+            .HasMaxLength(20);
 
         builder.Property(e => e.FirstName)
             .IsRequired()
@@ -47,10 +51,44 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.Property(e => e.BaseSalary)
             .HasColumnType("decimal(18,2)");
 
+        builder.Property(e => e.HourlyRate)
+            .HasColumnType("decimal(18,2)");
+
         builder.Property(e => e.CreatedBy)
             .HasMaxLength(100);
 
         builder.Property(e => e.ModifiedBy)
             .HasMaxLength(100);
+
+        builder.HasOne<Company>()
+            .WithMany()
+            .HasForeignKey(e => e.CompanyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<Branch>()
+            .WithMany()
+            .HasForeignKey(e => e.BranchId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<CostCenter>()
+            .WithMany()
+            .HasForeignKey(e => e.CostCenterId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(e => e.Company)
+               .WithMany()
+               .HasForeignKey(e => e.CompanyId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(e => e.Branch)
+               .WithMany()
+               .HasForeignKey(e => e.BranchId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(e => e.CostCenter)
+               .WithMany()
+               .HasForeignKey(e => e.CostCenterId)
+               .OnDelete(DeleteBehavior.Restrict);
+
     }
 }

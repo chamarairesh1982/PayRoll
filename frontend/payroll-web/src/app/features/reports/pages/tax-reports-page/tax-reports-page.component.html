@@ -1,0 +1,226 @@
+<div class="page-container animate-fadeIn">
+  <!-- Context Header -->
+  <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-end gap-4 mb-6">
+    <div>
+      <h1 class="m-0 text-3xl font-extrabold tracking-tight text-900 line-height-1">APIT Governance</h1>
+      <p class="text-600 mt-2 mb-0">Statutory tax reporting, annual returns, and individual certification management.
+      </p>
+    </div>
+    <div class="flex gap-2">
+      <button pButton icon="pi pi-verified" label="Audit Readiness"
+        class="p-button-text p-button-success font-bold"></button>
+      <button pButton icon="pi pi-file-export" label="Bulk Export"
+        class="p-button-outlined p-button-secondary font-bold"></button>
+    </div>
+  </div>
+
+  <!-- Jurisdictional Filtering -->
+  <div class="card border-none shadow-sm mb-6 p-4 surface-card border-round-xl">
+    <div class="flex align-items-center gap-2 mb-4 px-1">
+      <i class="pi pi-filter text-primary font-bold"></i>
+      <span class="text-sm font-bold text-900 uppercase tracking-wider">Report Scope (Optional)</span>
+    </div>
+    <div class="grid p-fluid">
+      <div class="col-12 md:col-4 field m-0">
+        <label class="text-900 font-bold mb-2 block text-xs">Target Entity</label>
+        <p-dropdown [options]="companies" [(ngModel)]="companyFilter" optionLabel="name" optionValue="id"
+          [showClear]="true" placeholder="All Companies" (onChange)="onCompanyChange($event.value)"></p-dropdown>
+      </div>
+      <div class="col-12 md:col-4 field m-0">
+        <label class="text-900 font-bold mb-2 block text-xs">Operating Branch</label>
+        <p-dropdown [options]="branches" [(ngModel)]="branchFilter" optionLabel="name" optionValue="id"
+          [showClear]="true" placeholder="All Branches" (onChange)="onBranchChange($event.value)"></p-dropdown>
+      </div>
+      <div class="col-12 md:col-4 field m-0">
+        <label class="text-900 font-bold mb-2 block text-xs">Cost Allocation Center</label>
+        <p-dropdown [options]="costCenters" [(ngModel)]="costCenterFilter" optionLabel="name" optionValue="id"
+          [showClear]="true" placeholder="All Cost Centers"></p-dropdown>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid mb-6">
+    <!-- Monthly APIT Engine -->
+    <div class="col-12 lg:col-4">
+      <div class="card border-none shadow-sm p-5 surface-card border-round-xl h-full flex flex-column gap-4">
+        <div class="flex align-items-center justify-content-between">
+          <div class="flex align-items-center gap-3">
+            <div class="p-3 bg-blue-50 border-round-lg">
+              <i class="pi pi-calendar text-blue-500 text-xl font-bold"></i>
+            </div>
+            <h3 class="m-0 text-xl font-extrabold tracking-tight">Monthly APIT</h3>
+          </div>
+        </div>
+        <div class="p-fluid flex flex-column gap-3">
+          <div class="flex gap-2">
+            <div class="flex-grow-1">
+              <label class="text-xs font-bold text-500 uppercase">Year</label>
+              <p-inputNumber [(ngModel)]="monthlyYear" [useGrouping]="false" placeholder="YYYY"></p-inputNumber>
+            </div>
+            <div class="flex-grow-1">
+              <label class="text-xs font-bold text-500 uppercase">Month</label>
+              <p-dropdown [options]="[1,2,3,4,5,6,7,8,9,10,11,12]" [(ngModel)]="monthlyMonth"></p-dropdown>
+            </div>
+          </div>
+          <div>
+            <label class="text-xs font-bold text-500 uppercase">Output Specification</label>
+            <p-dropdown
+              [options]="[{label: 'Portable Document (PDF)', value: 'pdf'}, {label: 'Spreadsheet (CSV)', value: 'csv'}]"
+              [(ngModel)]="monthlyFormat"></p-dropdown>
+          </div>
+          <div class="flex align-items-center gap-2 py-2">
+            <p-checkbox [(ngModel)]="monthlyRegenerate" binary="true" inputId="mon_reg"></p-checkbox>
+            <label for="mon_reg" class="text-sm text-600 font-medium">Bypass existing cache</label>
+          </div>
+          <button pButton label="Generate Monthly Narrative" icon="pi pi-cog"
+            class="p-button-primary font-bold shadow-1" (click)="generateMonthly()" [loading]="isLoading"></button>
+        </div>
+
+        <div class="p-3 bg-surface-50 border-round-lg border-1 border-surface-100 flex flex-column gap-2"
+          *ngIf="monthlyResult">
+          <div class="flex justify-content-between align-items-center">
+            <span class="text-xs font-bold text-500 uppercase">Filing Health</span>
+            <p-tag [value]="monthlyResult.status"
+              [severity]="monthlyResult.status === 'Generated' ? 'success' : 'info'"></p-tag>
+          </div>
+          <span class="text-xs text-700 truncate font-mono bg-white p-1 border-round">{{ monthlyResult.fileName
+            }}</span>
+          <button pButton label="Access Internal Copy" icon="pi pi-download" class="p-button-text p-button-sm font-bold"
+            (click)="downloadDocument(monthlyResult, 'apit-monthly-report.csv')"
+            [disabled]="monthlyResult.status !== 'Generated'"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Annual APIT returns -->
+    <div class="col-12 lg:col-4">
+      <div class="card border-none shadow-sm p-5 surface-card border-round-xl h-full flex flex-column gap-4">
+        <div class="flex align-items-center gap-3">
+          <div class="p-3 bg-green-50 border-round-lg">
+            <i class="pi pi-file-excel text-green-500 text-xl font-bold"></i>
+          </div>
+          <h3 class="m-0 text-xl font-extrabold tracking-tight">Annual Return</h3>
+        </div>
+        <div class="p-fluid flex flex-column gap-3">
+          <div>
+            <label class="text-xs font-bold text-500 uppercase">Assessment Year</label>
+            <p-inputNumber [(ngModel)]="annualYear" [useGrouping]="false" placeholder="YYYY"></p-inputNumber>
+          </div>
+          <div>
+            <label class="text-xs font-bold text-500 uppercase">Output Specification</label>
+            <p-dropdown
+              [options]="[{label: 'Spreadsheet (CSV)', value: 'csv'}, {label: 'Portable Document (PDF)', value: 'pdf'}]"
+              [(ngModel)]="annualFormat"></p-dropdown>
+          </div>
+          <div class="flex align-items-center gap-2 py-2">
+            <p-checkbox [(ngModel)]="annualRegenerate" binary="true" inputId="ann_reg"></p-checkbox>
+            <label for="ann_reg" class="text-sm text-600 font-medium">Force reconciliation</label>
+          </div>
+          <button pButton label="Execute Annual Sequence" icon="pi pi-sync" class="p-button-success font-bold shadow-1"
+            (click)="generateAnnual()" [loading]="isLoading"></button>
+        </div>
+
+        <div class="p-3 bg-surface-50 border-round-lg border-1 border-surface-100 flex flex-column gap-2"
+          *ngIf="annualResult">
+          <div class="flex justify-content-between align-items-center">
+            <span class="text-xs font-bold text-500 uppercase">Filing Health</span>
+            <p-tag [value]="annualResult.status"
+              [severity]="annualResult.status === 'Generated' ? 'success' : 'info'"></p-tag>
+          </div>
+          <span class="text-xs text-700 truncate font-mono bg-white p-1 border-round">{{ annualResult.fileName }}</span>
+          <button pButton label="Access Internal Copy" icon="pi pi-download" class="p-button-text p-button-sm font-bold"
+            (click)="downloadDocument(annualResult, 'apit-annual-report.csv')"
+            [disabled]="annualResult.status !== 'Generated'"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Personnel Tax Certification -->
+    <div class="col-12 lg:col-4">
+      <div
+        class="card border-none shadow-sm p-5 surface-card border-round-xl h-full flex flex-column gap-4 border-1 border-primary-100 bg-primary-reverse">
+        <div class="flex align-items-center gap-3">
+          <div class="p-3 bg-primary border-round-lg shadow-1">
+            <i class="pi pi-id-card text-white text-xl font-bold"></i>
+          </div>
+          <h3 class="m-0 text-xl font-extrabold tracking-tight">Staff Certification</h3>
+        </div>
+        <div class="p-fluid flex flex-column gap-3">
+          <div>
+            <label class="text-xs font-bold text-500 uppercase">Personnel Entity</label>
+            <p-dropdown [options]="filteredEmployees" [(ngModel)]="selectedEmployeeId" optionLabel="firstName"
+              optionValue="id" [filter]="true" filterBy="firstName,lastName,employeeCode"
+              placeholder="Search staff member..." (onFilter)="onEmployeeSearch($event.filter)">
+              <ng-template let-employee pTemplate="item">
+                <div class="flex flex-column">
+                  <span class="font-bold text-900">{{ employee.firstName }} {{ employee.lastName }}</span>
+                  <span class="text-xs text-500">{{ employee.employeeCode }}</span>
+                </div>
+              </ng-template>
+            </p-dropdown>
+          </div>
+          <div>
+            <label class="text-xs font-bold text-500 uppercase">Fiscal Year</label>
+            <p-inputNumber [(ngModel)]="certificateYear" [useGrouping]="false" placeholder="YYYY"></p-inputNumber>
+          </div>
+          <div class="flex align-items-center gap-2 py-2">
+            <p-checkbox [(ngModel)]="certificateRegenerate" binary="true" inputId="cert_reg"></p-checkbox>
+            <label for="cert_reg" class="text-sm text-600 font-medium">Overwrite issued certificates</label>
+          </div>
+          <button pButton label="Issue T-10 Certificate" icon="pi pi-verified"
+            class="p-button-primary font-bold shadow-2 h-3rem" (click)="generateCertificate()"
+            [loading]="isLoading"></button>
+        </div>
+
+        <div class="p-3 bg-primary-50 border-round-lg border-1 border-primary-100 flex flex-column gap-2"
+          *ngIf="certificateResult">
+          <div class="flex justify-content-between align-items-center">
+            <span class="text-xs font-bold text-primary-900 uppercase">Issuance Status</span>
+            <p-tag value="READY" severity="success"></p-tag>
+          </div>
+          <span class="text-xs text-primary-700 truncate font-mono bg-white p-1 border-round">{{
+            certificateResult.fileName }}</span>
+          <button pButton label="Acquire Digital Document" icon="pi pi-download"
+            class="p-button-text p-button-sm font-bold p-button-primary"
+            (click)="downloadDocument(certificateResult, 'apit-certificate.pdf')"
+            [disabled]="certificateResult.status !== 'Generated'"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Messaging -->
+  <div
+    class="mt-3 mb-6 p-3 bg-red-50 border-round-lg border-1 border-red-100 flex align-items-center gap-3 animate-slideIn"
+    *ngIf="errorMessage">
+    <i class="pi pi-exclamation-circle text-red-500 text-xl"></i>
+    <span class="text-red-700 text-sm font-medium">{{ errorMessage }}</span>
+  </div>
+
+  <!-- Institutional Governance History -->
+  <div class="flex flex-column gap-3">
+    <div class="flex align-items-center justify-content-between px-2">
+      <div class="flex align-items-center gap-2">
+        <i class="pi pi-history text-primary font-bold"></i>
+        <h3 class="m-0 text-xl font-extrabold tracking-tight text-900">Governance & Issuance Archive</h3>
+      </div>
+      <button pButton icon="pi pi-refresh" (click)="loadHistory()"
+        class="p-button-text p-button-rounded p-button-sm"></button>
+    </div>
+    <div class="card border-none shadow-sm overflow-hidden p-0">
+      <app-data-table [columns]="historyColumns" [data]="history" [paginator]="true" [rows]="10"
+        [showGlobalFilter]="true" emptyMessage="Government filing archive is currently void of historical issuances.">
+
+        <ng-template #rowActions let-doc>
+          <div class="flex gap-1 justify-content-end">
+            <button pButton icon="pi pi-cloud-download" class="p-button-text p-button-secondary p-button-sm"
+              (click)="downloadDocument(doc, 'tax-document')" [disabled]="doc.status !== 'Generated'"
+              pTooltip="Acquire Document"></button>
+            <button pButton icon="pi pi-info-circle" class="p-button-text p-button-info p-button-sm"
+              pTooltip="Verify Checksum: {{ doc.checksumSha256 || 'N/A' }}"></button>
+          </div>
+        </ng-template>
+      </app-data-table>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,25 @@
+.analysis-card {
+    background: var(--p-surface-0);
+    padding: var(--sp-8);
+    border-radius: var(--radius-2xl);
+    border: 1px solid var(--p-surface-100);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-normal);
+
+    &:hover {
+        box-shadow: var(--shadow-md);
+        border-color: var(--p-primary-100);
+    }
+
+    .card-header {
+        h3 {
+            color: var(--p-surface-900);
+            letter-spacing: -0.025em;
+        }
+    }
+}
+
+.chart-wrapper {
+    position: relative;
+    width: 100%;
+}

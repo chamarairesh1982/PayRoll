@@ -1,0 +1,162 @@
+.payslip-container {
+  max-width: 900px;
+  margin: 2rem auto;
+}
+
+.payslip-card {
+  background: white;
+  box-shadow: var(--shadow-xl);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  color: var(--p-surface-900);
+}
+
+.payslip-header {
+  background: var(--p-surface-900);
+  color: white;
+  padding: var(--sp-8);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .brand-section {
+    .company-name {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .document-type {
+      font-size: 0.875rem;
+      color: var(--p-surface-400);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+  }
+
+  .period-section {
+    text-align: right;
+
+    .period-label {
+      font-size: var(--text-xs);
+      color: var(--p-surface-400);
+      display: block;
+    }
+
+    .period-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+  }
+}
+
+.employee-section {
+  padding: var(--sp-6) var(--sp-8);
+  border-bottom: 1px solid var(--p-surface-100);
+  background: var(--p-surface-50);
+  display: flex;
+  justify-content: space-between;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+
+  .column {
+    padding: var(--sp-8);
+
+    &:first-child {
+      border-right: 1px solid var(--p-surface-100);
+    }
+
+    h3 {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--p-surface-500);
+      margin-bottom: var(--sp-4);
+      display: flex;
+      justify-content: space-between;
+    }
+  }
+}
+
+.line-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--sp-3);
+  font-size: 0.95rem;
+
+  .amount {
+    font-weight: 600;
+    font-family: inherit;
+  }
+}
+
+.net-pay-section {
+  background: var(--p-primary-900);
+  color: white;
+  padding: var(--sp-6) var(--sp-8);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .label {
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+
+  .value {
+    font-size: 2rem;
+    font-weight: 800;
+  }
+}
+
+.statutory-section {
+  padding: var(--sp-6) var(--sp-8);
+  background: var(--p-surface-50);
+  border-top: 1px solid var(--p-surface-100);
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--p-surface-600);
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    span:last-child {
+      color: var(--p-surface-900);
+      font-weight: 600;
+    }
+  }
+}
+
+.tax-breakdown-area {
+  padding: var(--sp-6) var(--sp-8);
+  border-top: 1px dashed var(--p-surface-200);
+
+  h4 {
+    font-size: 0.875rem;
+    margin-bottom: var(--sp-4);
+  }
+}
+
+@media print {
+  .payslip-container {
+    margin: 0;
+    max-width: none;
+  }
+
+  .payslip-card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+
+  .back-button {
+    display: none;
+  }
+}

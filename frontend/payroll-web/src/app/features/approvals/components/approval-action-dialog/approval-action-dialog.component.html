@@ -1,0 +1,35 @@
+<p-dialog
+  [(visible)]="visible"
+  [modal]="true"
+  [closable]="false"
+  [draggable]="false"
+  [style]="{ width: '420px' }"
+  [header]="action + ' Approval'"
+>
+  <div class="dialog-body">
+    <p class="dialog-summary">Confirm {{ action.toLowerCase() }} for <strong>{{ request?.type }}</strong>.</p>
+    <p class="dialog-meta">Employee: {{ request?.employee }}</p>
+    <div class="field">
+      <label for="comment">Comment <span *ngIf="requiresComment" class="required">*</span></label>
+      <textarea
+        pInputTextarea
+        id="comment"
+        rows="4"
+        [(ngModel)]="comment"
+        placeholder="Add context for this action"
+      ></textarea>
+      <small *ngIf="requiresComment" class="hint">Comment is required for reject and send back actions.</small>
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <button pButton type="button" label="Cancel" class="p-button-text" (click)="closeDialog()"></button>
+    <button
+      pButton
+      type="button"
+      [label]="action"
+      [disabled]="!canSubmit"
+      class="p-button-primary"
+      (click)="submit()"
+    ></button>
+  </ng-template>
+</p-dialog>

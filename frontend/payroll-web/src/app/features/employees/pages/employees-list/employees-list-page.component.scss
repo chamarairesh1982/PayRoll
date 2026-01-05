@@ -1,0 +1,76 @@
+.employees-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.page-header h1 {
+  font-size: 1.8rem;
+}
+
+.filters.card {
+  padding: 1.5rem;
+  border-radius: 1rem;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.filter-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #334155;
+}
+
+.table-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 0.5rem 1rem 1rem;
+  box-shadow: 0 18px 32px rgba(15, 23, 42, 0.08);
+}
+
+.p-datatable {
+  border-radius: 0.75rem;
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+  background: #f8fafc;
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.actions-column {
+  width: 130px;
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem 0;
+  color: #64748b;
+}
+
+.empty-state i {
+  font-size: 1.5rem;
+}
+
+.paginator-wrapper {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+  .table-card {
+    padding: 0.5rem;
+  }
+
+  .paginator-wrapper {
+    justify-content: center;
+  }
+}

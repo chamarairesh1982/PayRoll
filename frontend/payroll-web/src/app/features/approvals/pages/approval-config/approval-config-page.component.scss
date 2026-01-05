@@ -1,0 +1,44 @@
+.page-header {
+  margin-bottom: 1.5rem;
+}
+
+.subtitle {
+  color: #64748b;
+  margin: 0.25rem 0 0;
+}
+
+.config-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 1.5rem;
+}
+
+.form-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.empty {
+  text-align: center;
+  padding: 1rem;
+  color: #94a3b8;
+}
+
+@media (max-width: 960px) {
+  .config-layout {
+    grid-template-columns: 1fr;
+  }
+}

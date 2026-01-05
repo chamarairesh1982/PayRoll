@@ -1,0 +1,7 @@
+<div class="page-header">
+  <h1>Create Pay Run</h1>
+</div>
+
+<app-pay-run-form mode="create" (submitted)="handleSubmit($event)"></app-pay-run-form>
+
+<div class="saving" *ngIf="isSaving">Saving...</div>

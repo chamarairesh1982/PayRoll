@@ -1,0 +1,14 @@
+using Payroll.Domain.PayrollConfig;
+
+namespace Payroll.Application.PayrollConfig.DTOs;
+
+public class CreateAllowanceTypeRequest
+{
+    public string Code { get; set; } = null!;
+    public string Name { get; set; } = null!;
+    public string? Description { get; set; }
+    public CalculationBasis Basis { get; set; }
+    public bool IsEpfApplicable { get; set; }
+    public bool IsEtfApplicable { get; set; }
+    public bool IsTaxable { get; set; }
+}

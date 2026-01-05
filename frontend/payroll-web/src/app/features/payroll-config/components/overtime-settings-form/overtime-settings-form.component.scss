@@ -1,0 +1,57 @@
+.overtime-form {
+  .form-grid {
+    .field {
+      margin-bottom: 0;
+    }
+
+    label {
+      i {
+        color: var(--primary-color);
+        font-size: 0.875rem;
+      }
+    }
+
+    small {
+      font-size: 0.75rem;
+      line-height: 1.4;
+    }
+  }
+
+  // Ensure proper spacing for PrimeNG components
+  ::ng-deep {
+
+    .p-inputnumber,
+    .p-dropdown,
+    .p-calendar {
+      width: 100%;
+    }
+
+    .p-inputtext,
+    .p-dropdown,
+    .p-calendar .p-inputtext {
+      border-radius: 0.5rem;
+      border: 1px solid var(--surface-300);
+      transition: all 0.2s ease;
+
+      &:enabled:hover {
+        border-color: var(--primary-color);
+      }
+
+      &:enabled:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(var(--primary-color-rgb), 0.2);
+      }
+    }
+
+    .p-inputnumber-input {
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    .p-inputswitch {
+      &.p-inputswitch-checked .p-inputswitch-slider {
+        background: var(--primary-color);
+      }
+    }
+  }
+}

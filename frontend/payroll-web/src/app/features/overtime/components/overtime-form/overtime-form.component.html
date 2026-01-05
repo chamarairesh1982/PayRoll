@@ -1,0 +1,38 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="overtime-form">
+  <div class="grid">
+    <label>
+      Employee
+      <input type="text" formControlName="employeeId" placeholder="Employee ID or Code" />
+      <app-form-field-error [control]="form.get('employeeId')"></app-form-field-error>
+    </label>
+
+    <label>
+      Date
+      <input type="date" formControlName="workDate" />
+      <app-form-field-error [control]="form.get('workDate')"></app-form-field-error>
+    </label>
+
+    <label>
+      Minutes
+      <input type="number" formControlName="rawMinutes" min="1" step="1" />
+      <app-form-field-error [control]="form.get('rawMinutes')"></app-form-field-error>
+    </label>
+
+    <label>
+      Type
+      <select formControlName="type">
+        <option *ngFor="let type of overtimeTypes" [value]="type">{{ type }}</option>
+      </select>
+      <app-form-field-error [control]="form.get('type')"></app-form-field-error>
+    </label>
+
+    <label class="full-width">
+      Comment
+      <textarea rows="3" formControlName="comment"></textarea>
+    </label>
+  </div>
+
+  <div class="actions">
+    <button type="submit">{{ mode === 'create' ? 'Create Overtime' : 'Save Changes' }}</button>
+  </div>
+</form>

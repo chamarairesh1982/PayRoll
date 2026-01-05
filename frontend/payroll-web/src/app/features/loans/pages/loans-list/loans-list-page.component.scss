@@ -1,0 +1,36 @@
+/* Loan module styles */
+.context-header {
+    border-bottom: 1px solid var(--surface-200);
+    background: white;
+    margin-bottom: 1.5rem;
+}
+
+.icon-box {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-metric {
+    background: white;
+    padding: 1.5rem;
+    border-radius: var(--border-radius-lg);
+    border: 1px solid var(--surface-100);
+    box-shadow: var(--shadow-sm);
+    height: 100%;
+
+    &.primary-metric {
+        background: var(--primary-color);
+        border-color: var(--primary-600);
+
+        .value {
+            color: white !important;
+        }
+    }
+}
+
+.h-4px {
+    height: 4px;
+}

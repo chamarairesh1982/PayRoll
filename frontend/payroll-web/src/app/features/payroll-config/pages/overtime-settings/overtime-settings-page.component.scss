@@ -1,0 +1,83 @@
+// Remove default browser selection highlights
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+// Prevent text selection on interactive elements
+.cursor-pointer {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+// Mandate list item styling
+.mandate-item {
+  background: white;
+  border-left: 3px solid transparent;
+
+  // Remove any focus outlines that might cause blue boxes
+  &:focus,
+  &:focus-visible {
+    outline: none !important;
+  }
+
+  // Hover state - subtle background change
+  &:hover {
+    background-color: var(--surface-50);
+  }
+
+  // Active/pressed state
+  &:active {
+    background-color: var(--surface-100);
+  }
+
+  // Selected state - clean left border indicator
+  &.mandate-item-selected {
+    background-color: var(--primary-50);
+    border-left-color: var(--primary-color);
+    border-left-width: 3px;
+
+    &:hover {
+      background-color: var(--primary-100);
+    }
+  }
+
+  // Smooth transitions
+  transition: all 0.2s ease-in-out;
+}
+
+// Override any PrimeNG default selection styles
+::ng-deep {
+
+  // Remove blue highlight from PrimeNG components
+  .p-highlight {
+    background: var(--primary-50) !important;
+    color: var(--text-color) !important;
+  }
+
+  // Ensure ripple effect doesn't cause issues
+  .p-ripple {
+    overflow: hidden;
+  }
+
+  // Remove selection highlight from text
+  .mandate-item {
+    &::selection {
+      background: transparent;
+    }
+
+    &::-moz-selection {
+      background: transparent;
+    }
+  }
+}
+
+// Ensure smooth page transitions
+.page-container {
+  .transition-all {
+    transition-property: background-color, border-color, transform;
+    transition-duration: 0.2s;
+    transition-timing-function: ease-in-out;
+  }
+}

@@ -1,0 +1,79 @@
+<div class="app-layout">
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
+
+  <!-- Sidebar -->
+  <aside class="app-layout__sidebar">
+    <div class="sidebar-header">
+      <div class="logo-text">Payroll Cloud</div>
+    </div>
+    <div class="sidebar-content">
+      <p-panelMenu [model]="menuItems" (onNodeSelect)="onMenuSelect()"></p-panelMenu>
+    </div>
+    <!-- Sidebar Footer could be added here -->
+  </aside>
+
+  <!-- Topbar -->
+  <header class="app-layout__topbar">
+    <div class="topbar-left">
+      <button pButton class="mobile-menu-btn p-button-text p-button-secondary" icon="pi pi-bars"
+        (click)="toggleSidebar()"></button>
+
+      <!-- Tenant Switches -->
+      <p-dropdown [options]="companyOptions" [(ngModel)]="selectedCompany" optionLabel="label"
+        placeholder="Select Company" (onChange)="onCompanyChange($event)">
+        <ng-template pTemplate="selectedItem" let-item>
+          <div class="flex align-items-center gap-2" *ngIf="item">
+            <i class="pi pi-building text-primary"></i>
+            <span class="font-semibold">{{ item.label }}</span>
+          </div>
+        </ng-template>
+      </p-dropdown>
+
+      <p-dropdown [options]="branchOptions" [(ngModel)]="selectedBranch" optionLabel="label" placeholder="Branch"
+        [disabled]="!selectedCompany"></p-dropdown>
+
+      <p-dropdown [options]="costCenterOptions" [(ngModel)]="selectedCostCenter" optionLabel="label"
+        placeholder="Cost Center" [disabled]="!selectedBranch"></p-dropdown>
+    </div>
+
+    <div class="topbar-right">
+      <!-- Search Input (optional, minimal version) -->
+      <span class="p-input-icon-left hidden md:block">
+        <i class="pi pi-search"></i>
+        <input pInputText type="text" placeholder="Global search..." class="p-inputtext-sm border-none bg-surface-50" />
+      </span>
+
+      <!-- Notifications -->
+      <button pButton icon="pi pi-bell" class="p-button-text p-button-secondary p-button-rounded"></button>
+
+      <!-- User Profile -->
+      <div class="flex align-items-center gap-3 pl-3 border-left-1 border-surface-200 cursor-pointer"
+        (click)="userMenu.toggle($event)">
+        <div class="hidden md:block text-right">
+          <div class="text-sm font-bold text-surface-900">{{ userName }}</div>
+          <div class="text-xs text-surface-500">{{ userRole }}</div>
+        </div>
+        <p-avatar icon="pi pi-user" shape="circle" styleClass="bg-primary text-white"></p-avatar>
+        <i class="pi pi-chevron-down text-xs text-surface-400"></i>
+      </div>
+      <p-menu #userMenu [popup]="true" [model]="userMenuItems"></p-menu>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="app-layout__content">
+    <div class="page-container">
+      <app-breadcrumb class="mb-4 block"></app-breadcrumb>
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+
+  <!-- Mobile Sidebar -->
+  <p-sidebar [(visible)]="sidebarVisible" [modal]="true" position="left" styleClass="app-mobile-sidebar">
+    <div class="mb-4">
+      <div class="logo-text">Payroll Cloud</div>
+    </div>
+    <p-panelMenu [model]="menuItems" (onNodeSelect)="onMenuSelect()"></p-panelMenu>
+  </p-sidebar>
+</div>

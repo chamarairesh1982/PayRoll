@@ -1,0 +1,36 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="attendance-form">
+  <div class="grid">
+    <label>
+      Employee ID
+      <select formControlName="employeeId">
+        <option value="" disabled>Select an employee</option>
+        <option *ngFor="let employee of employees" [value]="employee.id">
+          {{ employee.employeeCode }} - {{ employee.firstName }} {{ employee.lastName }}
+        </option>
+      </select>
+      <app-form-field-error [control]="form.get('employeeId')"></app-form-field-error>
+    </label>
+
+    <label>
+      Period Start
+      <input type="date" formControlName="periodStart" />
+      <app-form-field-error [control]="form.get('periodStart')"></app-form-field-error>
+    </label>
+
+    <label>
+      Period End
+      <input type="date" formControlName="periodEnd" />
+      <app-form-field-error [control]="form.get('periodEnd')"></app-form-field-error>
+    </label>
+
+    <label>
+      Hours Worked
+      <input type="number" formControlName="hoursWorked" min="0" step="0.25" />
+      <app-form-field-error [control]="form.get('hoursWorked')"></app-form-field-error>
+    </label>
+  </div>
+
+  <div class="actions">
+    <button type="submit">{{ mode === 'create' ? 'Record Attendance' : 'Save Changes' }}</button>
+  </div>
+</form>

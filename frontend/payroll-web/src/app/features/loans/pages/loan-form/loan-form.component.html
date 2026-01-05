@@ -1,0 +1,116 @@
+<div class="page-container">
+    <!-- Context Header: Loan Facility Architect -->
+    <div class="context-header">
+        <div class="header-content">
+            <div class="title-area">
+                <h1>{{ isEdit ? 'Refine Loan Facility' : 'Initialize Loan Facility' }}</h1>
+                <p>Configure institutional credit parameters and recovery schedules</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex justify-content-center mt-4">
+        <div class="col-12 lg:col-8">
+            <form [formGroup]="loanForm" (ngSubmit)="onSubmit()" class="p-fluid">
+                <!-- Personnel Entity Section -->
+                <div class="card-container mb-4">
+                    <div class="flex align-items-center gap-2 mb-4">
+                        <i class="pi pi-user text-primary text-xl"></i>
+                        <h2 class="text-xl font-bold m-0 text-900 font-outfit">Petitioner Identity</h2>
+                    </div>
+                    <div class="grid">
+                        <div class="col-12 md:col-6">
+                            <label class="block text-sm font-medium mb-2">Target Staff Member</label>
+                            <p-dropdown formControlName="employeeId" [options]="employees" optionLabel="firstName"
+                                optionValue="id" placeholder="Search by name or ID" [filter]="true"
+                                filterBy="firstName,lastName,employeeNo" styleClass="w-full">
+                                <ng-template let-emp pTemplate="item">
+                                    <div class="flex align-items-center gap-2">
+                                        <p-avatar [label]="emp.firstName[0]" shape="circle" size="small"></p-avatar>
+                                        <span>{{ emp.firstName }} {{ emp.lastName }}</span>
+                                        <small class="text-500">({{ emp.employeeNo }})</small>
+                                    </div>
+                                </ng-template>
+                            </p-dropdown>
+                        </div>
+                        <div class="col-12 md:col-6">
+                            <label class="block text-sm font-medium mb-2">Loan Classification</label>
+                            <p-dropdown formControlName="loanType" [options]="loanTypes" placeholder="Select product"
+                                styleClass="w-full"></p-dropdown>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Parameters Section -->
+                <div class="card-container mb-4">
+                    <div class="flex align-items-center gap-2 mb-4">
+                        <i class="pi pi-dollar text-primary text-xl"></i>
+                        <h2 class="text-xl font-bold m-0 text-900 font-outfit">Financial Magnitude</h2>
+                    </div>
+                    <div class="grid">
+                        <div class="col-12 md:col-4">
+                            <label class="block text-sm font-medium mb-2">Disbursement Principal (LKR)</label>
+                            <p-inputNumber formControlName="principal" mode="decimal" [min]="0" placeholder="0.00"
+                                prefix="Rs. "></p-inputNumber>
+                        </div>
+                        <div class="col-12 md:col-4">
+                            <label class="block text-sm font-medium mb-2">Yield / Interest Rate (%)</label>
+                            <p-inputNumber formControlName="interestRate" mode="decimal" [min]="0" [max]="100"
+                                suffix="%" placeholder="0.00"></p-inputNumber>
+                        </div>
+                        <div class="col-12 md:col-4">
+                            <label class="block text-sm font-medium mb-2">Total Exposure / Repayable</label>
+                            <p-inputNumber formControlName="totalRepayable" mode="decimal" [min]="0" placeholder="0.00"
+                                prefix="Rs. "></p-inputNumber>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Repayment Schedule Section -->
+                <div class="card-container mb-4">
+                    <div class="flex align-items-center gap-2 mb-4">
+                        <i class="pi pi-calendar text-primary text-xl"></i>
+                        <h2 class="text-xl font-bold m-0 text-900 font-outfit">Recovery Timeline</h2>
+                    </div>
+                    <div class="grid">
+                        <div class="col-12 md:col-4">
+                            <label class="block text-sm font-medium mb-2">Monthly Recovery Amount</label>
+                            <p-inputNumber formControlName="installmentAmount" mode="decimal" [min]="0"
+                                placeholder="0.00" prefix="Rs. "></p-inputNumber>
+                        </div>
+                        <div class="col-12 md:col-4">
+                            <label class="block text-sm font-medium mb-2">Disbursement Date</label>
+                            <p-calendar formControlName="disbursementDate" dateFormat="yy-mm-dd" [showIcon]="true"
+                                placeholder="Select date" styleClass="w-full"></p-calendar>
+                        </div>
+                        <div class="col-12 md:col-4">
+                            <label class="block text-sm font-medium mb-2">Initial Status</label>
+                            <p-dropdown formControlName="status" [options]="statusOptions" placeholder="Select status"
+                                styleClass="w-full">
+                                <ng-template pTemplate="selectedItem">
+                                    <div class="flex align-items-center" *ngIf="loanForm.get('status')?.value">
+                                        <p-tag [value]="loanForm.get('status')?.value" severity="info"></p-tag>
+                                    </div>
+                                </ng-template>
+                            </p-dropdown>
+                        </div>
+                    </div>
+
+                    <div class="field mt-4">
+                        <label class="block text-sm font-medium mb-2">Governance Notes / Remarks</label>
+                        <textarea pInputTextarea formControlName="remarks" rows="3"
+                            placeholder="Enter institutional remarks regarding this facility..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Action Footer -->
+                <div class="flex justify-content-end gap-3 mt-4">
+                    <p-button type="button" label="Discard Workflow"
+                        class="p-button-outlined p-button-secondary lg:w-10rem" (onClick)="onCancel()"></p-button>
+                    <p-button type="submit" [label]="isEdit ? 'Authorize Updates' : 'Authorize Disbursement'"
+                        class="lg:w-15rem" [disabled]="loanForm.invalid"></p-button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

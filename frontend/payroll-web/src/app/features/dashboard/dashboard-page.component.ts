@@ -1,0 +1,358 @@
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
+import { ButtonModule } from 'primeng/button';
+import { DropdownModule } from 'primeng/dropdown';
+import { CalendarModule } from 'primeng/calendar';
+import { DividerModule } from 'primeng/divider';
+import { TagModule } from 'primeng/tag';
+import { SkeletonModule } from 'primeng/skeleton';
+import { ChartModule } from 'primeng/chart';
+import { SharedModule } from '../../shared/shared.module';
+import { OrganizationApiService } from '../../shared/services/organization-api.service';
+import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
+import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
+import { ErrorBannerComponent } from '../../shared/ui/error-banner/error-banner.component';
+import { SkeletonBlockComponent } from '../../shared/ui/skeleton-block/skeleton-block.component';
+import { BranchOption, CompanyOption, CostCenterOption } from '../../shared/models/organization.model';
+import { DataTableColumn } from '../../shared/components/table/data-table.component';
+import { DashboardApiService } from './services/dashboard-api.service';
+import { DashboardActivity, DashboardSummary } from './models/dashboard-summary.model';
+
+@Component({
+  selector: 'app-dashboard-page',
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterModule,
+    ReactiveFormsModule,
+    SharedModule,
+    PageHeaderComponent,
+    EmptyStateComponent,
+    ErrorBannerComponent,
+    SkeletonBlockComponent,
+    ButtonModule,
+    DropdownModule,
+    CalendarModule,
+    DividerModule,
+    TagModule,
+    SkeletonModule,
+    ChartModule,
+  ],
+  templateUrl: './dashboard-page.component.html',
+  styleUrls: ['./dashboard-page.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class DashboardPageComponent implements OnInit, OnDestroy {
+  summary?: DashboardSummary;
+  errorMessage: string | null = null;
+  isLoading = false;
+
+  companies: CompanyOption[] = [];
+  branches: BranchOption[] = [];
+  costCenters: CostCenterOption[] = [];
+
+  // Analytical Data Models
+  payrollTrendData: any;
+  workforceDistData: any;
+  chartOptions: any;
+  workforceOptions: any;
+
+  activityColumns: DataTableColumn<DashboardActivity>[] = [
+    { field: 'occurredAt', header: 'Timestamp', type: 'datetime', sortable: true },
+    { field: 'activity', header: 'Activity', sortable: true },
+    { field: 'actor', header: 'Actor', sortable: true },
+    { field: 'context', header: 'Tenant Scope', sortable: true },
+  ];
+  selectedActivityColumns: DataTableColumn<DashboardActivity>[] = [...this.activityColumns];
+
+  filtersForm = new FormGroup({
+    periodStart: new FormControl<Date | null>(this.startOfCurrentMonth()),
+    periodEnd: new FormControl<Date | null>(this.endOfCurrentMonth()),
+    companyId: new FormControl<string | null>(null),
+    branchId: new FormControl<string | null>(null),
+    costCenterId: new FormControl<string | null>(null),
+  });
+
+  private destroy$ = new Subject<void>();
+
+  constructor(
+    private dashboardApi: DashboardApiService,
+    private organizationApi: OrganizationApiService,
+    private cdr: ChangeDetectorRef,
+  ) { }
+
+  ngOnInit(): void {
+    this.loadOrganizations();
+    this.loadSummary();
+
+    this.filtersForm
+      .get('companyId')
+      ?.valueChanges.pipe(takeUntil(this.destroy$))
+      .subscribe(companyId => {
+        this.filtersForm.patchValue({ branchId: null, costCenterId: null }, { emitEvent: false });
+        this.loadBranches(companyId);
+        this.loadCostCenters(companyId, null);
+      });
+
+    this.filtersForm
+      .get('branchId')
+      ?.valueChanges.pipe(takeUntil(this.destroy$))
+      .subscribe(branchId => {
+        const companyId = this.filtersForm.get('companyId')?.value ?? undefined;
+        this.filtersForm.patchValue({ costCenterId: null }, { emitEvent: false });
+        this.loadCostCenters(companyId, branchId);
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  applyFilters(): void {
+    this.loadSummary();
+  }
+
+  trackByHealth = (_: number, item: { key: string }) => item.key;
+
+  trackByActivity = (index: number, item: DashboardActivity) => item.id ?? index;
+
+  get healthItems(): Array<{
+    key: string;
+    label: string;
+    description: string;
+    route: string;
+    count: number;
+    severity: 'success' | 'warning' | 'danger';
+  }> {
+    const health = this.summary?.health;
+    return [
+      {
+        key: 'MISSING_EPF',
+        label: 'Missing EPF No',
+        description: 'Employees without EPF registration',
+        route: '/people/employees',
+        count: health?.missingEpf ?? 0,
+        severity: 'warning',
+      },
+      {
+        key: 'MISSING_BANK',
+        label: 'Missing Bank Details',
+        description: 'Employees without bank transfer setup',
+        route: '/people/employees',
+        count: health?.missingBank ?? 0,
+        severity: 'warning',
+      },
+      {
+        key: 'PENDING_ATTENDANCE',
+        label: 'Pending Attendance',
+        description: 'Attendance not submitted for the period',
+        route: '/time/attendance',
+        count: health?.pendingAttendance ?? 0,
+        severity: 'danger',
+      },
+      {
+        key: 'PENDING_OT',
+        label: 'Pending OT',
+        description: 'Overtime entries awaiting approval',
+        route: '/overtime',
+        count: health?.pendingOt ?? 0,
+        severity: 'danger',
+      },
+      {
+        key: 'NEGATIVE_NET',
+        label: 'Negative Net Pay',
+        description: 'Payslips with negative net pay',
+        route: '/payroll/pay-runs',
+        count: health?.negativeNet ?? 0,
+        severity: 'danger',
+      },
+    ];
+  }
+
+  private loadSummary(): void {
+    this.isLoading = true;
+    this.errorMessage = null;
+    this.initChartOptions();
+
+    const formValue = this.filtersForm.value;
+
+    this.dashboardApi
+      .getSummary({
+        periodStart: this.formatDate(formValue.periodStart),
+        periodEnd: this.formatDate(formValue.periodEnd),
+        companyId: formValue.companyId ?? undefined,
+        branchId: formValue.branchId ?? undefined,
+        costCenterId: formValue.costCenterId ?? undefined,
+      })
+      .subscribe({
+        next: summary => {
+          this.summary = summary;
+          this.selectedActivityColumns = [...this.activityColumns];
+          this.prepareAnalyticalIntelligence();
+          this.isLoading = false;
+          this.cdr.markForCheck();
+        },
+        error: err => {
+          console.error('Failed to load dashboard summary', err);
+          this.errorMessage = 'Unable to load dashboard data. Please retry.';
+          this.isLoading = false;
+          this.cdr.markForCheck();
+        },
+      });
+  }
+
+  private initChartOptions(): void {
+    const documentStyle = getComputedStyle(document.documentElement);
+    const textColor = documentStyle.getPropertyValue('--p-surface-700');
+    const textColorSecondary = documentStyle.getPropertyValue('--p-surface-500');
+    const surfaceBorder = documentStyle.getPropertyValue('--p-surface-200');
+
+    this.chartOptions = {
+      plugins: {
+        legend: {
+          labels: {
+            color: textColor,
+            font: { weight: '600', size: 12 },
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: textColorSecondary, font: { weight: '400' } },
+          grid: { color: surfaceBorder, drawBorder: false },
+        },
+        y: {
+          ticks: { color: textColorSecondary },
+          grid: { color: surfaceBorder, drawBorder: false },
+        },
+      },
+      maintainAspectRatio: false,
+      responsive: true,
+    };
+
+    this.workforceOptions = {
+      ...this.chartOptions,
+      cutout: '70%',
+    };
+  }
+
+  private prepareAnalyticalIntelligence(): void {
+    const documentStyle = getComputedStyle(document.documentElement);
+
+    // Mock/Real Trend Data: Payroll Cost Trajectory
+    this.payrollTrendData = {
+      labels: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      datasets: [
+        {
+          label: 'Total Net Disbursement',
+          data: [650000, 720000, 680000, 810000, 750000, 890000],
+          fill: true,
+          borderColor: documentStyle.getPropertyValue('--p-primary-500'),
+          tension: 0.4,
+          backgroundColor: 'rgba(79, 70, 229, 0.1)',
+        },
+        {
+          label: 'Statutory Liabilities',
+          data: [120000, 135000, 128000, 150000, 142000, 165000],
+          fill: false,
+          borderColor: documentStyle.getPropertyValue('--p-amber-400'),
+          tension: 0.4,
+        },
+      ],
+    };
+
+    // Mock/Real Intelligence Data: Workforce Distribution mapping
+    this.workforceDistData = {
+      labels: ['Engineering', 'Operations', 'Human Resources', 'Sales', 'Infrastructure'],
+      datasets: [
+        {
+          data: [45, 25, 10, 15, 5],
+          backgroundColor: [
+            documentStyle.getPropertyValue('--p-primary-500'),
+            documentStyle.getPropertyValue('--p-emerald-500'),
+            documentStyle.getPropertyValue('--p-amber-500'),
+            documentStyle.getPropertyValue('--p-indigo-500'),
+            documentStyle.getPropertyValue('--p-surface-400'),
+          ],
+          hoverBackgroundColor: [
+            documentStyle.getPropertyValue('--p-primary-400'),
+            documentStyle.getPropertyValue('--p-emerald-400'),
+            documentStyle.getPropertyValue('--p-amber-400'),
+            documentStyle.getPropertyValue('--p-indigo-400'),
+            documentStyle.getPropertyValue('--p-surface-300'),
+          ],
+        },
+      ],
+    };
+  }
+
+  private loadOrganizations(): void {
+    this.organizationApi.getCompanies().pipe(takeUntil(this.destroy$)).subscribe({
+      next: companies => {
+        this.companies = companies;
+        this.cdr.markForCheck();
+      },
+      error: err => {
+        console.error('Failed to load companies', err);
+      },
+    });
+  }
+
+  private loadBranches(companyId?: string | null): void {
+    this.organizationApi.getBranches(companyId ?? undefined).pipe(takeUntil(this.destroy$)).subscribe({
+      next: branches => {
+        this.branches = branches;
+        this.cdr.markForCheck();
+      },
+      error: err => {
+        console.error('Failed to load branches', err);
+      },
+    });
+  }
+
+  private loadCostCenters(companyId?: string | null, branchId?: string | null): void {
+    this.organizationApi
+      .getCostCenters(companyId ?? undefined, branchId ?? undefined)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: costCenters => {
+          this.costCenters = costCenters;
+          this.cdr.markForCheck();
+        },
+        error: err => {
+          console.error('Failed to load cost centers', err);
+        },
+      });
+  }
+
+  private startOfCurrentMonth(): Date {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+
+  private endOfCurrentMonth(): Date {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  }
+
+  private formatDate(value: Date | null | undefined): string | undefined {
+    if (!value) {
+      return undefined;
+    }
+    return value.toISOString().split('T')[0];
+  }
+
+  getStatusSeverity(status?: string): string {
+    switch (status) {
+      case 'Draft': return 'info';
+      case 'Prepared': return 'warning';
+      case 'Approved': return 'success';
+      case 'Locked': return 'danger';
+      default: return 'secondary';
+    }
+  }
+}

@@ -1,0 +1,90 @@
+<div class="filters-card" [formGroup]="form">
+  <div class="filters-header">
+    <div>
+      <h3>Report Filters</h3>
+      <p class="subtitle">Select scope, payroll month, and output preferences.</p>
+    </div>
+    <button
+      pButton
+      type="button"
+      label="Generate"
+      icon="pi pi-play"
+      [loading]="loading"
+      class="p-button-primary"
+      (click)="onGenerate()"
+    ></button>
+  </div>
+
+  <div class="filters-grid">
+    <div class="field">
+      <label>Company</label>
+      <p-dropdown
+        [options]="options?.companies"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="All Companies"
+        formControlName="companyId"
+      ></p-dropdown>
+    </div>
+    <div class="field">
+      <label>Branch</label>
+      <p-dropdown
+        [options]="options?.branches"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="All Branches"
+        formControlName="branchId"
+      ></p-dropdown>
+    </div>
+    <div class="field">
+      <label>Cost Center</label>
+      <p-dropdown
+        [options]="options?.costCenters"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="All Cost Centers"
+        formControlName="costCenterId"
+      ></p-dropdown>
+    </div>
+    <div class="field">
+      <label>Payroll Month</label>
+      <p-calendar
+        formControlName="payrollMonth"
+        view="month"
+        dateFormat="MM yy"
+        [showIcon]="true"
+        [showButtonBar]="true"
+      ></p-calendar>
+    </div>
+    <div class="field">
+      <label>Employee Status</label>
+      <p-dropdown
+        [options]="options?.employeeStatuses"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Active Employees"
+        formControlName="employeeStatus"
+      ></p-dropdown>
+    </div>
+    <div class="field">
+      <label>Output Mode</label>
+      <p-dropdown
+        [options]="options?.outputModes"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Preview"
+        formControlName="outputMode"
+      ></p-dropdown>
+    </div>
+    <div class="field">
+      <label>Output Format</label>
+      <p-dropdown
+        [options]="options?.outputFormats"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="CSV"
+        formControlName="outputFormat"
+      ></p-dropdown>
+    </div>
+  </div>
+</div>

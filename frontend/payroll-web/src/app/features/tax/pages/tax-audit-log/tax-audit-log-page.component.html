@@ -1,0 +1,38 @@
+<section class="tax-audit">
+  <div class="tax-audit__header">
+    <div>
+      <h2 class="m-0">Tax Configuration Audit Log</h2>
+      <p class="text-600 mt-2 mb-0">Track every change to PAYE schemes and reliefs.</p>
+    </div>
+  </div>
+
+  <p-card>
+    <p-table [value]="logs" [paginator]="true" [rows]="8" dataKey="id">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Change</th>
+          <th>Scheme</th>
+          <th>Action</th>
+          <th>Actor</th>
+          <th>Timestamp</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-log>
+        <tr>
+          <td>{{ log.summary }}</td>
+          <td>{{ log.schemeName }}</td>
+          <td>
+            <p-tag [value]="log.action" [severity]="log.action === 'Created' ? 'success' : log.action === 'Updated' ? 'info' : 'warning'"></p-tag>
+          </td>
+          <td>{{ log.changedBy }}</td>
+          <td>{{ log.changedAt | date: 'medium' }}</td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="5">No tax configuration changes logged yet.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</section>

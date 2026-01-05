@@ -1,0 +1,173 @@
+<div class="page-container animate-fadeIn">
+  <!-- Context Header -->
+  <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-end gap-4 mb-6">
+    <div>
+      <h1 class="m-0 text-3xl font-extrabold tracking-tight text-900 line-height-1">Statutory Compliance</h1>
+      <p class="text-600 mt-2 mb-0">Management of EPF/ETF contributions and regulatory reporting for institutional
+        payroll cycles.</p>
+    </div>
+    <div class="flex gap-2">
+      <button pButton icon="pi pi-history" label="Compliance Archive"
+        class="p-button-text p-button-secondary font-bold"></button>
+      <button pButton icon="pi pi-shield" label="Regulatory Status"
+        class="p-button-outlined p-button-success font-bold"></button>
+    </div>
+  </div>
+
+  <!-- Intelligence Filter Bar -->
+  <div class="card border-none shadow-sm mb-6 p-4 surface-card border-round-xl">
+    <div class="grid p-fluid align-items-end">
+      <div class="col-12 md:col-5 field m-0">
+        <label class="text-900 font-bold mb-2 block text-sm">Target Pay Cycle</label>
+        <p-dropdown [options]="payRuns" [(ngModel)]="selectedPayRunId" optionLabel="name" optionValue="id"
+          [filter]="true" filterBy="name,code" placeholder="Select a locked pay run"
+          (onChange)="onPayRunChange($event.value)" [loading]="isLoadingPayRuns">
+          <ng-template let-run pTemplate="item">
+            <div class="flex flex-column">
+              <span class="font-bold text-900">{{ run.code }}</span>
+              <span class="text-xs text-500">{{ run.name }} ({{ run.periodStart | date:'MMM yyyy' }})</span>
+            </div>
+          </ng-template>
+        </p-dropdown>
+      </div>
+      <div class="col-12 md:col-3 field m-0">
+        <label class="text-900 font-bold mb-2 block text-sm">Transmission Format</label>
+        <p-dropdown [options]="[{label: 'CSV (Standard)', value: 'csv'}, {label: 'TXT (Legacy)', value: 'txt'}]"
+          [(ngModel)]="format"></p-dropdown>
+      </div>
+      <div class="col-12 md:col-4 m-0">
+        <button pButton icon="pi pi-cloud-download" label="Generate Compliance Report"
+          class="p-button-primary shadow-2 font-bold w-full h-3rem" (click)="generateReport()" [loading]="isGenerating"
+          [disabled]="!selectedPayRunId"></button>
+      </div>
+    </div>
+    <div
+      class="mt-3 p-3 bg-red-50 border-round-lg border-1 border-red-100 flex align-items-center gap-3 animate-slideIn"
+      *ngIf="errorMessage">
+      <i class="pi pi-exclamation-circle text-red-500 text-xl"></i>
+      <span class="text-red-700 text-sm font-medium">{{ errorMessage }}</span>
+    </div>
+  </div>
+
+  <!-- Analytics Dashboard (Conditional) -->
+  <div class="animate-fadeIn" *ngIf="reportPreview">
+    <div class="grid mb-6">
+      <div class="col-12 md:col-2">
+        <div
+          class="card border-none shadow-sm p-4 surface-card border-round-xl h-full flex flex-column justify-content-center align-items-center text-center">
+          <span class="text-500 font-bold text-xs uppercase cursor-default mb-2">Workforce Size</span>
+          <span class="text-4xl font-extrabold text-900">{{ reportPreview.employeeCount }}</span>
+        </div>
+      </div>
+      <div class="col-12 md:col-3">
+        <div
+          class="card border-none shadow-sm p-4 surface-card border-round-xl h-full flex flex-column justify-content-center">
+          <div class="flex align-items-center gap-3 mb-2">
+            <i class="pi pi-wallet text-primary font-bold"></i>
+            <span class="text-500 font-bold text-xs uppercase tracking-wider">Contributable Base</span>
+          </div>
+          <span class="text-2xl font-extrabold text-900">{{ reportPreview.contributableBase |
+            currency:'LKR':'symbol-narrow':'1.0-0' }}</span>
+        </div>
+      </div>
+      <div class="col-12 md:col-7 flex gap-3">
+        <div
+          class="card border-none shadow-sm p-4 surface-card border-round-xl flex-grow-1 flex flex-column justify-content-center">
+          <span class="text-500 font-bold text-xs uppercase mb-1">Employee EPF (8%)</span>
+          <span class="text-xl font-extrabold text-900">{{ reportPreview.employeeEpfTotal |
+            currency:'LKR':'symbol-narrow':'1.0-2' }}</span>
+        </div>
+        <div
+          class="card border-none shadow-sm p-4 surface-card border-round-xl flex-grow-1 flex flex-column justify-content-center">
+          <span class="text-500 font-bold text-xs uppercase mb-1">Employer EPF (12%)</span>
+          <span class="text-xl font-extrabold text-900">{{ reportPreview.employerEpfTotal |
+            currency:'LKR':'symbol-narrow':'1.0-2' }}</span>
+        </div>
+        <div
+          class="card border-none shadow-sm p-4 surface-card border-round-xl flex-grow-1 flex flex-column justify-content-center bg-primary-50">
+          <span class="text-primary-700 font-bold text-xs uppercase mb-1">Employer ETF (3%)</span>
+          <span class="text-xl font-extrabold text-primary-900">{{ reportPreview.employerEtfTotal |
+            currency:'LKR':'symbol-narrow':'1.0-2' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compliance Validation Alert -->
+    <div
+      class="p-4 bg-orange-50 border-round-xl border-1 border-orange-100 flex align-items-center justify-content-between mb-6 shadow-sm animate-pulse"
+      *ngIf="reportPreview.warnings?.length">
+      <div class="flex align-items-center gap-4">
+        <div class="p-3 bg-orange-500 border-round-circle shadow-1">
+          <i class="pi pi-bell text-white text-xl"></i>
+        </div>
+        <div class="flex flex-column">
+          <span class="font-bold text-orange-900 text-lg">Regulatory Warnings Identified</span>
+          <span class="text-sm text-orange-700">Detailed compliance gaps detected in {{ reportPreview.warnings.length }}
+            entity profiles.</span>
+        </div>
+      </div>
+      <button pButton icon="pi pi-eye" label="Review Alerts" class="p-button-warning p-button-rounded font-bold px-4"
+        (click)="op.toggle($event)"></button>
+    </div>
+
+    <!-- Personnel Detailed Grid -->
+    <div class="card border-none shadow-sm overflow-hidden p-0 mb-6">
+      <div class="p-4 border-bottom-1 border-surface-100 flex justify-content-between align-items-center bg-white">
+        <h2 class="m-0 text-xl font-extrabold tracking-tight">Personnel Contribution Ledger</h2>
+        <div class="flex gap-2">
+          <button pButton icon="pi pi-file-excel" label="Export Detailed CSV"
+            class="p-button-text p-button-sm font-bold"
+            (click)="downloadPreview(reportPreview.file, 'epf-etf-report.csv')"></button>
+          <button pButton icon="pi pi-file-pdf" *ngIf="reportPreview.warningFile" label="Export Warnings"
+            class="p-button-text p-button-danger p-button-sm font-bold"
+            (click)="downloadPreview(reportPreview.warningFile, 'epf-etf-warnings.csv')"></button>
+        </div>
+      </div>
+      <app-data-table [columns]="employeeColumns" [data]="reportPreview.employees" [paginator]="true" [rows]="10"
+        [showGlobalFilter]="true" emptyMessage="Zero contribution entries identified for this cycle.">
+      </app-data-table>
+    </div>
+  </div>
+
+  <!-- Governance History Archive -->
+  <div class="flex flex-column gap-3">
+    <div class="flex align-items-center gap-2 px-2">
+      <i class="pi pi-database text-primary font-bold"></i>
+      <h3 class="m-0 text-xl font-extrabold tracking-tight">Historical Compliance Archive</h3>
+    </div>
+    <div class="card border-none shadow-sm overflow-hidden p-0">
+      <app-data-table [columns]="historyColumns" [data]="reportHistory" [paginator]="true" [rows]="5"
+        [showGlobalFilter]="true"
+        emptyMessage="Institutional compliance archive is currently void of historical reporting.">
+
+        <ng-template #rowActions let-report>
+          <div class="flex gap-1 justify-content-end">
+            <button pButton icon="pi pi-download" class="p-button-text p-button-secondary p-button-sm"
+              (click)="downloadHistory(report)" pTooltip="Download Narrative"></button>
+            <button pButton icon="pi pi-exclamation-triangle" *ngIf="report.warningCount > 0"
+              class="p-button-text p-button-danger p-button-sm" (click)="downloadHistory(report, true)"
+              pTooltip="Download Warnings"></button>
+          </div>
+        </ng-template>
+      </app-data-table>
+    </div>
+  </div>
+</div>
+
+<!-- Validation Overlay -->
+<p-overlayPanel #op [showCloseIcon]="true" [style]="{width: '500px'}">
+  <div class="p-3">
+    <h4 class="m-0 mb-3 text-900 border-bottom-1 border-surface-100 pb-2">Compliance Alert Log</h4>
+    <div class="flex flex-column gap-3 max-h-30rem overflow-y-auto pr-2">
+      <div
+        class="flex align-items-start gap-3 p-3 surface-50 border-round-lg border-1 border-surface-100 hover:surface-100 transition-colors"
+        *ngFor="let warning of reportPreview?.warnings">
+        <i class="pi pi-info-circle text-orange-500 mt-1"></i>
+        <div class="flex flex-column gap-1">
+          <span class="font-bold text-900 text-sm">{{ warning.employeeCode }} - {{ warning.employeeName }}</span>
+          <span class="text-xs text-600 line-height-3">{{ warning.message }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</p-overlayPanel>

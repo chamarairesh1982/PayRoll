@@ -1,0 +1,58 @@
+<div class="page-container animate-fadeIn">
+  <!-- Context Header -->
+  <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-end gap-4 mb-6">
+    <div>
+      <h1 class="m-0 text-3xl font-extrabold tracking-tight text-900 line-height-1">Leave Governance</h1>
+      <p class="text-600 mt-2 mb-0">Systematic oversight of workforce availability and time-off accruals.</p>
+    </div>
+    <button pButton icon="pi pi-plus" label="Initiate Leave Request" class="p-button-primary p-button-rounded shadow-2"
+      (click)="goToCreate()"></button>
+  </div>
+
+  <!-- Multi-stage Filtering -->
+  <div
+    class="surface-card p-4 border-round-xl border-1 border-surface-100 shadow-sm mb-6 flex flex-wrap align-items-center gap-3">
+    <div class="flex-grow-1 min-w-0">
+      <span class="p-input-icon-left w-full">
+        <i class="pi pi-user"></i>
+        <input pInputText type="text" [(ngModel)]="selectedEmployeeId" placeholder="Identify Employee (ID or Code)..."
+          class="w-full p-inputtext-sm border-none bg-surface-50" />
+      </span>
+    </div>
+
+    <p-dropdown [options]="statusOptions" [(ngModel)]="selectedStatus" placeholder="Lifecycle Status" [showClear]="true"
+      styleClass="p-inputtext-sm"></p-dropdown>
+
+    <div class="flex gap-2">
+      <button pButton icon="pi pi-filter" label="Apply Analytics" class="p-button-sm p-button-outlined"
+        (click)="applyFilters()"></button>
+      <button pButton icon="pi pi-refresh" class="p-button-sm p-button-text p-button-secondary" (click)="resetFilters()"
+        pTooltip="Clear Intelligence Filters"></button>
+    </div>
+  </div>
+
+  <!-- Strategic Data Table -->
+  <div class="card border-none shadow-sm overflow-hidden p-0">
+    <app-data-table [columns]="columns" [data]="requests" [loading]="isLoading" [totalRecords]="totalCount"
+      [rows]="pageSize" [first]="tableFirst" [paginator]="true" [lazy]="true" [showGlobalFilter]="false"
+      emptyMessage="No time-off requests aligned with current parameters." (lazyLoad)="handleLazyLoad($event)">
+      <!-- Custom Action Template -->
+      <ng-template #rowActions let-request>
+        <div class="flex gap-1 justify-content-end">
+          <button pButton icon="pi pi-eye" class="p-button-text p-button-secondary p-button-sm"
+            (click)="viewRequest(request)" pTooltip="Audit Detail"></button>
+          <button pButton icon="pi pi-pencil" class="p-button-text p-button-secondary p-button-sm"
+            (click)="editRequest(request)" pTooltip="Adjust Parameters"></button>
+          <button pButton icon="pi pi-trash" class="p-button-text p-button-danger p-button-sm"
+            (click)="confirmDelete(request)" pTooltip="Revoke Request"></button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+</div>
+
+<div class="dialog-wrapper" *ngIf="showConfirm">
+  <app-confirm-dialog title="Revoke Leave Transaction"
+    [message]="'Confirm the deletion of leave transaction for ' + (requestToDelete?.employeeName || requestToDelete?.employeeCode || requestToDelete?.employeeId) + '?'"
+    (confirmed)="deleteRequest()" (cancelled)="cancelDelete()"></app-confirm-dialog>
+</div>

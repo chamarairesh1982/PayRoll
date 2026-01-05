@@ -1,0 +1,78 @@
+<div class="page-header flex flex-column md:flex-row md:justify-content-between md:align-items-center gap-3">
+  <div>
+    <h1 class="m-0">Employees</h1>
+    <p class="text-600 mt-2 mb-0">Manage employee profiles across companies, branches, and cost centers.</p>
+  </div>
+  <button pButton type="button" label="New Employee" icon="pi pi-plus" class="p-button-rounded"
+    (click)="goToCreate()"></button>
+</div>
+
+<div class="card mb-4 border-none shadow-sm">
+  <div class="grid p-fluid">
+    <div class="col-12 md:col-6 lg:col-3">
+      <label class="font-medium text-sm text-500 mb-1 block" for="companyFilter">Company</label>
+      <p-dropdown inputId="companyFilter" [options]="companies" optionLabel="name" optionValue="id" [filter]="true"
+        [showClear]="true" placeholder="All companies" [(ngModel)]="companyFilter"
+        (onChange)="onCompanyChange($event.value)" styleClass="w-full">
+        <ng-template pTemplate="selectedItem" let-company>
+          <span *ngIf="company">{{ company.name }}</span>
+        </ng-template>
+        <ng-template pTemplate="item" let-company>
+          <div>{{ company.name }} <small class="text-500">({{ company.code }})</small></div>
+        </ng-template>
+      </p-dropdown>
+    </div>
+
+    <div class="col-12 md:col-6 lg:col-3">
+      <label class="font-medium text-sm text-500 mb-1 block" for="branchFilter">Branch</label>
+      <p-dropdown inputId="branchFilter" [options]="branches" optionLabel="name" optionValue="id" [filter]="true"
+        [showClear]="true" placeholder="All branches" [(ngModel)]="branchFilter" [disabled]="!companyFilter"
+        (onChange)="onBranchChange($event.value)" styleClass="w-full">
+        <ng-template pTemplate="selectedItem" let-branch>
+          <span *ngIf="branch">{{ branch.name }}</span>
+        </ng-template>
+        <ng-template pTemplate="item" let-branch>
+          <div>{{ branch.name }} <small class="text-500">({{ branch.code }})</small></div>
+        </ng-template>
+      </p-dropdown>
+    </div>
+
+    <div class="col-12 md:col-6 lg:col-3">
+      <label class="font-medium text-sm text-500 mb-1 block" for="costCenterFilter">Cost Center</label>
+      <p-dropdown inputId="costCenterFilter" [options]="costCenters" optionLabel="name" optionValue="id" [filter]="true"
+        [showClear]="true" placeholder="All cost centers" [(ngModel)]="costCenterFilter" [disabled]="!companyFilter"
+        (onChange)="onCostCenterChange($event.value)" styleClass="w-full">
+        <ng-template pTemplate="selectedItem" let-costCenter>
+          <span *ngIf="costCenter">{{ costCenter.name }}</span>
+        </ng-template>
+        <ng-template pTemplate="item" let-costCenter>
+          <div>{{ costCenter.name }} <small class="text-500">({{ costCenter.code }})</small></div>
+        </ng-template>
+      </p-dropdown>
+    </div>
+  </div>
+</div>
+
+<app-data-table [columns]="columns" [data]="employees" [totalRecords]="totalCount" [loading]="loading" [rows]="pageSize"
+  [lazy]="true" (lazyLoad)="onLazyLoad($event)" (rowSelect)="viewEmployee($event)" [showGlobalFilter]="true"
+  [globalFilterFields]="['firstName', 'lastName', 'nicNumber', 'epfNumber']">
+  <!-- Custom Actions Template -->
+  <ng-template #rowActions let-employee>
+    <div class="flex justify-content-center gap-2">
+      <button pButton class="p-button-text p-button-sm p-button-rounded p-button-secondary" icon="pi pi-eye"
+        (click)="viewEmployee(employee); $event.stopPropagation()" pTooltip="View Profile"></button>
+      <button pButton class="p-button-text p-button-sm p-button-rounded" icon="pi pi-pencil"
+        (click)="editEmployee(employee); $event.stopPropagation()" pTooltip="Edit"></button>
+      <button pButton class="p-button-text p-button-sm p-button-rounded p-button-danger" icon="pi pi-trash"
+        (click)="confirmDelete(employee); $event.stopPropagation()" pTooltip="Delete"></button>
+    </div>
+  </ng-template>
+
+  <ng-template #headerActions>
+    <button pButton type="button" icon="pi pi-download" class="p-button-outlined" pTooltip="Export CSV"
+      tooltipPosition="bottom"></button>
+  </ng-template>
+</app-data-table>
+
+<p-confirmDialog [style]="{width: '450px'}"></p-confirmDialog>
+<p-toast></p-toast>

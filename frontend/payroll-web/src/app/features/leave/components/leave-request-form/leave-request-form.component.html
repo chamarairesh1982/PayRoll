@@ -1,0 +1,56 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="leave-request-form">
+  <div class="grid">
+    <label>
+      Employee
+      <input type="text" formControlName="employeeId" placeholder="Employee ID or Code" />
+      <app-form-field-error [control]="form.get('employeeId')"></app-form-field-error>
+    </label>
+
+    <label>
+      Leave Type
+      <select formControlName="leaveType">
+        <option *ngFor="let type of leaveTypes" [value]="type">{{ type }}</option>
+      </select>
+      <app-form-field-error [control]="form.get('leaveType')"></app-form-field-error>
+    </label>
+
+    <label>
+      Start Date
+      <input type="date" formControlName="startDate" />
+      <app-form-field-error [control]="form.get('startDate')"></app-form-field-error>
+    </label>
+
+    <label>
+      End Date
+      <input type="date" formControlName="endDate" />
+      <app-form-field-error [control]="form.get('endDate')"></app-form-field-error>
+      <div class="field-error" *ngIf="form.errors?.['endBeforeStart'] && form.get('endDate')?.touched">
+        End date must be on or after start date.
+      </div>
+    </label>
+
+    <label class="checkbox">
+      <input type="checkbox" formControlName="isHalfDay" />
+      Half Day
+    </label>
+
+    <label *ngIf="form.get('isHalfDay')?.value">
+      Half Day Session
+      <select formControlName="halfDaySession">
+        <option value="">Select session</option>
+        <option value="AM">AM</option>
+        <option value="PM">PM</option>
+      </select>
+      <app-form-field-error [control]="form.get('halfDaySession')"></app-form-field-error>
+    </label>
+
+    <label class="full-width">
+      Reason
+      <textarea rows="3" formControlName="reason" placeholder="Optional"></textarea>
+    </label>
+  </div>
+
+  <div class="actions">
+    <button type="submit">{{ mode === 'create' ? 'Create Leave Request' : 'Save Changes' }}</button>
+  </div>
+</form>

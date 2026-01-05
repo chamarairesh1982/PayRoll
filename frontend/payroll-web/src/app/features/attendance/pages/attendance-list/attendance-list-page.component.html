@@ -1,0 +1,35 @@
+<div class="page-container animate-fadeIn">
+  <!-- Context Header -->
+  <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-end gap-4 mb-6">
+    <div>
+      <h1 class="m-0 text-3xl font-extrabold tracking-tight text-900 line-height-1">Attendance Intelligence</h1>
+      <p class="text-600 mt-2 mb-0">High-fidelity tracking of workforce engagement and operational hours.</p>
+    </div>
+    <button pButton icon="pi pi-plus" [label]="showCreateForm ? 'Minimize Repository' : 'Log New Engagement'"
+      class="p-button-primary p-button-rounded shadow-2" (click)="toggleCreateForm()"></button>
+  </div>
+
+  <!-- Active Ingestion Section -->
+  <div class="surface-card p-6 border-round-xl border-1 border-surface-100 shadow-lg mb-6 animate-slideDown"
+    *ngIf="showCreateForm">
+    <div class="flex align-items-center gap-3 mb-4">
+      <i class="pi pi-calendar-plus text-primary text-2xl"></i>
+      <h2 class="m-0 text-xl font-bold">New Attendance Entry</h2>
+    </div>
+    <app-attendance-form mode="create" (submitted)="handleCreate($event)"></app-attendance-form>
+  </div>
+
+  <!-- Feedback Mechanism -->
+  <div class="p-3 bg-red-50 text-red-700 border-round-lg mb-6 flex align-items-center gap-2" *ngIf="errorMessage">
+    <i class="pi pi-exclamation-circle"></i>
+    <span class="font-medium">{{ errorMessage }}</span>
+  </div>
+
+  <!-- Empirical Data Grid -->
+  <div class="card border-none shadow-sm overflow-hidden p-0">
+    <app-data-table [columns]="columns" [data]="records" [loading]="isLoading" [totalRecords]="totalCount"
+      [rows]="pageSize" [first]="tableFirst" [paginator]="true" [lazy]="true" [showGlobalFilter]="false"
+      emptyMessage="No engagement records identified within the current scope." (lazyLoad)="handleLazyLoad($event)">
+    </app-data-table>
+  </div>
+</div>

@@ -1,0 +1,49 @@
+<div class="page-container">
+  <!-- Context Header: Tax Governance Framework -->
+  <div class="context-header">
+    <div class="header-content">
+      <div class="title-area">
+        <h1>Tax Governance Framework</h1>
+        <p>Manage systematically structured PAYE rules and institutional tax slabs</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button pButton label="Initialize Rule Set" icon="pi pi-plus" class="p-button-primary shadow-2"
+        (click)="navigateToCreate()"></button>
+    </div>
+  </div>
+
+  <!-- Intelligence Filters -->
+  <div class="filter-runtime p-4 mb-4">
+    <div class="grid align-items-end">
+      <div class="col-12 md:col-4 field m-0">
+        <label class="block text-sm font-medium mb-2">Year of Assessment</label>
+        <div class="p-inputgroup">
+          <p-inputNumber [(ngModel)]="filterYear" (onInput)="handleYearChange($event.value)" placeholder="Fiscal Year"
+            [useGrouping]="false"></p-inputNumber>
+          <button type="button" pButton icon="pi pi-times" class="p-button-secondary p-button-outlined"
+            (click)="clearYear()"></button>
+        </div>
+      </div>
+      <div class="col-12 md:col-8 text-right font-medium text-500">
+        <span class="mr-2">{{ totalCount }} Regulatory Frameworks Identified</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Power Grid: Tax Ledger -->
+  <div class="grid-container">
+    <app-data-table [data]="items" [columns]="columns" [loading]="isLoading" [totalRecords]="totalCount"
+      [paginator]="true" [rows]="pageSize" [showGlobalFilter]="true" (onLazyLoad)="load()">
+      <!-- Row Actions -->
+      <ng-template #rowActions let-row>
+        <div class="flex gap-2">
+          <button pButton icon="pi pi-pencil" class="p-button-rounded p-button-secondary p-button-text"
+            pTooltip="Modify parameters" (click)="navigateToEdit(row)"></button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+</div>
+
+<p-toast></p-toast>

@@ -1,0 +1,77 @@
+.reports-home {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: #0f172a;
+  }
+
+  p {
+    margin: 0.35rem 0 0;
+    color: #64748b;
+  }
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.report-card {
+  :host ::ng-deep .p-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+
+    h2 {
+      margin: 0;
+      font-size: 1.15rem;
+      color: #0f172a;
+    }
+
+    i {
+      font-size: 1.4rem;
+      color: #64748b;
+    }
+  }
+
+  .cadence {
+    display: inline-block;
+    margin-top: 0.35rem;
+    padding: 0.2rem 0.6rem;
+    background: #e2e8f0;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    color: #475569;
+  }
+
+  p {
+    margin: 0;
+    color: #475569;
+    line-height: 1.5;
+  }
+
+  .card-actions {
+    margin-top: auto;
+    display: flex;
+    justify-content: flex-end;
+  }
+}

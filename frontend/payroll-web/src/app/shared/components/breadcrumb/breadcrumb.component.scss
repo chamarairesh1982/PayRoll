@@ -1,0 +1,48 @@
+:host {
+  display: block;
+}
+
+:host ::ng-deep .p-breadcrumb {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+
+  ul {
+    li {
+      .p-breadcrumb-chevron {
+        font-size: 0.75rem;
+        color: var(--p-surface-400);
+        margin: 0 var(--sp-2);
+      }
+
+      .p-menuitem-link {
+        .p-menuitem-text {
+          color: var(--p-surface-500);
+          font-size: var(--text-sm);
+          font-weight: 500;
+          transition: color var(--transition-fast);
+        }
+
+        .p-menuitem-icon {
+          color: var(--p-surface-400);
+        }
+
+        &:hover {
+          .p-menuitem-text {
+            color: var(--p-primary-600);
+          }
+        }
+      }
+
+      &:last-child {
+        .p-menuitem-link {
+          .p-menuitem-text {
+            color: var(--p-surface-900);
+            font-weight: 700;
+          }
+        }
+      }
+    }
+  }
+}

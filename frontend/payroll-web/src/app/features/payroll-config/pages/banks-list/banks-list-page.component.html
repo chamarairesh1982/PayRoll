@@ -1,0 +1,60 @@
+<div class="page-container">
+  <!-- Context Header: Banking Infrastructure -->
+  <div class="context-header">
+    <div class="header-content">
+      <div class="title-area">
+        <h1>Banking Infrastructure</h1>
+        <p>Manage systematically registered financial institutions for systemic salary disbursement</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button pButton label="Register Institution" icon="pi pi-plus" class="p-button-primary shadow-2"
+        (click)="navigateToCreate()"></button>
+    </div>
+  </div>
+
+  <!-- Intelligence Filters -->
+  <div class="filter-runtime p-4 mb-4">
+    <div class="grid align-items-end">
+      <div class="col-12 md:col-4 field m-0">
+        <label class="block text-sm font-medium mb-2">Institutional Status</label>
+        <p-dropdown
+          [options]="[{label: 'Show All', value: 'all'}, {label: 'Operational', value: 'active'}, {label: 'Decommissioned', value: 'inactive'}]"
+          [(ngModel)]="filterIsActive" (onChange)="handleFilterChange()" styleClass="w-full"></p-dropdown>
+      </div>
+      <div class="col-12 md:col-4 field m-0">
+        <label class="block text-sm font-medium mb-2">Registry Search</label>
+        <div class="p-input-icon-left w-full">
+          <i class="pi pi-search"></i>
+          <input type="text" pInputText [(ngModel)]="searchTerm" (keyup.enter)="handleSearch()"
+            placeholder="Search by code or name" class="w-full" />
+        </div>
+      </div>
+      <div class="col-12 md:col-4 text-right font-medium text-500">
+        <span class="mr-2">{{ totalCount }} Institutions in Registry</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Power Grid: Banking Ledger -->
+  <div class="grid-container">
+    <app-data-table [data]="items" [columns]="columns" [loading]="isLoading" [totalRecords]="totalCount"
+      [paginator]="true" [rows]="pageSize" [showGlobalFilter]="true" (onLazyLoad)="load()">
+      <!-- Row Actions -->
+      <ng-template #rowActions let-row>
+        <div class="flex gap-2">
+          <button pButton icon="pi pi-eye" class="p-button-rounded p-button-secondary p-button-text"
+            pTooltip="Examine Node" (click)="navigateToView(row)"></button>
+          <button pButton icon="pi pi-pencil" class="p-button-rounded p-button-secondary p-button-text"
+            pTooltip="Modify parameters" (click)="navigateToEdit(row)"></button>
+          <button pButton icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-text"
+            pTooltip="Decommission Infrastructure" (click)="confirmDelete(row)"></button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+</div>
+
+<!-- Infrastructure Decommissioning Confirmation -->
+<p-confirmDialog header="Strategic Decommissioning" icon="pi pi-exclamation-triangle"></p-confirmDialog>
+<p-toast></p-toast>

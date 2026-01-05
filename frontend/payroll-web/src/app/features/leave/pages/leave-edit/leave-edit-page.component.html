@@ -1,0 +1,15 @@
+<h1>Edit Leave Request</h1>
+
+<ng-container *ngIf="!isLoading; else loading">
+  <app-leave-request-form
+    *ngIf="leaveRequest"
+    mode="edit"
+    [initialValue]="leaveRequest"
+    (submitted)="onSubmitted($event)"
+  ></app-leave-request-form>
+  <div *ngIf="!leaveRequest" class="empty">Leave request not found.</div>
+</ng-container>
+
+<ng-template #loading>
+  <div>Loading leave request...</div>
+</ng-template>

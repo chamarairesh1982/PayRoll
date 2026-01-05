@@ -1,6 +1,15 @@
-<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/0.5.92">
+<Project Sdk="Microsoft.Build.NoTargets/3.0.0">
   <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDefaultItems>false</EnableDefaultItems>
     <ProjectType>spa</ProjectType>
     <SpaRoot>./</SpaRoot>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="**/*" Exclude="bin/**;obj/**;node_modules/**;dist/**;.angular/**" />
+  </ItemGroup>
+
+  <!-- Prevent MSBuild from expecting resource-generation targets that are not needed for the SPA project. -->
+  <Target Name="CreateManifestResourceNames" />
 </Project>

@@ -1,0 +1,6 @@
+<div class="page-header">
+  <h1>{{ mode === 'create' ? 'Create EPF/ETF Rule Set' : 'Edit EPF/ETF Rule Set' }}</h1>
+  <button type="button" (click)="goBack()">Back to List</button>
+</div>
+
+<app-epf-etf-rule-set-form [initialValue]="ruleSet" [mode]="mode" (submitted)="handleSubmit($event)"></app-epf-etf-rule-set-form>

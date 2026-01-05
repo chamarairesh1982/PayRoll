@@ -1,0 +1,117 @@
+# Gitattributes for Sri Lanka Payroll Platform
+# Ensures consistent line endings and proper handling of binary files
+
+# Auto detect text files and normalize line endings to LF in the repository
+* text=auto
+
+# Source code
+*.cs text diff=csharp eol=crlf
+*.csx text diff=csharp eol=crlf
+*.vb text eol=crlf
+*.vbx text eol=crlf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+*.xml text eol=crlf
+*.html text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.sass text eol=lf
+*.less text eol=lf
+
+# Scripts
+*.sh text eol=lf
+*.bash text eol=lf
+*.ps1 text eol=crlf
+*.psm1 text eol=crlf
+*.psd1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Configuration files
+*.config text eol=crlf
+*.conf text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.ini text eol=crlf
+.editorconfig text eol=lf
+.gitattributes text eol=lf
+.gitignore text eol=lf
+
+# Documentation
+*.md text eol=lf
+*.txt text eol=lf
+*.adoc text eol=lf
+*.rst text eol=lf
+LICENSE text eol=lf
+AUTHORS text eol=lf
+CHANGELOG text eol=lf
+CONTRIBUTING text eol=lf
+README text eol=lf
+
+# Project files
+*.csproj text eol=crlf
+*.vbproj text eol=crlf
+*.vcxproj text eol=crlf
+*.vcxproj.filters text eol=crlf
+*.proj text eol=crlf
+*.projitems text eol=crlf
+*.shproj text eol=crlf
+*.sln text eol=crlf
+*.esproj text eol=crlf
+package.json text eol=lf
+package-lock.json text eol=lf
+tsconfig.json text eol=lf
+angular.json text eol=lf
+
+# SQL files
+*.sql text eol=crlf
+
+# Graphics
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text eol=lf
+*.eps binary
+*.ai binary
+*.psd binary
+
+# Fonts
+*.ttf binary
+*.eot binary
+*.woff binary
+*.woff2 binary
+
+# Archives
+*.zip binary
+*.7z binary
+*.gz binary
+*.tar binary
+*.rar binary
+
+# Documents
+*.pdf binary
+*.doc binary
+*.docx binary
+*.xls binary
+*.xlsx binary
+*.ppt binary
+*.pptx binary
+
+# Compiled binaries
+*.dll binary
+*.exe binary
+*.so binary
+*.dylib binary
+
+# Other
+*.mp4 binary
+*.mov binary
+*.mp3 binary
+*.wav binary
+*.flac binary

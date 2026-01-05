@@ -1,0 +1,59 @@
+
+> payroll-web-angular@0.0.0 build
+> ng build payroll-web-angular
+
+node.exe : - Generating browser application bundles (phase: setup)...
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\user\AppData\Roaming\n ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (- Generating br...hase: setup)...:Str 
+   ing) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+G£ö Browser application bundle generation complete.
+G£ö Browser application bundle generation complete.
+
+Error: 
+src/app/features/admin/pages/rule-versions/rule-versions-page.component.html:21:25 
+- error NG8002: Can't bind to 'options' since it isn't a known property of 
+'p-selectButton'.
+1. If 'p-selectButton' is an Angular component and it has 'options' input, then 
+verify that it is part of this module.
+2. If 'p-selectButton' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the 
+'@NgModule.schemas' of this component to suppress this message.
+3. To allow any property add 'NO_ERRORS_SCHEMA' to the '@NgModule.schemas' of this 
+component.
+
+21         <p-selectButton [options]="ruleTypes" [(ngModel)]="selectedType" 
+(onChange)="onTypeChange()" optionLabel="label"
+                           ~~~~~~~~~~~~~~~~~~~~~
+
+  src/app/features/admin/pages/rule-versions/rule-versions-page.component.ts:9:16
+    9   templateUrl: './rule-versions-page.component.html',
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Error occurs in the template of component RuleVersionsPageComponent.
+
+
+Error: src/app/features/payroll-config/pages/epf-etf-rules-list/epf-etf-rules-list-
+page.component.html:22:13 - error NG8002: Can't bind to 'options' since it isn't a 
+known property of 'p-selectButton'.
+1. If 'p-selectButton' is an Angular component and it has 'options' input, then 
+verify that it is part of this module.
+2. If 'p-selectButton' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the 
+'@NgModule.schemas' of this component to suppress this message.
+3. To allow any property add 'NO_ERRORS_SCHEMA' to the '@NgModule.schemas' of this 
+component.
+
+22             [options]="[{label: 'Active', value: 'active'}, {label: 'Archived', 
+value: 'inactive'}, {label: 'All', value: 'all'}]"
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  src/app/features/payroll-config/pages/epf-etf-rules-list/epf-etf-rules-list-page.
+component.ts:10:16
+    10   templateUrl: './epf-etf-rules-list-page.component.html',
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Error occurs in the template of component EpfEtfRulesListPageComponent.
+
+
+

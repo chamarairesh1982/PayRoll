@@ -1,0 +1,59 @@
+<div class="page-container">
+  <!-- Context Header: Institutional Audit Trail -->
+  <div class="context-header">
+    <div class="header-content">
+      <div class="title-area">
+        <h1>Institutional Audit Trail</h1>
+        <p>Monitor systematically logged transformations and administrative interventions</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button pButton label="Archive to CSV" icon="pi pi-download" class="p-button-secondary p-button-outlined"
+        (click)="export()"></button>
+    </div>
+  </div>
+
+  <!-- Intelligence Filters -->
+  <div class="filter-runtime p-4 mb-4">
+    <div class="grid align-items-end">
+      <div class="col-12 md:col-2 field m-0">
+        <label class="block text-sm font-medium mb-2">Governance Object</label>
+        <input type="text" pInputText [(ngModel)]="filters.entityType" (change)="applyFilters()"
+          placeholder="e.g. PayRun" class="w-full" />
+      </div>
+      <div class="col-12 md:col-2 field m-0">
+        <label class="block text-sm font-medium mb-2">Object ID</label>
+        <input type="text" pInputText [(ngModel)]="filters.entityId" (change)="applyFilters()" class="w-full" />
+      </div>
+      <div class="col-12 md:col-2 field m-0">
+        <label class="block text-sm font-medium mb-2">Transaction</label>
+        <input type="text" pInputText [(ngModel)]="filters.action" (change)="applyFilters()"
+          placeholder="e.g. Authorized" class="w-full" />
+      </div>
+      <div class="col-12 md:col-2 field m-0">
+        <label class="block text-sm font-medium mb-2">Temporal Start</label>
+        <p-calendar [(ngModel)]="filters.from" (onSelect)="applyFilters()" [showTime]="true" hourFormat="24"
+          styleClass="w-full" appendTo="body"></p-calendar>
+      </div>
+      <div class="col-12 md:col-2 field m-0">
+        <label class="block text-sm font-medium mb-2">Temporal End</label>
+        <p-calendar [(ngModel)]="filters.to" (onSelect)="applyFilters()" [showTime]="true" hourFormat="24"
+          styleClass="w-full" appendTo="body"></p-calendar>
+      </div>
+      <div class="col-12 md:col-2 flex gap-2">
+        <button pButton icon="pi pi-filter-slash" class="p-button-text p-button-secondary" (click)="clearFilters()"
+          pTooltip="Reset Parameters"></button>
+        <button pButton label="Analyze" class="p-button-primary flex-grow-1" (click)="applyFilters()"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Power Grid: Audit Ledger -->
+  <div class="grid-container">
+    <app-data-table [data]="logs" [columns]="columns" [loading]="isLoading" [totalRecords]="totalCount"
+      [paginator]="true" [rows]="pageSize" [showGlobalFilter]="true" (onLazyLoad)="load()">
+    </app-data-table>
+  </div>
+</div>
+
+<p-toast></p-toast>

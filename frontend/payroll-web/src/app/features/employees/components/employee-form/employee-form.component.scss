@@ -1,0 +1,95 @@
+.employee-form {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+:host ::ng-deep {
+  .section-tabs {
+    .p-tabview-panels {
+      padding: var(--sp-6);
+      background: var(--p-surface-0);
+      border: 1px solid var(--p-surface-100);
+      border-top: none;
+      border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .p-tabview-nav {
+      background: transparent;
+      border: none;
+
+      li {
+        .p-tabview-nav-link {
+          background: var(--p-surface-50);
+          border: 1px solid var(--p-surface-100);
+          border-bottom: none;
+          margin-right: 2px;
+          border-radius: var(--radius-md) var(--radius-md) 0 0;
+          padding: var(--sp-3) var(--sp-6);
+          color: var(--p-surface-500);
+          transition: all var(--transition-fast);
+
+          &:not(.p-disabled):focus {
+            box-shadow: none;
+          }
+        }
+
+        &.p-highlight .p-tabview-nav-link {
+          background: var(--p-surface-0);
+          color: var(--p-primary-600);
+          font-weight: 700;
+          border-bottom-color: var(--p-surface-0);
+          margin-bottom: -1px;
+          z-index: 1;
+        }
+      }
+    }
+  }
+
+  .field {
+    margin-bottom: var(--sp-6);
+
+    label {
+      display: block;
+      margin-bottom: var(--sp-2);
+      font-weight: 600;
+      font-size: var(--text-sm);
+      color: var(--p-surface-700);
+    }
+  }
+
+  .field-hint {
+    display: block;
+    margin-top: var(--sp-1);
+    font-size: var(--text-xs);
+    color: var(--p-surface-400);
+  }
+}
+
+.action-bar {
+  position: sticky;
+  bottom: -1.5rem;
+  /* Matches layout content padding */
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  padding: var(--sp-4) var(--sp-6);
+  margin: var(--sp-8) calc(-1 * var(--sp-6)) calc(-1 * var(--sp-6));
+  border-top: 1px solid var(--p-surface-100);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-3);
+  z-index: 10;
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding-top: var(--sp-6);
+
+  label {
+    margin-bottom: 0 !important;
+  }
+}
